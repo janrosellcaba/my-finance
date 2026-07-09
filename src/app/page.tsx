@@ -1,52 +1,233 @@
-import Image from "next/image";
+"use client";
+
+import { useState } from "react";
+
+const ACCOUNTS = ["Imagin Main", "Imagin Savings", "Imagin EMH", "MyInvestor Fix", "MyInvestor Var."];
+
+const EXPENSE_CATEGORIES = [
+	"Clàudia",
+	"Food & Drinks",
+	"Moto Rental",
+	"Gas",
+	"Social",
+	"Gym",
+	"Transport",
+	"Sport",
+	"Travel",
+	"Services",
+	"Other",
+];
+
+const INCOME_CATEGORIES = ["Salary", "Gift & Prices", "Bizum", "Other"];
+
+const TRANSACTION_TYPES = ["Income", "Expense", "Transfer"] as const;
+type TransactionType = (typeof TRANSACTION_TYPES)[number];
+
+function todayISO() {
+	const d = new Date();
+	const yyyy = d.getFullYear();
+	const mm = String(d.getMonth() + 1).padStart(2, "0");
+	const dd = String(d.getDate()).padStart(2, "0");
+	return `${yyyy}-${mm}-${dd}`;
+}
+
+function categoryOptionsFor(type: TransactionType) {
+	if (type === "Income") return INCOME_CATEGORIES;
+	if (type === "Expense") return EXPENSE_CATEGORIES;
+	return ACCOUNTS;
+}
+
+function categoryLabelFor(type: TransactionType) {
+	return type === "Transfer" ? "Destination" : "Category";
+}
+
+const TYPE_STYLES: Record<TransactionType, string> = {
+	Income: "bg-emerald-500 text-white border-emerald-500 shadow-md shadow-emerald-500/25",
+	Expense: "bg-red-500 text-white border-red-500 shadow-md shadow-red-500/25",
+	Transfer: "bg-yellow-500 text-white border-yellow-500 shadow-md shadow-yellow-500/25",
+};
 
 export default function Home() {
-	return (
-		<div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-			<main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-				<Image className="dark:invert" src="/next.svg" alt="Next.js logo" width={180} height={38} priority />
-				<ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-					<li className="mb-2 tracking-[-.01em]">
-						Get started by editing{" "}
-						<code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-							src/app/page.tsx
-						</code>
-						.
-					</li>
-					<li className="tracking-[-.01em]">Save and see your changes instantly.</li>
-				</ol>
+	const [date, setDate] = useState(todayISO());
+	const [description, setDescription] = useState("");
+	const [type, setType] = useState<TransactionType>("Expense");
+	const [account, setAccount] = useState(ACCOUNTS[0]);
+	const [category, setCategory] = useState("");
+	const [amount, setAmount] = useState("");
+	const [showSuccess, setShowSuccess] = useState(false);
 
-				<div className="flex gap-4 items-center flex-col sm:flex-row">
-					<a
-						className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-						href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						Read our docs
-					</a>
+	function handleTypeChange(next: TransactionType) {
+		setType(next);
+		setCategory("");
+	}
+
+	function handleAddTransaction(e: React.FormEvent) {
+		e.preventDefault();
+
+		setDescription("");
+		setAmount("");
+		setCategory("");
+		setDate(todayISO());
+
+		setShowSuccess(true);
+		setTimeout(() => setShowSuccess(false), 2500);
+	}
+
+	return (
+		<div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-emerald-50 via-white to-teal-50">
+			<div className="w-full max-w-md">
+				<div className="mb-8 text-center">
+					<h1 className="[font-family:var(--font-outfit)] text-3xl font-extrabold tracking-tight text-emerald-950">
+						MyFinance
+					</h1>
+					<p className="mt-1.5 text-sm text-emerald-700/60">Add a new transaction</p>
 				</div>
-			</main>
-			<footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
+
+				<form
+					onSubmit={handleAddTransaction}
+					className="rounded-3xl border border-emerald-900/5 bg-white shadow-xl shadow-emerald-900/10 p-7 space-y-5"
 				>
-					<Image aria-hidden src="/file.svg" alt="File icon" width={16} height={16} />
-					Learn
-				</a>
-				<a
-					className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-					href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-					target="_blank"
-					rel="noopener noreferrer"
-				>
-					<Image aria-hidden src="/globe.svg" alt="Globe icon" width={16} height={16} />
-					Go to nextjs.org →
-				</a>
-			</footer>
+					<div>
+						<label
+							htmlFor="date"
+							className="block text-xs font-semibold uppercase tracking-wide text-emerald-800/50 mb-1.5"
+						>
+							Date
+						</label>
+						<input
+							id="date"
+							type="date"
+							value={date}
+							onChange={(e) => setDate(e.target.value)}
+							required
+							className="w-full rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-3.5 py-2.5 text-sm text-emerald-950 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30 transition"
+						/>
+					</div>
+
+					<div>
+						<label
+							htmlFor="description"
+							className="block text-xs font-semibold uppercase tracking-wide text-emerald-800/50 mb-1.5"
+						>
+							Description
+						</label>
+						<input
+							id="description"
+							type="text"
+							value={description}
+							onChange={(e) => setDescription(e.target.value)}
+							placeholder="e.g. Groceries at Mercadona"
+							className="w-full rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-3.5 py-2.5 text-sm text-emerald-950 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30 transition placeholder:text-emerald-900/30"
+						/>
+					</div>
+
+					<div>
+						<label className="block text-xs font-semibold uppercase tracking-wide text-emerald-800/50 mb-1.5">
+							Type
+						</label>
+						<div className="grid grid-cols-3 gap-2">
+							{TRANSACTION_TYPES.map((t) => (
+								<button
+									key={t}
+									type="button"
+									onClick={() => handleTypeChange(t)}
+									className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition ${
+										type === t
+											? TYPE_STYLES[t]
+											: "border-emerald-900/10 bg-emerald-50/50 text-emerald-800/50 hover:bg-emerald-100/60"
+									}`}
+								>
+									{t}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<div>
+						<label
+							htmlFor="account"
+							className="block text-xs font-semibold uppercase tracking-wide text-emerald-800/50 mb-1.5"
+						>
+							Account
+						</label>
+						<select
+							id="account"
+							value={account}
+							onChange={(e) => setAccount(e.target.value)}
+							className="w-full rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-3.5 py-2.5 text-sm text-emerald-950 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30 transition"
+						>
+							{ACCOUNTS.map((a) => (
+								<option key={a} value={a}>
+									{a}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div>
+						<label
+							htmlFor="category"
+							className="block text-xs font-semibold uppercase tracking-wide text-emerald-800/50 mb-1.5"
+						>
+							{categoryLabelFor(type)}
+						</label>
+						<select
+							id="category"
+							value={category}
+							onChange={(e) => setCategory(e.target.value)}
+							required
+							className="w-full rounded-xl border border-emerald-900/10 bg-emerald-50/50 px-3.5 py-2.5 text-sm text-emerald-950 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30 transition"
+						>
+							<option value="" disabled>
+								Select {categoryLabelFor(type).toLowerCase()}
+							</option>
+							{categoryOptionsFor(type).map((c) => (
+								<option key={c} value={c}>
+									{c}
+								</option>
+							))}
+						</select>
+					</div>
+
+					<div>
+						<label
+							htmlFor="amount"
+							className="block text-xs font-semibold uppercase tracking-wide text-emerald-800/50 mb-1.5"
+						>
+							Amount
+						</label>
+						<div className="relative">
+							<span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-emerald-700/40 text-sm font-medium">
+								€
+							</span>
+							<input
+								id="amount"
+								type="number"
+								step="0.01"
+								min="0"
+								value={amount}
+								onChange={(e) => setAmount(e.target.value)}
+								placeholder="0.00"
+								required
+								className="w-full rounded-xl border border-emerald-900/10 bg-emerald-50/50 pl-7.5 pr-3.5 py-2.5 text-sm text-emerald-950 outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30 transition placeholder:text-emerald-900/30"
+							/>
+						</div>
+					</div>
+
+					<button
+						type="submit"
+						className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white [font-family:var(--font-outfit)] font-semibold text-sm py-3 shadow-lg shadow-emerald-500/25 transition hover:shadow-emerald-500/40 hover:brightness-105 active:scale-[0.99]"
+					>
+						Add Transaction
+					</button>
+
+					{showSuccess && (
+						<div className="flex items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 text-sm font-semibold px-3 py-2.5 text-center">
+							<span>✓</span> Transaction added
+						</div>
+					)}
+				</form>
+			</div>
 		</div>
 	);
 }

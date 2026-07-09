@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx next *)",
+      "Bash(npx tsc *)",
+      "Skill(run)",
+      "Skill(run:*)",
+      "Bash(timeout 30 bash -c 'until curl -sf http://localhost:3000 >/dev/null; do sleep 1; done')",
+      "Bash(which chromium-cli *)",
+      "Read(//tmp/claude-1000/bundled-skills/**)",
+      "Bash(npx --yes playwright --version)",
+      "Bash(node -e \"require.resolve\\('playwright'\\)\")",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(npx playwright *)",
+      "Read(//tmp/**)",
+      "Bash(which chromium *)",
+      "Read(//home/jan/.cache/ms-playwright/**)",
+      "Bash(node check.mjs)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(pkill -f \"npm run dev\")"
+    ]
+  }
+}
