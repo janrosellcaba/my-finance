@@ -45,8 +45,9 @@ type AnalyticsData = {
 
 export function AnalyticsView({ privacyMode }: { privacyMode: boolean }) {
     const router = useRouter();
-    const [year, setYear] = useState("all");
-    const [month, setMonth] = useState("all");
+    const now = new Date();
+    const [year, setYear] = useState(String(now.getFullYear()));
+    const [month, setMonth] = useState(String(now.getMonth() + 1));
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
 

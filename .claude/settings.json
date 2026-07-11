@@ -140,7 +140,8 @@
       "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify10.js)",
       "Bash(kill 5070 5082 5158)",
       "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_scroll.js)",
-      "Bash(pkill -f \"next-server\")"
+      "Bash(pkill -f \"next-server\")",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_analytics.js)"
     ],
     "additionalDirectories": [
       "/home/jan/.npm/_npx/e41f203b7505f1fb"
