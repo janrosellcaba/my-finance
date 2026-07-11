@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type FormEvent, type ReactElement } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { AnalyticsView } from "./AnalyticsView";
@@ -96,7 +96,25 @@ function IconEyeOff({ className }: { className?: string }) {
 function IconChart({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 20V10M12 20V4M20 20v-7" />
+            <rect x="4" y="12" width="4" height="8" rx="1" />
+            <rect x="10" y="8" width="4" height="12" rx="1" />
+            <rect x="16" y="4" width="4" height="16" rx="1" />
+        </svg>
+    );
+}
+
+function IconChevronRight({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 6l6 6-6 6" />
+        </svg>
+    );
+}
+
+function IconArrowLeft({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M19 12H5M11 6l-6 6 6 6" />
         </svg>
     );
 }
@@ -216,6 +234,11 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
     const [categories, setCategories] = useState<Category[]>([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [privacyMode, setPrivacyMode] = useState(initialPrivacyMode);
+    const mainRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        mainRef.current?.scrollTo(0, 0);
+    }, [tab]);
 
     const loadDashboard = useCallback(async () => {
         const res = await fetch("/api/dashboard");
@@ -272,8 +295,8 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
     }
 
     return (
-        <div className="min-h-screen bg-cream pb-28">
-            <header className="sticky top-0 z-30 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
+        <div className="flex h-dvh flex-col bg-cream">
+            <header className="shrink-0 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                         <Image src="/logo.png" alt="" width={20} height={20} className="opacity-80" />
@@ -291,30 +314,37 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                 </div>
             </header>
 
-            <main className="mx-auto max-w-md">
-                {tab === "home" && (
-                    <HomeView
-                        dashboard={dashboard}
-                        loading={loadingDashboard}
-                        accounts={accounts}
-                        categories={categories}
-                        privacyMode={privacyMode}
-                        onAddClick={() => setShowAddModal(true)}
-                    />
-                )}
-                {tab === "transactions" && (
-                    <TransactionsView accounts={accounts} categories={categories} privacyMode={privacyMode} />
-                )}
-                {tab === "analytics" && <AnalyticsView privacyMode={privacyMode} />}
-                {tab === "config" && (
-                    <ConfigView
-                        accounts={accounts}
-                        categories={categories}
-                        onRefresh={loadConfig}
-                        onLogout={handleLogout}
-                        onPasswordChanged={handlePasswordChanged}
-                    />
-                )}
+            <main ref={mainRef} className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+                <div className="mx-auto max-w-md pb-6">
+                    {tab === "home" && (
+                        <HomeView
+                            dashboard={dashboard}
+                            loading={loadingDashboard}
+                            accounts={accounts}
+                            categories={categories}
+                            privacyMode={privacyMode}
+                            onAddClick={() => setShowAddModal(true)}
+                        />
+                    )}
+                    {tab === "transactions" && (
+                        <TransactionsView
+                            accounts={accounts}
+                            categories={categories}
+                            privacyMode={privacyMode}
+                            onTransactionChanged={loadDashboard}
+                        />
+                    )}
+                    {tab === "analytics" && <AnalyticsView privacyMode={privacyMode} />}
+                    {tab === "config" && (
+                        <ConfigView
+                            accounts={accounts}
+                            categories={categories}
+                            onRefresh={loadConfig}
+                            onLogout={handleLogout}
+                            onPasswordChanged={handlePasswordChanged}
+                        />
+                    )}
+                </div>
             </main>
 
             <BottomNav active={tab} onChange={setTab} />
@@ -342,7 +372,7 @@ function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: Tab) => 
     ];
 
     return (
-        <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-paper/95 backdrop-blur [padding-bottom:env(safe-area-inset-bottom)]">
+        <nav className="shrink-0 border-t border-line bg-paper/95 backdrop-blur [padding-bottom:env(safe-area-inset-bottom)]">
             <div className="mx-auto flex max-w-md">
                 {items.map(({ key, label, Icon }) => {
                     const isActive = active === key;
@@ -508,6 +538,7 @@ function AddTransactionModal({
     const [amount, setAmount] = useState(transaction ? String(Math.abs(transaction.amount)) : "");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
+    const [deleting, setDeleting] = useState(false);
 
     const destinationOptions: { id: string; name: string }[] =
         type === "transfer" ? accounts.filter((a) => a.id !== accountId) : categories.filter((c) => c.type === type);
@@ -569,6 +600,31 @@ function AddTransactionModal({
         } catch {
             setError("Network error. Please try again.");
             setSaving(false);
+        }
+    }
+
+    async function handleDelete() {
+        if (!transaction) return;
+        if (!confirm("Delete this transaction? This cannot be undone.")) return;
+
+        setError("");
+        setDeleting(true);
+        try {
+            const res = await fetch("/api/transactions", {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: transaction.id }),
+            });
+            const data = (await res.json()) as { error?: string };
+            if (!res.ok) {
+                setError(data.error || "Could not delete transaction.");
+                setDeleting(false);
+                return;
+            }
+            onSaved();
+        } catch {
+            setError("Network error. Please try again.");
+            setDeleting(false);
         }
     }
 
@@ -668,9 +724,20 @@ function AddTransactionModal({
 
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
-                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                <button type="submit" disabled={saving || deleting} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
                     {saving ? "Saving…" : isEditing ? "Save Changes" : "Save Transaction"}
                 </button>
+
+                {isEditing && (
+                    <button
+                        type="button"
+                        onClick={handleDelete}
+                        disabled={saving || deleting}
+                        className="mt-3 w-full rounded-2xl border-2 border-danger/25 bg-danger-soft py-4 text-lg font-bold text-danger transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-danger/40 hover:shadow-md active:translate-y-0 disabled:opacity-60 select-none"
+                    >
+                        {deleting ? "Deleting…" : "Delete Transaction"}
+                    </button>
+                )}
             </form>
         </div>
     );
@@ -682,10 +749,12 @@ function TransactionsView({
     accounts,
     categories,
     privacyMode,
+    onTransactionChanged,
 }: {
     accounts: Account[];
     categories: Category[];
     privacyMode: boolean;
+    onTransactionChanged: () => void;
 }) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [page, setPage] = useState(1);
@@ -802,6 +871,7 @@ function TransactionsView({
                     onSaved={() => {
                         setEditingTransaction(null);
                         fetchPage(1, true);
+                        onTransactionChanged();
                     }}
                 />
             )}
@@ -822,6 +892,42 @@ function TransactionsView({
 
 // ---------- Configuration ----------
 
+type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import";
+
+const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
+    accounts: "Accounts",
+    categories: "Categories",
+    export: "Export Data",
+    import: "Import Data",
+};
+
+function MenuRow({
+    label,
+    onClick,
+    danger = false,
+    chevron = true,
+    last = false,
+}: {
+    label: string;
+    onClick: () => void;
+    danger?: boolean;
+    chevron?: boolean;
+    last?: boolean;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`flex w-full items-center gap-3 px-5 py-4 text-left transition-colors duration-150 select-none ${
+                last ? "" : "border-b border-line"
+            } ${danger ? "text-danger hover:bg-danger-soft" : "text-ink hover:bg-chip"}`}
+        >
+            <span className="flex-1 text-base font-semibold">{label}</span>
+            {chevron && <IconChevronRight className="h-4 w-4 shrink-0 text-muted" />}
+        </button>
+    );
+}
+
 function ConfigView({
     accounts,
     categories,
@@ -835,6 +941,7 @@ function ConfigView({
     onLogout: () => void;
     onPasswordChanged: () => void;
 }) {
+    const [section, setSection] = useState<ConfigSection>("menu");
     const [accountName, setAccountName] = useState("");
     const [categoryName, setCategoryName] = useState("");
     const [categoryType, setCategoryType] = useState<"income" | "expense">("expense");
@@ -933,121 +1040,152 @@ function ConfigView({
         onRefresh();
     }
 
+    if (section === "menu") {
+        return (
+            <div className="space-y-6 px-5 pt-6">
+                <h1 className="text-2xl font-extrabold text-ink">Configuration</h1>
+
+                {error && <p className="text-sm font-medium text-danger">{error}</p>}
+
+                <div className="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+                    <MenuRow label="Bank Accounts" onClick={() => setSection("accounts")} />
+                    <MenuRow label="Categories" onClick={() => setSection("categories")} />
+                    <MenuRow label="Export Data" onClick={() => setSection("export")} />
+                    <MenuRow label="Import Data" onClick={() => setSection("import")} />
+                    <MenuRow
+                        label="Change Password"
+                        chevron={false}
+                        onClick={() => setShowChangePassword(true)}
+                    />
+                    <MenuRow label="Log Out" chevron={false} danger last onClick={onLogout} />
+                </div>
+
+                {showChangePassword && (
+                    <ChangePasswordModal
+                        onClose={() => setShowChangePassword(false)}
+                        onChanged={onPasswordChanged}
+                    />
+                )}
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-6 px-5 pt-6">
-            <h1 className="text-2xl font-extrabold text-ink">Configuration</h1>
+            <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onClick={() => setSection("menu")}
+                    aria-label="Back to configuration"
+                    className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
+                >
+                    <IconArrowLeft className="h-5 w-5" />
+                </button>
+                <h1 className="text-2xl font-extrabold text-ink">{CONFIG_SECTION_TITLES[section]}</h1>
+            </div>
 
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
-            <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Accounts</h2>
-                <div className="mb-4 flex flex-wrap gap-2">
-                    {accounts.map((a) => (
-                        <span
-                            key={a.id}
-                            className="inline-flex items-center gap-1.5 rounded-full bg-chip py-1.5 pl-3 pr-1.5 text-sm font-medium text-ink"
-                        >
-                            {a.name}
-                            <button
-                                type="button"
-                                onClick={() => handleDeleteAccount(a)}
-                                aria-label={`Delete ${a.name}`}
-                                className="rounded-full p-0.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
+            {section === "accounts" && (
+                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {accounts.map((a) => (
+                            <span
+                                key={a.id}
+                                className="inline-flex items-center gap-1.5 rounded-full bg-chip py-1.5 pl-3 pr-1.5 text-sm font-medium text-ink"
                             >
-                                <IconClose className="h-3.5 w-3.5" />
-                            </button>
-                        </span>
-                    ))}
-                </div>
-                <form onSubmit={handleAddAccount} className="flex gap-2">
-                    <input
-                        value={accountName}
-                        onChange={(e) => setAccountName(e.target.value)}
-                        placeholder="New account name"
-                        className={`flex-1 ${INPUT_CLS}`}
-                    />
-                    <button type="submit" disabled={savingAccount} className={`${PRIMARY_BTN} bg-brand px-5 py-3 text-base hover:bg-brand-dark`}>
-                        Add
-                    </button>
-                </form>
-            </section>
-
-            <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Categories</h2>
-                <div className="mb-4 flex flex-wrap gap-2">
-                    {categories.map((c) => (
-                        <span
-                            key={c.id}
-                            className={`inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-sm font-medium ${
-                                c.type === "income" ? "bg-brand-soft text-brand-dark" : "bg-danger-soft text-danger-dark"
-                            }`}
-                        >
-                            {c.name}
-                            <button
-                                type="button"
-                                onClick={() => handleDeleteCategory(c)}
-                                aria-label={`Delete ${c.name}`}
-                                className="rounded-full p-0.5 opacity-70 transition-opacity duration-150 hover:opacity-100"
-                            >
-                                <IconClose className="h-3.5 w-3.5" />
-                            </button>
-                        </span>
-                    ))}
-                </div>
-                <form onSubmit={handleAddCategory} className="space-y-2">
-                    <input
-                        value={categoryName}
-                        onChange={(e) => setCategoryName(e.target.value)}
-                        placeholder="New category name"
-                        className={INPUT_CLS}
-                    />
-                    <div className="flex gap-2">
-                        <button
-                            type="button"
-                            onClick={() => setCategoryType("income")}
-                            className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
-                                categoryType === "income" ? "bg-brand text-white" : "bg-chip text-muted hover:bg-chip-hover"
-                            }`}
-                        >
-                            Income
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setCategoryType("expense")}
-                            className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
-                                categoryType === "expense" ? "bg-danger text-white" : "bg-chip text-muted hover:bg-chip-hover"
-                            }`}
-                        >
-                            Expense
-                        </button>
+                                {a.name}
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteAccount(a)}
+                                    aria-label={`Delete ${a.name}`}
+                                    className="rounded-full p-0.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
+                                >
+                                    <IconClose className="h-3.5 w-3.5" />
+                                </button>
+                            </span>
+                        ))}
                     </div>
-                    <button type="submit" disabled={savingCategory} className={`${INK_BTN} w-full`}>
-                        Add Category
-                    </button>
-                </form>
-            </section>
+                    <form onSubmit={handleAddAccount} className="flex gap-2">
+                        <input
+                            value={accountName}
+                            onChange={(e) => setAccountName(e.target.value)}
+                            placeholder="New account name"
+                            className={`flex-1 ${INPUT_CLS}`}
+                        />
+                        <button type="submit" disabled={savingAccount} className={`${PRIMARY_BTN} bg-brand px-5 py-3 text-base hover:bg-brand-dark`}>
+                            Add
+                        </button>
+                    </form>
+                </section>
+            )}
 
-            <button
-                type="button"
-                onClick={() => setShowChangePassword(true)}
-                className={`${INK_BTN} w-full text-center`}
-            >
-                Change Password
-            </button>
+            {section === "categories" && (
+                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <div className="mb-4 flex flex-wrap gap-2">
+                        {categories.map((c) => (
+                            <span
+                                key={c.id}
+                                className={`inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-sm font-medium ${
+                                    c.type === "income" ? "bg-brand-soft text-brand-dark" : "bg-danger-soft text-danger-dark"
+                                }`}
+                            >
+                                {c.name}
+                                <button
+                                    type="button"
+                                    onClick={() => handleDeleteCategory(c)}
+                                    aria-label={`Delete ${c.name}`}
+                                    className="rounded-full p-0.5 opacity-70 transition-opacity duration-150 hover:opacity-100"
+                                >
+                                    <IconClose className="h-3.5 w-3.5" />
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                    <form onSubmit={handleAddCategory} className="space-y-2">
+                        <input
+                            value={categoryName}
+                            onChange={(e) => setCategoryName(e.target.value)}
+                            placeholder="New category name"
+                            className={INPUT_CLS}
+                        />
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => setCategoryType("income")}
+                                className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
+                                    categoryType === "income" ? "bg-brand text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                }`}
+                            >
+                                Income
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setCategoryType("expense")}
+                                className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
+                                    categoryType === "expense" ? "bg-danger text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                }`}
+                            >
+                                Expense
+                            </button>
+                        </div>
+                        <button type="submit" disabled={savingCategory} className={`${INK_BTN} w-full`}>
+                            Add Category
+                        </button>
+                    </form>
+                </section>
+            )}
 
-            <button
-                type="button"
-                onClick={onLogout}
-                className="w-full rounded-2xl border-2 border-danger/25 bg-danger-soft py-4 text-lg font-bold text-danger transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-danger/40 hover:shadow-md active:translate-y-0 select-none"
-            >
-                Log Out
-            </button>
+            {section === "export" && (
+                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <p className="text-sm text-muted">Export functionality is coming soon.</p>
+                </section>
+            )}
 
-            {showChangePassword && (
-                <ChangePasswordModal
-                    onClose={() => setShowChangePassword(false)}
-                    onChanged={onPasswordChanged}
-                />
+            {section === "import" && (
+                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <p className="text-sm text-muted">Import functionality is coming soon.</p>
+                </section>
             )}
         </div>
     );

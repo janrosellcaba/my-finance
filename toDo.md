@@ -3,6 +3,8 @@ improve transactions page
 better session control -> auth api calls
 export transaction data
 import transaction data
+analytics by default on current month
+change icons
 
 ---done---
 admin

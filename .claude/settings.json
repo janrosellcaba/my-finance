@@ -120,7 +120,27 @@
       "Bash(node /home/jan/.npm/_npx/e41f203b7505f1fb/test-analytics.mjs)",
       "Bash(cp /tmp/claude-1000/-home-jan-personal-my-finance/bb52dfec-544c-4d15-a3c4-3a37284e91d4/scratchpad/debug-chart.mjs /home/jan/.npm/_npx/e41f203b7505f1fb/debug-chart.mjs)",
       "Bash(node /home/jan/.npm/_npx/e41f203b7505f1fb/debug-chart.mjs)",
-      "Bash(cp /tmp/claude-1000/-home-jan-personal-my-finance/bb52dfec-544c-4d15-a3c4-3a37284e91d4/scratchpad/debug-chart.mjs /home/jan/.npm/_npx/e41f203b7505f1fb/debug-chart.mjs *)"
+      "Bash(cp /tmp/claude-1000/-home-jan-personal-my-finance/bb52dfec-544c-4d15-a3c4-3a37284e91d4/scratchpad/debug-chart.mjs /home/jan/.npm/_npx/e41f203b7505f1fb/debug-chart.mjs *)",
+      "Bash(./node_modules/.bin/next lint *)",
+      "Bash(./node_modules/.bin/eslint src/app/FinanceApp.tsx)",
+      "Bash(curl -s -c /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/cookies.txt -X POST http://localhost:3000/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"uitestuser\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify.js)",
+      "Bash(pkill -f \"next dev -p 3000\")",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify2.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify3.js)",
+      "Bash(xargs -I{} echo {})",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify4.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify5.js)",
+      "Bash(curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/cookies2.txt \"http://localhost:3000/api/transactions?search=Item%2040\")",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify6.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify7.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify8.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify9.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify10.js)",
+      "Bash(kill 5070 5082 5158)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_scroll.js)",
+      "Bash(pkill -f \"next-server\")"
     ],
     "additionalDirectories": [
       "/home/jan/.npm/_npx/e41f203b7505f1fb"

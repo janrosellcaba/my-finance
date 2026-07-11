@@ -123,6 +123,39 @@ export async function PUT(request: Request) {
     }
 }
 
+export async function DELETE(request: Request) {
+    try {
+        const user = await validateSession();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = (await request.json().catch(() => null)) as { id?: unknown } | null;
+        if (!body || typeof body.id !== "string" || body.id.length < 1) {
+            return NextResponse.json({ error: "Id is required." }, { status: 400 });
+        }
+
+        const { id } = body;
+        const db = await getDb();
+
+        const existing = await db
+            .select({ id: transaction.id })
+            .from(transaction)
+            .where(and(eq(transaction.id, id), eq(transaction.userId, user.id)))
+            .get();
+        if (!existing) {
+            return NextResponse.json({ error: "Transaction not found." }, { status: 404 });
+        }
+
+        await db.delete(transaction).where(and(eq(transaction.id, id), eq(transaction.userId, user.id)));
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Transaction delete error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
+
 export async function GET(request: Request) {
     try {
         const user = await validateSession();
