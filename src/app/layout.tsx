@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
 
@@ -21,6 +21,14 @@ const outfit = Outfit({
 export const metadata: Metadata = {
 	title: "MyFinance",
 	description: "Track your income, expenses, and transfers",
+	icons: {
+		icon: "/favicon.ico",
+		apple: "/logo.png",
+	},
+};
+
+export const viewport: Viewport = {
+	themeColor: "#faf8f2",
 };
 
 export default function RootLayout({
@@ -30,9 +38,6 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<head>
-				<link rel="icon" href="/favicon.svg" type="image/svg+xml"></link>
-			</head>
 			<body className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}>{children}</body>
 		</html>
 	);

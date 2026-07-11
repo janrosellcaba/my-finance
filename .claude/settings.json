@@ -57,7 +57,26 @@
       "Bash(npx opennextjs-cloudflare *)",
       "Bash(nohup npx wrangler dev --port 8799)",
       "Bash(disown)",
-      "Bash(curl -s -o /tmp/resp.txt -w \"HTTP_CODE:%{http_code}\\\\n\" -X POST http://localhost:8799/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"verifyuser1\",\"password\":\"password123\",\"secretCode\":\"1234\"}')"
+      "Bash(curl -s -o /tmp/resp.txt -w \"HTTP_CODE:%{http_code}\\\\n\" -X POST http://localhost:8799/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"verifyuser1\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(npx eslint *)",
+      "Bash(chromium-cli --help)",
+      "Bash(npx --no-install playwright --version)",
+      "Bash(find / -maxdepth 4 -iname \"playwright\" -type d)",
+      "Bash(node -e \"const {chromium}=require\\('playwright'\\); \\(async\\(\\)=>{try{const b=await chromium.launch\\({args:['--no-sandbox']}\\); console.log\\('launched ok'\\); await b.close\\(\\);}catch\\(e\\){console.error\\('ERR',e.message\\);}}\\)\\(\\)\")",
+      "Bash(npm root *)",
+      "Bash(find / -maxdepth 6 -iname \"playwright\" -type d)",
+      "Bash(find ~/.npm/_npx -maxdepth 4 -iname \"playwright\" -type d 2>/dev/null)",
+      "Read(//home/jan/.npm/_npx/**)",
+      "Bash(export NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules)",
+      "Bash(npx --prefix /home/jan/.npm/_npx/e41f203b7505f1fb playwright install chromium)",
+      "Bash(timeout 30 bash -c 'until curl -sf http://localhost:8799 >/dev/null; do sleep 1; done')",
+      "Bash(node verify-ui.mjs)",
+      "Bash(mkdir -p /tmp/claude-1000/-home-jan-personal-my-finance/66781828-eff1-4ee9-8464-00e589079032/scratchpad/node_modules)",
+      "Bash(ln -sf /home/jan/.npm/_npx/e41f203b7505f1fb/node_modules/playwright /tmp/claude-1000/-home-jan-personal-my-finance/66781828-eff1-4ee9-8464-00e589079032/scratchpad/node_modules/playwright)",
+      "Bash(ln -sf /home/jan/.npm/_npx/e41f203b7505f1fb/node_modules/playwright-core /tmp/claude-1000/-home-jan-personal-my-finance/66781828-eff1-4ee9-8464-00e589079032/scratchpad/node_modules/playwright-core)",
+      "Bash(cp favicon.ico /tmp/favicon-preview.webp)",
+      "Bash(python3 -c ' *)",
+      "Bash(node verify-hover.mjs)"
     ]
   }
 }
