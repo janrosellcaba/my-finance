@@ -1,4 +1,5 @@
-const ITERATIONS = 210000;
+// workerd's WebCrypto PBKDF2 implementation rejects iteration counts above 100000.
+const ITERATIONS = 100000;
 
 const textEncoder = new TextEncoder();
 

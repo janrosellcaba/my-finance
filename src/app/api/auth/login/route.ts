@@ -27,7 +27,7 @@ export async function POST(request: Request) {
             .where(eq(users.username, username))
             .get();
 
-        const dummyHash = "210000:00000000000000000000000000000000:0000000000000000000000000000000000000000000000000000000000000000";
+        const dummyHash = "100000:00000000000000000000000000000000:0000000000000000000000000000000000000000000000000000000000000000";
         const isValid = await verifyPassword(
             password,
             userRecord ? userRecord.passwordHash : dummyHash
