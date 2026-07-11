@@ -18,7 +18,26 @@
       "Read(//home/jan/.cache/ms-playwright/**)",
       "Bash(node check.mjs)",
       "Bash(pkill -f \"next dev\")",
-      "Bash(pkill -f \"npm run dev\")"
+      "Bash(pkill -f \"npm run dev\")",
+      "Bash(wrangler whoami *)",
+      "WebFetch(domain:developers.cloudflare.com)",
+      "WebFetch(domain:opennext.js.org)",
+      "Read(//home/jan/.claude/skills/cloudflare/references/d1/**)",
+      "Bash(npx wrangler *)",
+      "Bash(npx drizzle-kit *)",
+      "Bash(npm run *)",
+      "Bash(timeout 180 npx opennextjs-cloudflare build)",
+      "Bash(curl -s -i -c cookies.txt -X POST http://localhost:8799/api/auth/signup -H 'Content-Type: application/json' -d '{\"email\":\"test@example.com\",\"password\":\"correcthorsebattery\"}')",
+      "Bash(curl -s -i http://localhost:8799/api/transactions)",
+      "Bash(curl -s -i -b cookies.txt -X POST http://localhost:8799/api/transactions -H 'Content-Type: application/json' -d '{\"date\":\"2026-07-01\",\"description\":\"Groceries\",\"type\":\"expense\",\"account\":\"checking\",\"category\":\"food\",\"amount\":42.5}')",
+      "Bash(curl -s -i -b cookies.txt http://localhost:8799/api/transactions)",
+      "Bash(curl -s -i -X POST http://localhost:8799/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"test@example.com\",\"password\":\"wrongpassword\"}')",
+      "Bash(curl -s -i -c cookies2.txt -X POST http://localhost:8799/api/auth/login -H \"Content-Type: application/json\" -d '{\"email\":\"test@example.com\",\"password\":\"correcthorsebattery\"}')",
+      "Bash(curl -s -i -b cookies.txt -X POST http://localhost:8799/api/transactions -H \"Content-Type: application/json\" -d '{\"date\":\"2026-07-01\",\"description\":\"x\",\"type\":\"bogus\",\"account\":\"a\",\"category\":\"c\",\"amount\":1}')",
+      "Bash(curl -s -i -b cookies.txt -X POST http://localhost:8799/api/auth/logout)",
+      "Bash(pkill -f \"wrangler dev --port 8799\")",
+      "Bash(rm -f /tmp/cookies.txt /tmp/cookies2.txt /tmp/wrangler-dev.log)",
+      "Bash(git status *)"
     ]
   }
 }
