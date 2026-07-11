@@ -31,9 +31,9 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Unauthorized: Invalid registration safety code." }, { status: 403 });
         }
 
-        if (username.length < 3 || password.length < 8) {
+        if (username.length < 3 || password.length < 1) {
             return NextResponse.json(
-                { error: "Username must be at least 3 characters and password at least 8 characters." },
+                { error: "Username must be at least 3 characters and password at least 1 character." },
                 { status: 400 }
             );
         }

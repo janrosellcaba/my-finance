@@ -81,7 +81,9 @@
       "Bash(python3 -m json.tool)",
       "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.cloudflare.com/client/v4/zones)",
       "Bash(timeout 120 npm run build)",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(xargs -I{} sh -c 'echo ===={}====; cat {}')",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.cloudflare.com/client/v4/accounts/0d866b6749b0982a192f3158c5b57da0/workers/scripts/my-finance/settings)"
     ]
   }
 }

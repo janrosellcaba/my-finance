@@ -154,7 +154,7 @@ export function AuthGate() {
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
                             required
-                            minLength={8}
+                            minLength={1}
                             autoComplete={mode === "login" ? "current-password" : "new-password"}
                             className={INPUT_CLS}
                         />
