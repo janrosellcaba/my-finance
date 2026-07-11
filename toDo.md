@@ -1,4 +1,3 @@
-analytics
 view password
 improve transactions page
 better session control -> auth api calls
@@ -8,3 +7,4 @@ import transaction data
 ---done---
 admin
 add button to hide numbers (save in user db)
+analytics

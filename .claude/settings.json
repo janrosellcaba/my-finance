@@ -112,7 +112,18 @@
       "Bash(grep -n \"function TransactionsView\\\\|TransactionCard$\\\\|TransactionCard\\\\b\" /home/jan/personal/my-finance/src/app/FinanceApp.tsx)",
       "Bash(cp /tmp/claude-1000/-home-jan-personal-my-finance/bb52dfec-544c-4d15-a3c4-3a37284e91d4/scratchpad/test-privacy.mjs /home/jan/.npm/_npx/e41f203b7505f1fb/test-privacy.mjs)",
       "Bash(node /home/jan/.npm/_npx/e41f203b7505f1fb/test-privacy.mjs)",
-      "Bash(rm -f /home/jan/.npm/_npx/e41f203b7505f1fb/test-privacy.mjs)"
+      "Bash(rm -f /home/jan/.npm/_npx/e41f203b7505f1fb/test-privacy.mjs)",
+      "Skill(dataviz)",
+      "Skill(dataviz:*)",
+      "Bash(node scripts/validate_palette.js \"#2a78d6,#1baf7a,#eda100,#008300,#4a3aa7,#e34948,#e87ba4,#eb6834\" --mode light --surface \"#fffdf8\")",
+      "Bash(cp /tmp/claude-1000/-home-jan-personal-my-finance/bb52dfec-544c-4d15-a3c4-3a37284e91d4/scratchpad/test-analytics.mjs /home/jan/.npm/_npx/e41f203b7505f1fb/test-analytics.mjs)",
+      "Bash(node /home/jan/.npm/_npx/e41f203b7505f1fb/test-analytics.mjs)",
+      "Bash(cp /tmp/claude-1000/-home-jan-personal-my-finance/bb52dfec-544c-4d15-a3c4-3a37284e91d4/scratchpad/debug-chart.mjs /home/jan/.npm/_npx/e41f203b7505f1fb/debug-chart.mjs)",
+      "Bash(node /home/jan/.npm/_npx/e41f203b7505f1fb/debug-chart.mjs)",
+      "Bash(cp /tmp/claude-1000/-home-jan-personal-my-finance/bb52dfec-544c-4d15-a3c4-3a37284e91d4/scratchpad/debug-chart.mjs /home/jan/.npm/_npx/e41f203b7505f1fb/debug-chart.mjs *)"
+    ],
+    "additionalDirectories": [
+      "/home/jan/.npm/_npx/e41f203b7505f1fb"
     ]
   }
 }

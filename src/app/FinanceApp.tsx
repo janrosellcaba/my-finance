@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState, type FormEvent, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { AnalyticsView } from "./AnalyticsView";
+import { type Account, type Category, AMOUNT_MASK, eur, formatCurrency, formatDate, INPUT_CLS } from "./shared";
 
-type Account = { id: string; name: string };
-type Category = { id: string; name: string; type: "income" | "expense" };
 type TransactionType = "income" | "expense" | "transfer";
 type Transaction = {
     id: string;
@@ -21,29 +21,13 @@ type DashboardSummary = {
     accounts: { id: string; name: string; balance: number }[];
     recentTransactions: Transaction[];
 };
-type Tab = "home" | "transactions" | "config";
-
-const eur = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
-const AMOUNT_MASK = "****";
-
-function formatCurrency(value: number, privacyMode: boolean): string {
-    return privacyMode ? AMOUNT_MASK : eur.format(value);
-}
-
-const INPUT_CLS =
-    "w-full rounded-xl border border-line bg-paper px-4 py-3 text-base text-ink transition-colors duration-150 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10";
+type Tab = "home" | "transactions" | "analytics" | "config";
 
 const PRIMARY_BTN =
     "rounded-2xl py-4 text-lg font-bold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-60 select-none";
 
 const INK_BTN =
     "rounded-xl bg-ink px-5 py-3 font-semibold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none";
-
-function formatDate(iso: string): string {
-    const d = new Date(iso);
-    if (Number.isNaN(d.getTime())) return iso;
-    return d.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
-}
 
 function resolveName(id: string, accounts: Account[], categories: Category[]): string {
     return accounts.find((a) => a.id === id)?.name ?? categories.find((c) => c.id === id)?.name ?? "Unknown";
@@ -105,6 +89,14 @@ function IconEyeOff({ className }: { className?: string }) {
             <path d="M3 3l18 18" />
             <path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a13.5 13.5 0 0 1-3.1 3.9M6.6 6.6C3.9 8.3 2 12 2 12s3.5 7 10 7a10.7 10.7 0 0 0 4.4-.9" />
             <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+        </svg>
+    );
+}
+
+function IconChart({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 20V10M12 20V4M20 20v-7" />
         </svg>
     );
 }
@@ -313,6 +305,7 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                 {tab === "transactions" && (
                     <TransactionsView accounts={accounts} categories={categories} privacyMode={privacyMode} />
                 )}
+                {tab === "analytics" && <AnalyticsView privacyMode={privacyMode} />}
                 {tab === "config" && (
                     <ConfigView
                         accounts={accounts}
@@ -344,6 +337,7 @@ function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: Tab) => 
     const items: { key: Tab; label: string; Icon: (props: { className?: string }) => ReactElement }[] = [
         { key: "home", label: "Home", Icon: IconHome },
         { key: "transactions", label: "Transactions", Icon: IconList },
+        { key: "analytics", label: "Analytics", Icon: IconChart },
         { key: "config", label: "Settings", Icon: IconSettings },
     ];
 

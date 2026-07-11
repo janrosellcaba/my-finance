@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { transaction, account } from "@/db/schema";
 import { validateSession } from "@/lib/session";
-import { eq, desc, sql } from "drizzle-orm";
+import { applyTransactionToBalances, round2 } from "@/lib/balances";
+import { eq, desc } from "drizzle-orm";
 
 export async function GET() {
     try {
@@ -37,32 +38,18 @@ export async function GET() {
 
         let totalNetWorth = 0;
 
-        for (const tx of allTransactions) {
-            const amt = tx.amount;
+        const rawBalances: Record<string, number> = {};
+        for (const accId in accountBalances) rawBalances[accId] = 0;
 
-            if (tx.type === "expense") {
-                if (accountBalances[tx.accountId]) {
-                    accountBalances[tx.accountId].balance -= amt;
-                }
-            } else if (tx.type === "income") {
-                if (accountBalances[tx.accountId]) {
-                    accountBalances[tx.accountId].balance += amt;
-                }
-            } else if (tx.type === "transfer") {
-                if (accountBalances[tx.accountId]) {
-                    accountBalances[tx.accountId].balance -= amt;
-                }
-                if (accountBalances[tx.destinationId]) {
-                    accountBalances[tx.destinationId].balance += amt;
-                }
-            }
+        for (const tx of allTransactions) {
+            applyTransactionToBalances(rawBalances, tx);
         }
 
         for (const accId in accountBalances) {
-            accountBalances[accId].balance = Math.round(accountBalances[accId].balance * 100) / 100;
+            accountBalances[accId].balance = round2(rawBalances[accId]);
             totalNetWorth += accountBalances[accId].balance;
         }
-        totalNetWorth = Math.round(totalNetWorth * 100) / 100;
+        totalNetWorth = round2(totalNetWorth);
 
         const recentTransactions = await db
             .select()
