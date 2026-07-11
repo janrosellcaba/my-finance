@@ -4,7 +4,18 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactEle
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { AnalyticsView } from "./AnalyticsView";
-import { type Account, type Category, AMOUNT_MASK, eur, formatCurrency, formatDate, INPUT_CLS } from "./shared";
+import {
+    type Account,
+    type Category,
+    AMOUNT_MASK,
+    eur,
+    formatCurrency,
+    formatDate,
+    INPUT_CLS,
+    INK_BTN,
+    PRIMARY_BTN,
+} from "./shared";
+import { ImportView } from "./ImportView";
 
 type TransactionType = "income" | "expense" | "transfer";
 type Transaction = {
@@ -22,12 +33,6 @@ type DashboardSummary = {
     recentTransactions: Transaction[];
 };
 type Tab = "home" | "transactions" | "analytics" | "config";
-
-const PRIMARY_BTN =
-    "rounded-2xl py-4 text-lg font-bold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-60 select-none";
-
-const INK_BTN =
-    "rounded-xl bg-ink px-5 py-3 font-semibold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none";
 
 function resolveName(id: string, accounts: Account[], categories: Category[]): string {
     return accounts.find((a) => a.id === id)?.name ?? categories.find((c) => c.id === id)?.name ?? "Unknown";
@@ -342,6 +347,9 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                             onRefresh={loadConfig}
                             onLogout={handleLogout}
                             onPasswordChanged={handlePasswordChanged}
+                            onImported={async () => {
+                                await Promise.all([loadConfig(), loadDashboard()]);
+                            }}
                         />
                     )}
                 </div>
@@ -934,12 +942,14 @@ function ConfigView({
     onRefresh,
     onLogout,
     onPasswordChanged,
+    onImported,
 }: {
     accounts: Account[];
     categories: Category[];
     onRefresh: () => void;
     onLogout: () => void;
     onPasswordChanged: () => void;
+    onImported: () => void;
 }) {
     const [section, setSection] = useState<ConfigSection>("menu");
     const [accountName, setAccountName] = useState("");
@@ -1183,9 +1193,7 @@ function ConfigView({
             )}
 
             {section === "import" && (
-                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
-                    <p className="text-sm text-muted">Import functionality is coming soon.</p>
-                </section>
+                <ImportView accounts={accounts} categories={categories} onImported={onImported} />
             )}
         </div>
     );
