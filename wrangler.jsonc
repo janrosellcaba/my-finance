@@ -11,12 +11,9 @@
 	"name": "my-finance",
 	"main": ".open-next/worker.js",
 	"compatibility_date": "2026-07-11",
-	"routes": [
-		{
-			"pattern": "fin.janrosell.com/*",
-			"custom_domain": true
-		}
-	],
+	// Custom domain route removed until the janrosell.com zone is Active in Cloudflare
+	// (nameservers not yet switched at the registrar). Re-add once active:
+	// "routes": [{ "pattern": "fin.janrosell.com", "custom_domain": true }],
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"
