@@ -76,6 +76,14 @@ export async function invalidateSession(): Promise<void> {
     cookieStore.set(COOKIE_NAME, "", { maxAge: 0, path: "/" });
 }
 
+export async function invalidateAllSessions(userId: string): Promise<void> {
+    const db = await getDb();
+    await db.delete(session).where(eq(session.userId, userId));
+
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, "", { maxAge: 0, path: "/" });
+}
+
 export async function setSessionCookie(token: string, expiresAt: Date): Promise<void> {
     const cookieStore = await cookies();
     cookieStore.set(COOKIE_NAME, token, {

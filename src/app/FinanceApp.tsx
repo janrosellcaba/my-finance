@@ -234,6 +234,10 @@ export function AppShell({ username }: { username: string }) {
         router.refresh();
     }
 
+    async function handlePasswordChanged() {
+        router.refresh();
+    }
+
     async function handleTransactionSaved() {
         setShowAddModal(false);
         await loadDashboard();
@@ -265,6 +269,7 @@ export function AppShell({ username }: { username: string }) {
                         categories={categories}
                         onRefresh={loadConfig}
                         onLogout={handleLogout}
+                        onPasswordChanged={handlePasswordChanged}
                     />
                 )}
             </main>
@@ -727,11 +732,13 @@ function ConfigView({
     categories,
     onRefresh,
     onLogout,
+    onPasswordChanged,
 }: {
     accounts: Account[];
     categories: Category[];
     onRefresh: () => void;
     onLogout: () => void;
+    onPasswordChanged: () => void;
 }) {
     const [accountName, setAccountName] = useState("");
     const [categoryName, setCategoryName] = useState("");
@@ -739,6 +746,7 @@ function ConfigView({
     const [savingAccount, setSavingAccount] = useState(false);
     const [savingCategory, setSavingCategory] = useState(false);
     const [error, setError] = useState("");
+    const [showChangePassword, setShowChangePassword] = useState(false);
 
     async function handleAddAccount(e: FormEvent) {
         e.preventDefault();
@@ -786,6 +794,50 @@ function ConfigView({
         }
     }
 
+    async function handleDeleteAccount(a: Account) {
+        if (
+            !confirm(
+                `Delete "${a.name}"? Are you sure? If there is money or transactions linked to this account, they will be lost.`
+            )
+        ) {
+            return;
+        }
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target: "account", id: a.id }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not delete account.");
+            return;
+        }
+        onRefresh();
+    }
+
+    async function handleDeleteCategory(c: Category) {
+        if (
+            !confirm(
+                `Delete "${c.name}"? Are you sure? If there is money or transactions linked to this category, they will be lost.`
+            )
+        ) {
+            return;
+        }
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ target: "category", id: c.id }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not delete category.");
+            return;
+        }
+        onRefresh();
+    }
+
     return (
         <div className="space-y-6 px-5 pt-6">
             <h1 className="text-2xl font-extrabold text-ink">Configuration</h1>
@@ -796,8 +848,19 @@ function ConfigView({
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Accounts</h2>
                 <div className="mb-4 flex flex-wrap gap-2">
                     {accounts.map((a) => (
-                        <span key={a.id} className="rounded-full bg-chip px-3 py-1.5 text-sm font-medium text-ink">
+                        <span
+                            key={a.id}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-chip py-1.5 pl-3 pr-1.5 text-sm font-medium text-ink"
+                        >
                             {a.name}
+                            <button
+                                type="button"
+                                onClick={() => handleDeleteAccount(a)}
+                                aria-label={`Delete ${a.name}`}
+                                className="rounded-full p-0.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
+                            >
+                                <IconClose className="h-3.5 w-3.5" />
+                            </button>
                         </span>
                     ))}
                 </div>
@@ -820,11 +883,19 @@ function ConfigView({
                     {categories.map((c) => (
                         <span
                             key={c.id}
-                            className={`rounded-full px-3 py-1.5 text-sm font-medium ${
+                            className={`inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-sm font-medium ${
                                 c.type === "income" ? "bg-brand-soft text-brand-dark" : "bg-danger-soft text-danger-dark"
                             }`}
                         >
                             {c.name}
+                            <button
+                                type="button"
+                                onClick={() => handleDeleteCategory(c)}
+                                aria-label={`Delete ${c.name}`}
+                                className="rounded-full p-0.5 opacity-70 transition-opacity duration-150 hover:opacity-100"
+                            >
+                                <IconClose className="h-3.5 w-3.5" />
+                            </button>
                         </span>
                     ))}
                 </div>
@@ -863,11 +934,136 @@ function ConfigView({
 
             <button
                 type="button"
+                onClick={() => setShowChangePassword(true)}
+                className={`${INK_BTN} w-full text-center`}
+            >
+                Change Password
+            </button>
+
+            <button
+                type="button"
                 onClick={onLogout}
                 className="w-full rounded-2xl border-2 border-danger/25 bg-danger-soft py-4 text-lg font-bold text-danger transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-danger/40 hover:shadow-md active:translate-y-0 select-none"
             >
                 Log Out
             </button>
+
+            {showChangePassword && (
+                <ChangePasswordModal
+                    onClose={() => setShowChangePassword(false)}
+                    onChanged={onPasswordChanged}
+                />
+            )}
+        </div>
+    );
+}
+
+// ---------- Change password ----------
+
+function ChangePasswordModal({ onClose, onChanged }: { onClose: () => void; onChanged: () => void }) {
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [error, setError] = useState("");
+    const [saving, setSaving] = useState(false);
+
+    async function handleSubmit(e: FormEvent) {
+        e.preventDefault();
+        setError("");
+
+        if (newPassword !== confirmPassword) {
+            setError("New passwords do not match.");
+            return;
+        }
+
+        setSaving(true);
+        try {
+            const res = await fetch("/api/auth/change-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ currentPassword, newPassword }),
+            });
+            const data = (await res.json()) as { error?: string };
+            if (!res.ok) {
+                setError(data.error || "Could not change password.");
+                setSaving(false);
+                return;
+            }
+            onChanged();
+        } catch {
+            setError("Network error. Please try again.");
+            setSaving(false);
+        }
+    }
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
+            <form
+                onClick={(e) => e.stopPropagation()}
+                onSubmit={handleSubmit}
+                className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
+            >
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-xl font-bold text-ink">Change Password</h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close"
+                        className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
+                    >
+                        <IconClose className="h-5 w-5" />
+                    </button>
+                </div>
+
+                <p className="mb-4 text-sm text-muted">
+                    You&apos;ll need to log in again after changing your password.
+                </p>
+
+                <label className="mb-3 block">
+                    <span className="mb-1 block text-sm font-semibold text-ink">Current Password</span>
+                    <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        required
+                        minLength={1}
+                        autoComplete="current-password"
+                        className={INPUT_CLS}
+                    />
+                </label>
+
+                <label className="mb-3 block">
+                    <span className="mb-1 block text-sm font-semibold text-ink">New Password</span>
+                    <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        required
+                        minLength={1}
+                        autoComplete="new-password"
+                        className={INPUT_CLS}
+                    />
+                </label>
+
+                <label className="mb-4 block">
+                    <span className="mb-1 block text-sm font-semibold text-ink">Confirm New Password</span>
+                    <input
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        required
+                        minLength={1}
+                        autoComplete="new-password"
+                        className={INPUT_CLS}
+                    />
+                </label>
+
+                {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
+
+                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                    {saving ? "Saving…" : "Change Password"}
+                </button>
+            </form>
         </div>
     );
 }

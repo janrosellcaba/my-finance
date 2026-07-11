@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { account, category } from "@/db/schema";
+import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { and, eq } from "drizzle-orm";
 
@@ -84,6 +84,65 @@ export async function POST(request: Request) {
         return NextResponse.json({ success: true, id: itemId }, { status: 201 });
     } catch (error) {
         console.error("Config write error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
+
+export async function DELETE(request: Request) {
+    try {
+        const user = await validateSession();
+        if (!user) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const body = (await request.json().catch(() => null)) as { target?: unknown; id?: unknown } | null;
+        if (!body) {
+            return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+        }
+
+        const { target, id } = body;
+        if (typeof id !== "string" || id.length < 1) {
+            return NextResponse.json({ error: "Id is required." }, { status: 400 });
+        }
+
+        const db = await getDb();
+
+        if (target === "account") {
+            const existing = await db
+                .select()
+                .from(account)
+                .where(and(eq(account.id, id), eq(account.userId, user.id)))
+                .get();
+            if (!existing) {
+                return NextResponse.json({ error: "Account not found." }, { status: 404 });
+            }
+
+            await db.batch([
+                db.delete(transaction).where(and(eq(transaction.userId, user.id), eq(transaction.accountId, id))),
+                db.delete(transaction).where(and(eq(transaction.userId, user.id), eq(transaction.destinationId, id))),
+                db.delete(account).where(and(eq(account.id, id), eq(account.userId, user.id))),
+            ]);
+        } else if (target === "category") {
+            const existing = await db
+                .select()
+                .from(category)
+                .where(and(eq(category.id, id), eq(category.userId, user.id)))
+                .get();
+            if (!existing) {
+                return NextResponse.json({ error: "Category not found." }, { status: 404 });
+            }
+
+            await db.batch([
+                db.delete(transaction).where(and(eq(transaction.userId, user.id), eq(transaction.destinationId, id))),
+                db.delete(category).where(and(eq(category.id, id), eq(category.userId, user.id))),
+            ]);
+        } else {
+            return NextResponse.json({ error: "Invalid configuration target." }, { status: 400 });
+        }
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Config delete error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
