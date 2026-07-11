@@ -37,7 +37,27 @@
       "Bash(curl -s -i -b cookies.txt -X POST http://localhost:8799/api/auth/logout)",
       "Bash(pkill -f \"wrangler dev --port 8799\")",
       "Bash(rm -f /tmp/cookies.txt /tmp/cookies2.txt /tmp/wrangler-dev.log)",
-      "Bash(git status *)"
+      "Bash(git status *)",
+      "Bash(curl -s -i -X POST http://localhost:8788/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"testuser_curl\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(sleep 2; tail -60 /tmp/wrangler-dev.log)",
+      "Bash(sqlite3 \".wrangler/state/v3/d1/miniflare-D1DatabaseObject/33c390ee82beef4e977ec5b346b03387c3cf526b4387630a1d60ce62bcbe6156.sqlite\" \".tables\")",
+      "Bash(sqlite3 \".wrangler/state/v3/d1/miniflare-D1DatabaseObject/33c390ee82beef4e977ec5b346b03387c3cf526b4387630a1d60ce62bcbe6156.sqlite\" \".schema users\")",
+      "Bash(curl -s -i -X POST http://localhost:8787/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"debuguser1\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(find / -maxdepth 6 -iname \"*.log\" -newer /home/jan/personal/my-finance/package.json 2>/dev/null | grep -v node_modules | head -20 *)",
+      "Read(//home/jan/**)",
+      "Bash(tail -100 /tmp/wrangler-dev.log)",
+      "Bash(curl -s -i -X POST http://localhost:8787/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"debuguser2\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(tail -20 /tmp/wrangler-dev.log)",
+      "Bash(sleep 3; tail -30 /tmp/wrangler-dev.log; echo \"---curl retry---\"; curl -s -i -X POST http://localhost:8787/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"debuguser2\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(curl -s -o /tmp/resp.txt -w \"HTTP_CODE:%{http_code} EXIT\\\\n\" -X POST http://localhost:8787/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"debuguser3\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(jobs -l)",
+      "Bash(curl -s -o /tmp/resp.txt -w \"HTTP_CODE:%{http_code}\\\\n\" -X POST http://localhost:8788/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"debuguser4\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(tail -30 /tmp/wrangler-dev.log)",
+      "Bash(kill 13989 14002 14009)",
+      "Bash(npx opennextjs-cloudflare *)",
+      "Bash(nohup npx wrangler dev --port 8799)",
+      "Bash(disown)",
+      "Bash(curl -s -o /tmp/resp.txt -w \"HTTP_CODE:%{http_code}\\\\n\" -X POST http://localhost:8799/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"verifyuser1\",\"password\":\"password123\",\"secretCode\":\"1234\"}')"
     ]
   }
 }
