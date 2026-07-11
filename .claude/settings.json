@@ -179,7 +179,14 @@
       "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_rename3.js)",
       "Bash(kill 24279 24281 24293)",
       "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/smoke_test.js)",
-      "Bash(kill 25241 25243 25255)"
+      "Bash(kill 25241 25243 25255)",
+      "Bash(curl -s -c /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/scaletest_cookies.txt -X POST http://localhost:3000/api/auth/signup -H \"Content-Type: application/json\" -d '{\"username\":\"scaletest1\",\"password\":\"password123\",\"secretCode\":\"1234\"}')",
+      "Bash(time curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/scaletest_cookies.txt -X POST http://localhost:3000/api/import -H \"Content-Type: application/json\" --data @/tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/payload_5000.json)",
+      "Bash(time curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/scaletest_cookies.txt -X POST http://localhost:3000/api/import -H \"Content-Type: application/json\" --data @/tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/payload_1000.json)",
+      "Bash(curl -s -c /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/limittest_cookies.txt -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"scaletest1\",\"password\":\"password123\"}')",
+      "Bash(curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/limittest_cookies.txt -X POST http://localhost:3000/api/import -H \"Content-Type: application/json\" --data @/tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/payload_5000.json)",
+      "Bash(time curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/limittest_cookies.txt -X POST http://localhost:3000/api/import -H \"Content-Type: application/json\" --data @/tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/payload_2000.json)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_import_limit.js)"
     ],
     "additionalDirectories": [
       "/home/jan/.npm/_npx/e41f203b7505f1fb"

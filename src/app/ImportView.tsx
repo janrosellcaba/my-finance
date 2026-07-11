@@ -9,6 +9,7 @@ import {
     parseDateDDMMYYYY,
     INPUT_CLS,
     INK_BTN,
+    MAX_IMPORT_TRANSACTIONS,
     PRIMARY_BTN,
 } from "./shared";
 
@@ -180,6 +181,12 @@ function parseImportText(text: string, existingAccounts: Account[], existingCate
 
     const dates = rows.map((r) => r.date).sort();
     const dateRange = dates.length > 0 ? { from: dates[0], to: dates[dates.length - 1] } : null;
+
+    if (rows.length > MAX_IMPORT_TRANSACTIONS) {
+        errors.unshift(
+            `Too many rows (${rows.length}). Import at most ${MAX_IMPORT_TRANSACTIONS} transactions at a time — split this into multiple imports.`
+        );
+    }
 
     return {
         rows,

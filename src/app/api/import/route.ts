@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { eq } from "drizzle-orm";
+import { MAX_IMPORT_TRANSACTIONS } from "@/app/shared";
 
 type ImportRow = {
     date: string;
@@ -49,6 +50,14 @@ export async function POST(request: Request) {
         }
         if (!Array.isArray(rows) || rows.length === 0) {
             return NextResponse.json({ error: "No transaction rows to import." }, { status: 400 });
+        }
+        if (rows.length > MAX_IMPORT_TRANSACTIONS) {
+            return NextResponse.json(
+                {
+                    error: `Too many rows (${rows.length}). Import at most ${MAX_IMPORT_TRANSACTIONS} transactions at a time — split larger histories into multiple imports.`,
+                },
+                { status: 400 }
+            );
         }
         const rowErrors = rows.map((row, i) => ({ i, err: rowError(row) })).filter((r) => r.err);
         if (rowErrors.length > 0) {

@@ -1,3 +1,7 @@
+// Keeps a single import request comfortably under Worker execution limits — each row
+// costs its own sequential D1 round trip (see api/import/route.ts), so this bounds worst-case time.
+export const MAX_IMPORT_TRANSACTIONS = 2000;
+
 export type Account = { id: string; name: string };
 export type Category = {
     id: string;
