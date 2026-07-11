@@ -16,6 +16,7 @@ import {
     PRIMARY_BTN,
 } from "./shared";
 import { ImportView } from "./ImportView";
+import { ExportView } from "./ExportView";
 
 type TransactionType = "income" | "expense" | "transfer";
 type Transaction = {
@@ -1186,11 +1187,7 @@ function ConfigView({
                 </section>
             )}
 
-            {section === "export" && (
-                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
-                    <p className="text-sm text-muted">Export functionality is coming soon.</p>
-                </section>
-            )}
+            {section === "export" && <ExportView accounts={accounts} categories={categories} />}
 
             {section === "import" && (
                 <ImportView accounts={accounts} categories={categories} onImported={onImported} />

@@ -162,7 +162,11 @@
       "Bash(curl -s -c /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/bigtest_cookies.txt -X POST http://localhost:3000/api/auth/login -H \"Content-Type: application/json\" -d '{\"username\":\"bigtest1\",\"password\":\"password123\"}')",
       "Bash(break)",
       "Bash(curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/import_cookies.txt http://localhost:3000/api/dashboard)",
-      "Bash(curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/import_cookies.txt \"http://localhost:3000/api/transactions?page=1\")"
+      "Bash(curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/import_cookies.txt \"http://localhost:3000/api/transactions?page=1\")",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_export.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_export_range.js)",
+      "Bash(curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/import_cookies.txt \"http://localhost:3000/api/transactions?startDate=2026-06-01&endDate=2026-06-30\")",
+      "Bash(kill 19928)"
     ],
     "additionalDirectories": [
       "/home/jan/.npm/_npx/e41f203b7505f1fb"
