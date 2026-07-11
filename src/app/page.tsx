@@ -8,5 +8,5 @@ export default async function Home() {
         return <AuthGate />;
     }
 
-    return <AppShell username={user.username} />;
+    return <AppShell username={user.username} initialPrivacyMode={user.privacyMode} />;
 }

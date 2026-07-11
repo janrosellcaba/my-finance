@@ -24,6 +24,11 @@ type DashboardSummary = {
 type Tab = "home" | "transactions" | "config";
 
 const eur = new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" });
+const AMOUNT_MASK = "****";
+
+function formatCurrency(value: number, privacyMode: boolean): string {
+    return privacyMode ? AMOUNT_MASK : eur.format(value);
+}
 
 const INPUT_CLS =
     "w-full rounded-xl border border-line bg-paper px-4 py-3 text-base text-ink transition-colors duration-150 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10";
@@ -81,6 +86,25 @@ function IconClose({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
             <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+    );
+}
+
+function IconEye({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+            <circle cx="12" cy="12" r="3" />
+        </svg>
+    );
+}
+
+function IconEyeOff({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 3l18 18" />
+            <path d="M10.6 5.1A10.9 10.9 0 0 1 12 5c6.5 0 10 7 10 7a13.5 13.5 0 0 1-3.1 3.9M6.6 6.6C3.9 8.3 2 12 2 12s3.5 7 10 7a10.7 10.7 0 0 0 4.4-.9" />
+            <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
         </svg>
     );
 }
@@ -191,7 +215,7 @@ export function AuthGate() {
 
 // ---------- App shell ----------
 
-export function AppShell({ username }: { username: string }) {
+export function AppShell({ username, initialPrivacyMode }: { username: string; initialPrivacyMode: boolean }) {
     const router = useRouter();
     const [tab, setTab] = useState<Tab>("home");
     const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
@@ -199,6 +223,7 @@ export function AppShell({ username }: { username: string }) {
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [privacyMode, setPrivacyMode] = useState(initialPrivacyMode);
 
     const loadDashboard = useCallback(async () => {
         const res = await fetch("/api/dashboard");
@@ -243,12 +268,34 @@ export function AppShell({ username }: { username: string }) {
         await loadDashboard();
     }
 
+    async function handleTogglePrivacy() {
+        const next = !privacyMode;
+        setPrivacyMode(next);
+        const res = await fetch("/api/privacy", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ privacyMode: next }),
+        });
+        if (!res.ok) setPrivacyMode(!next);
+    }
+
     return (
         <div className="min-h-screen bg-cream pb-28">
             <header className="sticky top-0 z-30 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
-                <div className="flex items-center gap-2">
-                    <Image src="/logo.png" alt="" width={20} height={20} className="opacity-80" />
-                    <p className="text-lg font-extrabold text-ink">Hi, {username}</p>
+                <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                        <Image src="/logo.png" alt="" width={20} height={20} className="opacity-80" />
+                        <p className="text-lg font-extrabold text-ink">Hi, {username}</p>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={handleTogglePrivacy}
+                        aria-label={privacyMode ? "Show amounts" : "Hide amounts"}
+                        aria-pressed={privacyMode}
+                        className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
+                    >
+                        {privacyMode ? <IconEyeOff className="h-5 w-5" /> : <IconEye className="h-5 w-5" />}
+                    </button>
                 </div>
             </header>
 
@@ -259,10 +306,13 @@ export function AppShell({ username }: { username: string }) {
                         loading={loadingDashboard}
                         accounts={accounts}
                         categories={categories}
+                        privacyMode={privacyMode}
                         onAddClick={() => setShowAddModal(true)}
                     />
                 )}
-                {tab === "transactions" && <TransactionsView accounts={accounts} categories={categories} />}
+                {tab === "transactions" && (
+                    <TransactionsView accounts={accounts} categories={categories} privacyMode={privacyMode} />
+                )}
                 {tab === "config" && (
                     <ConfigView
                         accounts={accounts}
@@ -328,12 +378,14 @@ function HomeView({
     loading,
     accounts,
     categories,
+    privacyMode,
     onAddClick,
 }: {
     dashboard: DashboardSummary | null;
     loading: boolean;
     accounts: Account[];
     categories: Category[];
+    privacyMode: boolean;
     onAddClick: () => void;
 }) {
     if (loading) {
@@ -352,7 +404,7 @@ function HomeView({
             <div className="rounded-3xl border border-line bg-paper p-6 text-center shadow-sm">
                 <p className="text-sm font-semibold text-muted">Total Balance</p>
                 <p className={`mt-2 text-4xl font-extrabold tracking-tight ${positive ? "text-brand" : "text-danger"}`}>
-                    {eur.format(dashboard.totalNetWorth)}
+                    {formatCurrency(dashboard.totalNetWorth, privacyMode)}
                 </p>
             </div>
 
@@ -371,7 +423,7 @@ function HomeView({
                         <div key={acc.id} className="rounded-2xl border border-line bg-paper p-4 shadow-sm">
                             <p className="truncate text-sm font-medium text-muted">{acc.name}</p>
                             <p className={`mt-1 text-xl font-bold ${acc.balance >= 0 ? "text-brand" : "text-danger"}`}>
-                                {eur.format(acc.balance)}
+                                {formatCurrency(acc.balance, privacyMode)}
                             </p>
                         </div>
                     ))}
@@ -383,7 +435,13 @@ function HomeView({
                 <div className="space-y-2">
                     {recent.length === 0 && <p className="text-sm text-muted">No transactions yet.</p>}
                     {recent.map((tx) => (
-                        <TransactionCard key={tx.id} tx={tx} accounts={accounts} categories={categories} />
+                        <TransactionCard
+                            key={tx.id}
+                            tx={tx}
+                            accounts={accounts}
+                            categories={categories}
+                            privacyMode={privacyMode}
+                        />
                     ))}
                 </div>
             </div>
@@ -395,19 +453,30 @@ function TransactionCard({
     tx,
     accounts,
     categories,
+    privacyMode,
+    onClick,
 }: {
     tx: Transaction;
     accounts: Account[];
     categories: Category[];
+    privacyMode: boolean;
+    onClick?: () => void;
 }) {
     const sign = tx.type === "expense" ? "-" : tx.type === "income" ? "+" : "";
     const color = tx.type === "expense" ? "text-danger" : tx.type === "income" ? "text-brand" : "text-ink";
     const fromName = resolveName(tx.accountId, accounts, categories);
     const toName = resolveName(tx.destinationId, accounts, categories);
     const subtitle = tx.type === "transfer" ? `${fromName} → ${toName}` : `${toName} · ${fromName}`;
+    const Tag = onClick ? "button" : "div";
 
     return (
-        <div className="flex items-center justify-between rounded-2xl border border-line bg-paper p-4 shadow-sm">
+        <Tag
+            type={onClick ? "button" : undefined}
+            onClick={onClick}
+            className={`flex w-full items-center justify-between rounded-2xl border border-line bg-paper p-4 text-left shadow-sm ${
+                onClick ? "transition-colors duration-150 hover:border-brand hover:bg-chip" : ""
+            }`}
+        >
             <div className="min-w-0">
                 <p className="truncate font-semibold text-ink">{tx.description}</p>
                 <p className="truncate text-xs text-muted">
@@ -415,10 +484,9 @@ function TransactionCard({
                 </p>
             </div>
             <p className={`ml-3 shrink-0 text-lg font-bold ${color}`}>
-                {sign}
-                {eur.format(Math.abs(tx.amount))}
+                {privacyMode ? AMOUNT_MASK : `${sign}${eur.format(Math.abs(tx.amount))}`}
             </p>
-        </div>
+        </Tag>
     );
 }
 
@@ -427,20 +495,23 @@ function TransactionCard({
 function AddTransactionModal({
     accounts,
     categories,
+    transaction,
     onClose,
     onSaved,
 }: {
     accounts: Account[];
     categories: Category[];
+    transaction?: Transaction;
     onClose: () => void;
     onSaved: () => void;
 }) {
-    const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
-    const [description, setDescription] = useState("");
-    const [type, setType] = useState<TransactionType>("expense");
-    const [accountId, setAccountId] = useState("");
-    const [destinationId, setDestinationId] = useState("");
-    const [amount, setAmount] = useState("");
+    const isEditing = !!transaction;
+    const [date, setDate] = useState(() => transaction?.date ?? new Date().toISOString().slice(0, 10));
+    const [description, setDescription] = useState(transaction?.description ?? "");
+    const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense");
+    const [accountId, setAccountId] = useState(transaction?.accountId ?? "");
+    const [destinationId, setDestinationId] = useState(transaction?.destinationId ?? "");
+    const [amount, setAmount] = useState(transaction ? String(Math.abs(transaction.amount)) : "");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
 
@@ -458,8 +529,8 @@ function AddTransactionModal({
 
         const amountNum = parseFloat(amount);
 
-        if (!date || !description.trim()) {
-            setError("Please fill in the date and description.");
+        if (!date) {
+            setError("Please fill in the date.");
             return;
         }
         if (!accountId) {
@@ -482,9 +553,10 @@ function AddTransactionModal({
         setSaving(true);
         try {
             const res = await fetch("/api/transactions", {
-                method: "POST",
+                method: isEditing ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
+                    ...(isEditing ? { id: transaction!.id } : {}),
                     date,
                     description: description.trim(),
                     type,
@@ -514,7 +586,7 @@ function AddTransactionModal({
                 className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
             >
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-ink">Add Transaction</h2>
+                    <h2 className="text-xl font-bold text-ink">{isEditing ? "Edit Transaction" : "Add Transaction"}</h2>
                     <button
                         type="button"
                         onClick={onClose}
@@ -603,7 +675,7 @@ function AddTransactionModal({
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
                 <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
-                    {saving ? "Saving…" : "Save Transaction"}
+                    {saving ? "Saving…" : isEditing ? "Save Changes" : "Save Transaction"}
                 </button>
             </form>
         </div>
@@ -612,7 +684,15 @@ function AddTransactionModal({
 
 // ---------- Transactions list ----------
 
-function TransactionsView({ accounts, categories }: { accounts: Account[]; categories: Category[] }) {
+function TransactionsView({
+    accounts,
+    categories,
+    privacyMode,
+}: {
+    accounts: Account[];
+    categories: Category[];
+    privacyMode: boolean;
+}) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [page, setPage] = useState(1);
     const [search, setSearch] = useState("");
@@ -621,6 +701,7 @@ function TransactionsView({ accounts, categories }: { accounts: Account[]; categ
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(false);
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
 
     const fetchPage = useCallback(
         async (targetPage: number, replace: boolean) => {
@@ -706,9 +787,29 @@ function TransactionsView({ accounts, categories }: { accounts: Account[]; categ
             ) : (
                 <div className="space-y-2">
                     {transactions.map((tx) => (
-                        <TransactionCard key={tx.id} tx={tx} accounts={accounts} categories={categories} />
+                        <TransactionCard
+                            key={tx.id}
+                            tx={tx}
+                            accounts={accounts}
+                            categories={categories}
+                            privacyMode={privacyMode}
+                            onClick={() => setEditingTransaction(tx)}
+                        />
                     ))}
                 </div>
+            )}
+
+            {editingTransaction && (
+                <AddTransactionModal
+                    accounts={accounts}
+                    categories={categories}
+                    transaction={editingTransaction}
+                    onClose={() => setEditingTransaction(null)}
+                    onSaved={() => {
+                        setEditingTransaction(null);
+                        fetchPage(1, true);
+                    }}
+                />
             )}
 
             {hasMore && (

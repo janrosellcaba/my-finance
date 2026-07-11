@@ -15,6 +15,13 @@
       "when": 1783730914420,
       "tag": "0001_gorgeous_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1783764152254,
+      "tag": "0002_free_hydra",
+      "breakpoints": true
     }
   ]
 }
