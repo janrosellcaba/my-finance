@@ -79,7 +79,9 @@
       "Bash(node verify-hover.mjs)",
       "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.cloudflare.com/client/v4/zones?name=janrosell.com)",
       "Bash(python3 -m json.tool)",
-      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.cloudflare.com/client/v4/zones)"
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.cloudflare.com/client/v4/zones)",
+      "Bash(timeout 120 npm run build)",
+      "Bash(echo \"EXIT:$?\")"
     ]
   }
 }
