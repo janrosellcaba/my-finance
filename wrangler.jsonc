@@ -10,7 +10,13 @@
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "my-finance",
 	"main": ".open-next/worker.js",
-	"compatibility_date": "2026-07-09",
+	"compatibility_date": "2026-07-11",
+	"routes": [
+		{
+			"pattern": "fin.janrosell.com/*",
+			"custom_domain": true
+		}
+	],
 	"compatibility_flags": [
 		"nodejs_compat",
 		"global_fetch_strictly_public"

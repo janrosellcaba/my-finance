@@ -76,7 +76,10 @@
       "Bash(ln -sf /home/jan/.npm/_npx/e41f203b7505f1fb/node_modules/playwright-core /tmp/claude-1000/-home-jan-personal-my-finance/66781828-eff1-4ee9-8464-00e589079032/scratchpad/node_modules/playwright-core)",
       "Bash(cp favicon.ico /tmp/favicon-preview.webp)",
       "Bash(python3 -c ' *)",
-      "Bash(node verify-hover.mjs)"
+      "Bash(node verify-hover.mjs)",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.cloudflare.com/client/v4/zones?name=janrosell.com)",
+      "Bash(python3 -m json.tool)",
+      "Bash(curl -s -H 'Authorization: Bearer __CMDSUB_OUTPUT__' https://api.cloudflare.com/client/v4/zones)"
     ]
   }
 }
