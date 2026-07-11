@@ -22,6 +22,9 @@ export const category = sqliteTable("category", {
     userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     type: text("type").$type<"income" | "expense">().notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
+    color: text("color"),
 }, (table) => [
     index("idx_category_user").on(table.userId)
 ]);

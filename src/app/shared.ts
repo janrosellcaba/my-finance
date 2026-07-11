@@ -1,5 +1,36 @@
 export type Account = { id: string; name: string };
-export type Category = { id: string; name: string; type: "income" | "expense" };
+export type Category = {
+    id: string;
+    name: string;
+    type: "income" | "expense";
+    sortOrder: number;
+    isDefault: boolean;
+    color: string | null;
+};
+
+// 20 evenly-spaced light pastel colors, offered as the category color picker palette.
+export const CATEGORY_COLOR_PALETTE = [
+    "#f3bfbf",
+    "#f3cebf",
+    "#f3debf",
+    "#f3eebf",
+    "#e8f3bf",
+    "#d9f3bf",
+    "#c9f3bf",
+    "#bff3c4",
+    "#bff3d4",
+    "#bff3e3",
+    "#bff3f3",
+    "#bfe3f3",
+    "#bfd4f3",
+    "#bfc4f3",
+    "#c9bff3",
+    "#d9bff3",
+    "#e8bff3",
+    "#f3bfee",
+    "#f3bfde",
+    "#f3bfce",
+];
 
 export const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", useGrouping: true });
 export const AMOUNT_MASK = "****";

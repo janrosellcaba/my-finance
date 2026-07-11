@@ -166,7 +166,20 @@
       "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_export.js)",
       "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_export_range.js)",
       "Bash(curl -s -b /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/import_cookies.txt \"http://localhost:3000/api/transactions?startDate=2026-06-01&endDate=2026-06-30\")",
-      "Bash(kill 19928)"
+      "Bash(kill 19928)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_tx_density.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_home_unchanged.js)",
+      "Bash(kill 20929 20931 20943)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_categories.js)",
+      "Bash(kill 21395)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_colors.js)",
+      "Bash(kill 23689 23691 23703)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_rename.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_rename2.js)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/verify_rename3.js)",
+      "Bash(kill 24279 24281 24293)",
+      "Bash(NODE_PATH=/home/jan/.npm/_npx/e41f203b7505f1fb/node_modules node /tmp/claude-1000/-home-jan-personal-my-finance/6b0fd5ab-f62a-4858-9df0-7e3cdac94108/scratchpad/smoke_test.js)",
+      "Bash(kill 25241 25243 25255)"
     ],
     "additionalDirectories": [
       "/home/jan/.npm/_npx/e41f203b7505f1fb"

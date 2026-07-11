@@ -8,6 +8,7 @@ import {
     type Account,
     type Category,
     AMOUNT_MASK,
+    CATEGORY_COLOR_PALETTE,
     eur,
     formatCurrency,
     formatDate,
@@ -121,6 +122,30 @@ function IconArrowLeft({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5M11 6l-6 6 6 6" />
+        </svg>
+    );
+}
+
+function IconFilter({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 5h16M7 12h10M10 19h4" />
+        </svg>
+    );
+}
+
+function IconStar({ className, filled }: { className?: string; filled?: boolean }) {
+    return (
+        <svg
+            viewBox="0 0 24 24"
+            className={className}
+            fill={filled ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+        >
+            <path d="M12 3.5 14.6 8.9 20.5 9.7 16.3 13.9 17.3 19.8 12 17 6.7 19.8 7.7 13.9 3.5 9.7 9.4 8.9Z" />
         </svg>
     );
 }
@@ -488,27 +513,38 @@ function TransactionCard({
     categories,
     privacyMode,
     onClick,
+    compact = false,
 }: {
     tx: Transaction;
     accounts: Account[];
     categories: Category[];
     privacyMode: boolean;
     onClick?: () => void;
+    compact?: boolean;
 }) {
     const sign = tx.type === "expense" ? "-" : tx.type === "income" ? "+" : "";
     const color = tx.type === "expense" ? "text-danger" : tx.type === "income" ? "text-brand" : "text-ink";
     const fromName = resolveName(tx.accountId, accounts, categories);
     const toName = resolveName(tx.destinationId, accounts, categories);
     const subtitle = tx.type === "transfer" ? `${fromName} → ${toName}` : `${toName} · ${fromName}`;
+    const categoryColor =
+        tx.type !== "transfer" ? categories.find((c) => c.id === tx.destinationId)?.color ?? null : null;
     const Tag = onClick ? "button" : "div";
 
     return (
         <Tag
             type={onClick ? "button" : undefined}
             onClick={onClick}
-            className={`flex w-full items-center justify-between rounded-2xl border border-line bg-paper p-4 text-left shadow-sm ${
-                onClick ? "transition-colors duration-150 hover:border-brand hover:bg-chip" : ""
-            }`}
+            style={categoryColor ? { backgroundColor: categoryColor } : undefined}
+            className={
+                compact
+                    ? `flex w-full items-center justify-between px-4 py-2.5 text-left ${
+                          onClick ? "transition-colors duration-150 hover:bg-chip" : ""
+                      }`
+                    : `flex w-full items-center justify-between rounded-2xl border border-line bg-paper p-4 text-left shadow-sm ${
+                          onClick ? "transition-colors duration-150 hover:border-brand hover:bg-chip" : ""
+                      }`
+            }
         >
             <div className="min-w-0">
                 <p className="truncate font-semibold text-ink">{tx.description}</p>
@@ -516,7 +552,7 @@ function TransactionCard({
                     {subtitle} · {formatDate(tx.date)}
                 </p>
             </div>
-            <p className={`ml-3 shrink-0 text-lg font-bold ${color}`}>
+            <p className={`ml-3 shrink-0 font-bold ${compact ? "text-base" : "text-lg"} ${color}`}>
                 {privacyMode ? AMOUNT_MASK : `${sign}${eur.format(Math.abs(tx.amount))}`}
             </p>
         </Tag>
@@ -539,11 +575,16 @@ function AddTransactionModal({
     onSaved: () => void;
 }) {
     const isEditing = !!transaction;
+
+    function defaultCategoryFor(t: "income" | "expense"): string {
+        return categories.find((c) => c.type === t && c.isDefault)?.id ?? "";
+    }
+
     const [date, setDate] = useState(() => transaction?.date ?? new Date().toISOString().slice(0, 10));
     const [description, setDescription] = useState(transaction?.description ?? "");
     const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense");
     const [accountId, setAccountId] = useState(transaction?.accountId ?? "");
-    const [destinationId, setDestinationId] = useState(transaction?.destinationId ?? "");
+    const [destinationId, setDestinationId] = useState(transaction ? transaction.destinationId : defaultCategoryFor("expense"));
     const [amount, setAmount] = useState(transaction ? String(Math.abs(transaction.amount)) : "");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
@@ -554,7 +595,7 @@ function AddTransactionModal({
 
     function handleTypeChange(next: TransactionType) {
         setType(next);
-        setDestinationId("");
+        setDestinationId(isEditing || next === "transfer" ? "" : defaultCategoryFor(next));
     }
 
     async function handleSubmit(e: FormEvent) {
@@ -770,6 +811,7 @@ function TransactionsView({
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [showFilters, setShowFilters] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(false);
@@ -822,42 +864,58 @@ function TransactionsView({
                 <button type="submit" className={INK_BTN}>
                     Search
                 </button>
-            </form>
-
-            <div className="flex gap-2 overflow-x-auto pb-1">
                 <button
                     type="button"
-                    onClick={() => setCategoryFilter("")}
-                    className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
-                        categoryFilter === "" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                    onClick={() => setShowFilters((v) => !v)}
+                    aria-label="Toggle category filters"
+                    aria-pressed={showFilters}
+                    className={`relative shrink-0 rounded-xl p-3 transition-colors duration-150 ${
+                        showFilters ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
                     }`}
                 >
-                    All
+                    <IconFilter className="h-5 w-5" />
+                    {categoryFilter && (
+                        <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-brand" />
+                    )}
                 </button>
-                {categories.map((c) => (
+            </form>
+
+            {showFilters && (
+                <div className="flex gap-2 overflow-x-auto pb-1">
                     <button
                         type="button"
-                        key={c.id}
-                        onClick={() => setCategoryFilter(c.id)}
+                        onClick={() => setCategoryFilter("")}
                         className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
-                            categoryFilter === c.id
-                                ? c.type === "income"
-                                    ? "bg-brand text-white"
-                                    : "bg-danger text-white"
-                                : "bg-chip text-muted hover:bg-chip-hover"
+                            categoryFilter === "" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
                         }`}
                     >
-                        {c.name}
+                        All
                     </button>
-                ))}
-            </div>
+                    {categories.map((c) => (
+                        <button
+                            type="button"
+                            key={c.id}
+                            onClick={() => setCategoryFilter(c.id)}
+                            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
+                                categoryFilter === c.id
+                                    ? c.type === "income"
+                                        ? "bg-brand text-white"
+                                        : "bg-danger text-white"
+                                    : "bg-chip text-muted hover:bg-chip-hover"
+                            }`}
+                        >
+                            {c.name}
+                        </button>
+                    ))}
+                </div>
+            )}
 
             {loading ? (
                 <p className="pt-10 text-center text-muted">Loading…</p>
             ) : transactions.length === 0 ? (
                 <p className="pt-10 text-center text-muted">No transactions found.</p>
             ) : (
-                <div className="space-y-2">
+                <div className="divide-y divide-line rounded-2xl border border-line bg-paper shadow-sm">
                     {transactions.map((tx) => (
                         <TransactionCard
                             key={tx.id}
@@ -866,6 +924,7 @@ function TransactionsView({
                             categories={categories}
                             privacyMode={privacyMode}
                             onClick={() => setEditingTransaction(tx)}
+                            compact
                         />
                     ))}
                 </div>
@@ -934,6 +993,148 @@ function MenuRow({
             <span className="flex-1 text-base font-semibold">{label}</span>
             {chevron && <IconChevronRight className="h-4 w-4 shrink-0 text-muted" />}
         </button>
+    );
+}
+
+function CategoryList({
+    title,
+    items,
+    onMove,
+    onSetDefault,
+    onSetColor,
+    onRename,
+    onDelete,
+}: {
+    title: string;
+    items: Category[];
+    onMove: (c: Category, direction: "up" | "down") => void;
+    onSetDefault: (c: Category) => void;
+    onSetColor: (c: Category, color: string) => void;
+    onRename: (c: Category, name: string) => void;
+    onDelete: (c: Category) => void;
+}) {
+    const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editingValue, setEditingValue] = useState("");
+
+    function startEditing(c: Category) {
+        setEditingId(c.id);
+        setEditingValue(c.name);
+    }
+
+    function commitEditing(c: Category) {
+        const trimmed = editingValue.trim();
+        if (trimmed && trimmed !== c.name) {
+            onRename(c, trimmed);
+        }
+        setEditingId(null);
+    }
+
+    return (
+        <div>
+            <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">{title}</h3>
+            {items.length === 0 ? (
+                <p className="text-sm text-muted">No categories yet.</p>
+            ) : (
+                <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+                    {items.map((c, i) => (
+                        <div key={c.id}>
+                            <div className="flex items-center gap-0.5 bg-paper px-2 py-2">
+                                <button
+                                    type="button"
+                                    onClick={() => onSetDefault(c)}
+                                    aria-label={c.isDefault ? `Unset ${c.name} as default` : `Set ${c.name} as default`}
+                                    className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
+                                        c.isDefault ? "text-brand" : "text-muted hover:text-ink"
+                                    }`}
+                                >
+                                    <IconStar className="h-4 w-4" filled={c.isDefault} />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setColorPickerFor(colorPickerFor === c.id ? null : c.id)}
+                                    aria-label={`Change color for ${c.name}`}
+                                    className="h-5 w-5 shrink-0 rounded-full border border-line/50"
+                                    style={{ backgroundColor: c.color ?? "#e5e0d8" }}
+                                />
+                                {editingId === c.id ? (
+                                    <input
+                                        autoFocus
+                                        value={editingValue}
+                                        onChange={(e) => setEditingValue(e.target.value)}
+                                        onBlur={() => commitEditing(c)}
+                                        onKeyDown={(e) => {
+                                            if (e.key === "Enter") {
+                                                e.preventDefault();
+                                                commitEditing(c);
+                                            } else if (e.key === "Escape") {
+                                                e.preventDefault();
+                                                setEditingId(null);
+                                            }
+                                        }}
+                                        className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2 py-1 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
+                                    />
+                                ) : (
+                                    <button
+                                        type="button"
+                                        onClick={() => startEditing(c)}
+                                        aria-label={`Rename ${c.name}`}
+                                        className="min-w-0 flex-1 truncate pl-2 text-left text-sm font-medium text-ink"
+                                    >
+                                        {c.name}
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => onMove(c, "up")}
+                                    disabled={i === 0}
+                                    aria-label={`Move ${c.name} up`}
+                                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink disabled:opacity-30"
+                                >
+                                    <IconChevronRight className="h-4 w-4 -rotate-90" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onMove(c, "down")}
+                                    disabled={i === items.length - 1}
+                                    aria-label={`Move ${c.name} down`}
+                                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink disabled:opacity-30"
+                                >
+                                    <IconChevronRight className="h-4 w-4 rotate-90" />
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => onDelete(c)}
+                                    aria-label={`Delete ${c.name}`}
+                                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
+                                >
+                                    <IconClose className="h-4 w-4" />
+                                </button>
+                            </div>
+                            {colorPickerFor === c.id && (
+                                <div className="flex flex-wrap gap-2 bg-chip px-3 py-3">
+                                    {CATEGORY_COLOR_PALETTE.map((swatch) => (
+                                        <button
+                                            key={swatch}
+                                            type="button"
+                                            onClick={() => {
+                                                onSetColor(c, swatch);
+                                                setColorPickerFor(null);
+                                            }}
+                                            aria-label={`Set ${c.name} color to ${swatch}`}
+                                            className={`h-6 w-6 shrink-0 rounded-full border-2 transition-transform duration-150 hover:scale-110 ${
+                                                c.color === swatch ? "border-ink" : "border-white/60"
+                                            }`}
+                                            style={{ backgroundColor: swatch }}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -1051,6 +1252,74 @@ function ConfigView({
         onRefresh();
     }
 
+    async function handleMoveCategory(c: Category, direction: "up" | "down") {
+        const sameType = categories.filter((x) => x.type === c.type);
+        const index = sameType.findIndex((x) => x.id === c.id);
+        const swapWith = direction === "up" ? index - 1 : index + 1;
+        if (swapWith < 0 || swapWith >= sameType.length) return;
+
+        const reordered = [...sameType];
+        [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "reorder", type: c.type, orderedIds: reordered.map((x) => x.id) }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not reorder categories.");
+            return;
+        }
+        onRefresh();
+    }
+
+    async function handleSetDefault(c: Category) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "set-default", type: c.type, id: c.isDefault ? null : c.id }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not update default category.");
+            return;
+        }
+        onRefresh();
+    }
+
+    async function handleSetCategoryColor(c: Category, color: string) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "set-color", type: c.type, id: c.id, color }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not update category color.");
+            return;
+        }
+        onRefresh();
+    }
+
+    async function handleRenameCategory(c: Category, name: string) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "rename", type: c.type, id: c.id, name }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not rename category.");
+            return;
+        }
+        onRefresh();
+    }
+
     if (section === "menu") {
         return (
             <div className="space-y-6 px-5 pt-6">
@@ -1132,27 +1401,32 @@ function ConfigView({
             )}
 
             {section === "categories" && (
-                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
-                    <div className="mb-4 flex flex-wrap gap-2">
-                        {categories.map((c) => (
-                            <span
-                                key={c.id}
-                                className={`inline-flex items-center gap-1.5 rounded-full py-1.5 pl-3 pr-1.5 text-sm font-medium ${
-                                    c.type === "income" ? "bg-brand-soft text-brand-dark" : "bg-danger-soft text-danger-dark"
-                                }`}
-                            >
-                                {c.name}
-                                <button
-                                    type="button"
-                                    onClick={() => handleDeleteCategory(c)}
-                                    aria-label={`Delete ${c.name}`}
-                                    className="rounded-full p-0.5 opacity-70 transition-opacity duration-150 hover:opacity-100"
-                                >
-                                    <IconClose className="h-3.5 w-3.5" />
-                                </button>
-                            </span>
-                        ))}
-                    </div>
+                <section className="space-y-5 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <p className="text-sm text-muted">
+                        Tap <IconStar className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default category
+                        for that type — it&apos;ll be pre-selected when you add a new transaction. Tap the color dot
+                        to change the color shown on that category&apos;s transactions, or the name to rename it
+                        (existing transactions update automatically). Use the arrows to reorder how categories
+                        appear in the transaction form.
+                    </p>
+                    <CategoryList
+                        title="Income"
+                        items={categories.filter((c) => c.type === "income")}
+                        onMove={handleMoveCategory}
+                        onSetDefault={handleSetDefault}
+                        onSetColor={handleSetCategoryColor}
+                        onRename={handleRenameCategory}
+                        onDelete={handleDeleteCategory}
+                    />
+                    <CategoryList
+                        title="Expense"
+                        items={categories.filter((c) => c.type === "expense")}
+                        onMove={handleMoveCategory}
+                        onSetDefault={handleSetDefault}
+                        onSetColor={handleSetCategoryColor}
+                        onRename={handleRenameCategory}
+                        onDelete={handleDeleteCategory}
+                    />
                     <form onSubmit={handleAddCategory} className="space-y-2">
                         <input
                             value={categoryName}
