@@ -50,12 +50,13 @@ export async function POST(request: Request) {
             target?: unknown;
             name?: unknown;
             type?: unknown;
+            initialBalance?: unknown;
         } | null;
         if (!body) {
             return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
         }
 
-        const { target, name, type } = body;
+        const { target, name, type, initialBalance } = body;
 
         if (typeof name !== "string" || name.trim().length < 1) {
             return NextResponse.json({ error: "Name is required." }, { status: 400 });
@@ -65,10 +66,18 @@ export async function POST(request: Request) {
         const itemId = crypto.randomUUID();
 
         if (target === "account") {
+            let initialBalanceValue = 0;
+            if (initialBalance !== undefined) {
+                if (typeof initialBalance !== "number" || !Number.isFinite(initialBalance)) {
+                    return NextResponse.json({ error: "Invalid initial balance." }, { status: 400 });
+                }
+                initialBalanceValue = initialBalance;
+            }
             await db.insert(account).values({
                 id: itemId,
                 userId: user.id,
                 name: name.trim(),
+                initialBalance: initialBalanceValue,
             });
         } else if (target === "category") {
             if (typeof type !== "string" || !["income", "expense"].includes(type)) {
@@ -171,18 +180,60 @@ export async function PATCH(request: Request) {
             id?: unknown;
             color?: unknown;
             name?: unknown;
+            initialBalance?: unknown;
         } | null;
         if (!body) {
             return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
         }
 
-        const { action, type } = body;
+        const { action } = body;
+        const db = await getDb();
+
+        if (action === "set-initial-balance") {
+            const { id, initialBalance } = body;
+            if (typeof id !== "string" || id.length < 1) {
+                return NextResponse.json({ error: "Id is required." }, { status: 400 });
+            }
+            if (typeof initialBalance !== "number" || !Number.isFinite(initialBalance)) {
+                return NextResponse.json({ error: "Invalid initial balance." }, { status: 400 });
+            }
+            const existing = await db
+                .select({ id: account.id })
+                .from(account)
+                .where(and(eq(account.id, id), eq(account.userId, user.id)))
+                .get();
+            if (!existing) {
+                return NextResponse.json({ error: "Account not found." }, { status: 404 });
+            }
+            await db.update(account).set({ initialBalance }).where(eq(account.id, id));
+            return NextResponse.json({ success: true });
+        }
+
+        if (action === "rename-account") {
+            const { id, name } = body;
+            if (typeof id !== "string" || id.length < 1) {
+                return NextResponse.json({ error: "Id is required." }, { status: 400 });
+            }
+            if (typeof name !== "string" || name.trim().length < 1) {
+                return NextResponse.json({ error: "Name is required." }, { status: 400 });
+            }
+            const existing = await db
+                .select({ id: account.id })
+                .from(account)
+                .where(and(eq(account.id, id), eq(account.userId, user.id)))
+                .get();
+            if (!existing) {
+                return NextResponse.json({ error: "Account not found." }, { status: 404 });
+            }
+            await db.update(account).set({ name: name.trim() }).where(eq(account.id, id));
+            return NextResponse.json({ success: true });
+        }
+
+        const { type } = body;
         if (typeof type !== "string" || !["income", "expense"].includes(type)) {
             return NextResponse.json({ error: "Invalid category type." }, { status: 400 });
         }
         const categoryType = type as "income" | "expense";
-
-        const db = await getDb();
 
         if (action === "reorder") {
             const { orderedIds } = body;

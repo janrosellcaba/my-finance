@@ -3,6 +3,23 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactElement } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    arrayMove,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { AnalyticsView } from "./AnalyticsView";
 import {
     type Account,
@@ -134,18 +151,33 @@ function IconFilter({ className }: { className?: string }) {
     );
 }
 
-function IconStar({ className, filled }: { className?: string; filled?: boolean }) {
+function IconRadioDot({ className, checked }: { className?: string; checked?: boolean }) {
     return (
-        <svg
-            viewBox="0 0 24 24"
-            className={className}
-            fill={filled ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <path d="M12 3.5 14.6 8.9 20.5 9.7 16.3 13.9 17.3 19.8 12 17 6.7 19.8 7.7 13.9 3.5 9.7 9.4 8.9Z" />
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8">
+            <circle cx="12" cy="12" r="8" />
+            {checked && <circle cx="12" cy="12" r="4" fill="currentColor" stroke="none" />}
+        </svg>
+    );
+}
+
+function IconPencil({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+            <path d="M14.5 5.5l3 3" />
+        </svg>
+    );
+}
+
+function IconGrip({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} fill="currentColor">
+            <circle cx="9" cy="6" r="1.4" />
+            <circle cx="15" cy="6" r="1.4" />
+            <circle cx="9" cy="12" r="1.4" />
+            <circle cx="15" cy="12" r="1.4" />
+            <circle cx="9" cy="18" r="1.4" />
+            <circle cx="15" cy="18" r="1.4" />
         </svg>
     );
 }
@@ -309,6 +341,10 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
         router.refresh();
     }
 
+    async function handleAccountDeleted() {
+        router.refresh();
+    }
+
     async function handleTransactionSaved() {
         setShowAddModal(false);
         await loadDashboard();
@@ -373,6 +409,7 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                             onRefresh={loadConfig}
                             onLogout={handleLogout}
                             onPasswordChanged={handlePasswordChanged}
+                            onAccountDeleted={handleAccountDeleted}
                             onImported={async () => {
                                 await Promise.all([loadConfig(), loadDashboard()]);
                             }}
@@ -960,13 +997,14 @@ function TransactionsView({
 
 // ---------- Configuration ----------
 
-type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import";
+type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import" | "danger";
 
 const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
     accounts: "Accounts",
     categories: "Categories",
     export: "Export Data",
     import: "Import Data",
+    danger: "Delete Data",
 };
 
 function MenuRow({
@@ -996,18 +1034,262 @@ function MenuRow({
     );
 }
 
+function AccountList({
+    items,
+    onRename,
+    onSetInitialBalance,
+    onDelete,
+}: {
+    items: Account[];
+    onRename: (a: Account, name: string) => void;
+    onSetInitialBalance: (a: Account, value: number) => void;
+    onDelete: (a: Account) => void;
+}) {
+    const [editingNameId, setEditingNameId] = useState<string | null>(null);
+    const [editingNameValue, setEditingNameValue] = useState("");
+    const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
+    const [editingBalanceValue, setEditingBalanceValue] = useState("");
+
+    function startEditingName(a: Account) {
+        setEditingNameId(a.id);
+        setEditingNameValue(a.name);
+    }
+
+    function commitEditingName(a: Account) {
+        const trimmed = editingNameValue.trim();
+        if (trimmed && trimmed !== a.name) {
+            onRename(a, trimmed);
+        }
+        setEditingNameId(null);
+    }
+
+    function startEditingBalance(a: Account) {
+        setEditingBalanceId(a.id);
+        setEditingBalanceValue(String(a.initialBalance));
+    }
+
+    function commitEditingBalance(a: Account) {
+        const parsed = Number(editingBalanceValue.trim().replace(",", "."));
+        if (Number.isFinite(parsed) && parsed !== a.initialBalance) {
+            onSetInitialBalance(a, parsed);
+        }
+        setEditingBalanceId(null);
+    }
+
+    if (items.length === 0) {
+        return <p className="text-sm text-muted">No accounts yet.</p>;
+    }
+
+    return (
+        <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+            {items.map((a) => (
+                <div key={a.id} className="flex items-center gap-1 bg-paper px-3 py-2.5">
+                    {editingNameId === a.id ? (
+                        <input
+                            autoFocus
+                            value={editingNameValue}
+                            onChange={(e) => setEditingNameValue(e.target.value)}
+                            onBlur={() => commitEditingName(a)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    commitEditingName(a);
+                                } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setEditingNameId(null);
+                                }
+                            }}
+                            className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2 py-1 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
+                        />
+                    ) : (
+                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{a.name}</span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => startEditingName(a)}
+                        aria-label={`Rename ${a.name}`}
+                        className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                    >
+                        <IconPencil className="h-4 w-4" />
+                    </button>
+                    {editingBalanceId === a.id ? (
+                        <input
+                            autoFocus
+                            inputMode="decimal"
+                            value={editingBalanceValue}
+                            onChange={(e) => setEditingBalanceValue(e.target.value)}
+                            onBlur={() => commitEditingBalance(a)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    commitEditingBalance(a);
+                                } else if (e.key === "Escape") {
+                                    e.preventDefault();
+                                    setEditingBalanceId(null);
+                                }
+                            }}
+                            className="w-24 shrink-0 rounded-lg border border-line bg-paper px-2 py-1 text-right text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
+                        />
+                    ) : (
+                        <span className="shrink-0 text-sm text-muted">Starts at {eur.format(a.initialBalance)}</span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={() => startEditingBalance(a)}
+                        aria-label={`Edit initial balance for ${a.name}`}
+                        className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                    >
+                        <IconPencil className="h-4 w-4" />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => onDelete(a)}
+                        aria-label={`Delete ${a.name}`}
+                        className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
+                    >
+                        <IconClose className="h-4 w-4" />
+                    </button>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function SortableCategoryRow({
+    category,
+    isColorPickerOpen,
+    onToggleColorPicker,
+    onSetDefault,
+    onSetColor,
+    onDelete,
+    isEditing,
+    editingValue,
+    onStartEditing,
+    onEditingValueChange,
+    onCommitEditing,
+    onCancelEditing,
+}: {
+    category: Category;
+    isColorPickerOpen: boolean;
+    onToggleColorPicker: () => void;
+    onSetDefault: () => void;
+    onSetColor: (color: string) => void;
+    onDelete: () => void;
+    isEditing: boolean;
+    editingValue: string;
+    onStartEditing: () => void;
+    onEditingValueChange: (value: string) => void;
+    onCommitEditing: () => void;
+    onCancelEditing: () => void;
+}) {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
+    const style = { transform: CSS.Transform.toString(transform), transition };
+
+    return (
+        <div ref={setNodeRef} style={style} className="relative bg-paper">
+            <div className={`flex items-center gap-1 px-2 py-2 ${isDragging ? "shadow-md ring-1 ring-brand/30" : ""}`}>
+                <button
+                    type="button"
+                    {...attributes}
+                    {...listeners}
+                    aria-label={`Reorder ${category.name}`}
+                    className="shrink-0 cursor-grab touch-none rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink active:cursor-grabbing"
+                >
+                    <IconGrip className="h-4 w-4" />
+                </button>
+                <button
+                    type="button"
+                    onClick={onSetDefault}
+                    role="radio"
+                    aria-checked={category.isDefault}
+                    title={category.isDefault ? "Default category" : "Set as default"}
+                    aria-label={category.isDefault ? `${category.name} is the default` : `Set ${category.name} as default`}
+                    className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
+                        category.isDefault ? "text-brand" : "text-muted hover:text-ink"
+                    }`}
+                >
+                    <IconRadioDot className="h-4 w-4" checked={category.isDefault} />
+                </button>
+                <button
+                    type="button"
+                    onClick={onToggleColorPicker}
+                    aria-label={`Change color for ${category.name}`}
+                    className="h-5 w-5 shrink-0 rounded-full border border-line/50"
+                    style={{ backgroundColor: category.color ?? "#e5e0d8" }}
+                />
+                {isEditing ? (
+                    <input
+                        autoFocus
+                        value={editingValue}
+                        onChange={(e) => onEditingValueChange(e.target.value)}
+                        onBlur={onCommitEditing}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                onCommitEditing();
+                            } else if (e.key === "Escape") {
+                                e.preventDefault();
+                                onCancelEditing();
+                            }
+                        }}
+                        className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2 py-1 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
+                    />
+                ) : (
+                    <>
+                        <span className="min-w-0 flex-1 truncate pl-2 text-sm font-medium text-ink">{category.name}</span>
+                        <button
+                            type="button"
+                            onClick={onStartEditing}
+                            aria-label={`Rename ${category.name}`}
+                            className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                        >
+                            <IconPencil className="h-4 w-4" />
+                        </button>
+                    </>
+                )}
+                <button
+                    type="button"
+                    onClick={onDelete}
+                    aria-label={`Delete ${category.name}`}
+                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
+                >
+                    <IconClose className="h-4 w-4" />
+                </button>
+            </div>
+            {isColorPickerOpen && (
+                <div className="flex flex-wrap gap-2 border-t border-line bg-chip px-3 py-3">
+                    {CATEGORY_COLOR_PALETTE.map((swatch) => (
+                        <button
+                            key={swatch}
+                            type="button"
+                            onClick={() => onSetColor(swatch)}
+                            aria-label={`Set ${category.name} color to ${swatch}`}
+                            className={`h-6 w-6 shrink-0 rounded-full border-2 transition-transform duration-150 hover:scale-110 ${
+                                category.color === swatch ? "border-ink" : "border-white/60"
+                            }`}
+                            style={{ backgroundColor: swatch }}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
 function CategoryList({
     title,
+    type,
     items,
-    onMove,
+    onReorder,
     onSetDefault,
     onSetColor,
     onRename,
     onDelete,
 }: {
     title: string;
+    type: "income" | "expense";
     items: Category[];
-    onMove: (c: Category, direction: "up" | "down") => void;
+    onReorder: (type: "income" | "expense", orderedIds: string[]) => void;
     onSetDefault: (c: Category) => void;
     onSetColor: (c: Category, color: string) => void;
     onRename: (c: Category, name: string) => void;
@@ -1016,6 +1298,16 @@ function CategoryList({
     const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState("");
+    const [localItems, setLocalItems] = useState(items);
+
+    useEffect(() => {
+        setLocalItems(items);
+    }, [items]);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    );
 
     function startEditing(c: Category) {
         setEditingId(c.id);
@@ -1030,109 +1322,49 @@ function CategoryList({
         setEditingId(null);
     }
 
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+        const oldIndex = localItems.findIndex((x) => x.id === active.id);
+        const newIndex = localItems.findIndex((x) => x.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return;
+        const reordered = arrayMove(localItems, oldIndex, newIndex);
+        setLocalItems(reordered);
+        onReorder(type, reordered.map((x) => x.id));
+    }
+
     return (
         <div>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">{title}</h3>
-            {items.length === 0 ? (
+            {localItems.length === 0 ? (
                 <p className="text-sm text-muted">No categories yet.</p>
             ) : (
-                <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
-                    {items.map((c, i) => (
-                        <div key={c.id}>
-                            <div className="flex items-center gap-0.5 bg-paper px-2 py-2">
-                                <button
-                                    type="button"
-                                    onClick={() => onSetDefault(c)}
-                                    aria-label={c.isDefault ? `Unset ${c.name} as default` : `Set ${c.name} as default`}
-                                    className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
-                                        c.isDefault ? "text-brand" : "text-muted hover:text-ink"
-                                    }`}
-                                >
-                                    <IconStar className="h-4 w-4" filled={c.isDefault} />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setColorPickerFor(colorPickerFor === c.id ? null : c.id)}
-                                    aria-label={`Change color for ${c.name}`}
-                                    className="h-5 w-5 shrink-0 rounded-full border border-line/50"
-                                    style={{ backgroundColor: c.color ?? "#e5e0d8" }}
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={localItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>
+                        <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
+                            {localItems.map((c) => (
+                                <SortableCategoryRow
+                                    key={c.id}
+                                    category={c}
+                                    isColorPickerOpen={colorPickerFor === c.id}
+                                    onToggleColorPicker={() => setColorPickerFor(colorPickerFor === c.id ? null : c.id)}
+                                    onSetDefault={() => onSetDefault(c)}
+                                    onSetColor={(color) => {
+                                        onSetColor(c, color);
+                                        setColorPickerFor(null);
+                                    }}
+                                    onDelete={() => onDelete(c)}
+                                    isEditing={editingId === c.id}
+                                    editingValue={editingValue}
+                                    onStartEditing={() => startEditing(c)}
+                                    onEditingValueChange={setEditingValue}
+                                    onCommitEditing={() => commitEditing(c)}
+                                    onCancelEditing={() => setEditingId(null)}
                                 />
-                                {editingId === c.id ? (
-                                    <input
-                                        autoFocus
-                                        value={editingValue}
-                                        onChange={(e) => setEditingValue(e.target.value)}
-                                        onBlur={() => commitEditing(c)}
-                                        onKeyDown={(e) => {
-                                            if (e.key === "Enter") {
-                                                e.preventDefault();
-                                                commitEditing(c);
-                                            } else if (e.key === "Escape") {
-                                                e.preventDefault();
-                                                setEditingId(null);
-                                            }
-                                        }}
-                                        className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2 py-1 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
-                                    />
-                                ) : (
-                                    <button
-                                        type="button"
-                                        onClick={() => startEditing(c)}
-                                        aria-label={`Rename ${c.name}`}
-                                        className="min-w-0 flex-1 truncate pl-2 text-left text-sm font-medium text-ink"
-                                    >
-                                        {c.name}
-                                    </button>
-                                )}
-                                <button
-                                    type="button"
-                                    onClick={() => onMove(c, "up")}
-                                    disabled={i === 0}
-                                    aria-label={`Move ${c.name} up`}
-                                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink disabled:opacity-30"
-                                >
-                                    <IconChevronRight className="h-4 w-4 -rotate-90" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onMove(c, "down")}
-                                    disabled={i === items.length - 1}
-                                    aria-label={`Move ${c.name} down`}
-                                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink disabled:opacity-30"
-                                >
-                                    <IconChevronRight className="h-4 w-4 rotate-90" />
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => onDelete(c)}
-                                    aria-label={`Delete ${c.name}`}
-                                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
-                                >
-                                    <IconClose className="h-4 w-4" />
-                                </button>
-                            </div>
-                            {colorPickerFor === c.id && (
-                                <div className="flex flex-wrap gap-2 bg-chip px-3 py-3">
-                                    {CATEGORY_COLOR_PALETTE.map((swatch) => (
-                                        <button
-                                            key={swatch}
-                                            type="button"
-                                            onClick={() => {
-                                                onSetColor(c, swatch);
-                                                setColorPickerFor(null);
-                                            }}
-                                            aria-label={`Set ${c.name} color to ${swatch}`}
-                                            className={`h-6 w-6 shrink-0 rounded-full border-2 transition-transform duration-150 hover:scale-110 ${
-                                                c.color === swatch ? "border-ink" : "border-white/60"
-                                            }`}
-                                            style={{ backgroundColor: swatch }}
-                                        />
-                                    ))}
-                                </div>
-                            )}
+                            ))}
                         </div>
-                    ))}
-                </div>
+                    </SortableContext>
+                </DndContext>
             )}
         </div>
     );
@@ -1145,6 +1377,7 @@ function ConfigView({
     onLogout,
     onPasswordChanged,
     onImported,
+    onAccountDeleted,
 }: {
     accounts: Account[];
     categories: Category[];
@@ -1152,9 +1385,11 @@ function ConfigView({
     onLogout: () => void;
     onPasswordChanged: () => void;
     onImported: () => void;
+    onAccountDeleted: () => void;
 }) {
     const [section, setSection] = useState<ConfigSection>("menu");
     const [accountName, setAccountName] = useState("");
+    const [accountInitialBalance, setAccountInitialBalance] = useState("");
     const [categoryName, setCategoryName] = useState("");
     const [categoryType, setCategoryType] = useState<"income" | "expense">("expense");
     const [savingAccount, setSavingAccount] = useState(false);
@@ -1165,13 +1400,19 @@ function ConfigView({
     async function handleAddAccount(e: FormEvent) {
         e.preventDefault();
         if (!accountName.trim()) return;
+        const trimmedBalance = accountInitialBalance.trim();
+        const initialBalance = trimmedBalance ? Number(trimmedBalance.replace(",", ".")) : 0;
+        if (!Number.isFinite(initialBalance)) {
+            setError("Invalid initial balance.");
+            return;
+        }
         setSavingAccount(true);
         setError("");
         try {
             const res = await fetch("/api/config", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ target: "account", name: accountName.trim() }),
+                body: JSON.stringify({ target: "account", name: accountName.trim(), initialBalance }),
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
@@ -1179,10 +1420,41 @@ function ConfigView({
                 return;
             }
             setAccountName("");
+            setAccountInitialBalance("");
             onRefresh();
         } finally {
             setSavingAccount(false);
         }
+    }
+
+    async function handleSetInitialBalance(a: Account, value: number) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "set-initial-balance", id: a.id, initialBalance: value }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not update initial balance.");
+            return;
+        }
+        onRefresh();
+    }
+
+    async function handleRenameAccount(a: Account, name: string) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "rename-account", id: a.id, name }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not rename account.");
+            return;
+        }
+        onRefresh();
     }
 
     async function handleAddCategory(e: FormEvent) {
@@ -1252,20 +1524,56 @@ function ConfigView({
         onRefresh();
     }
 
-    async function handleMoveCategory(c: Category, direction: "up" | "down") {
-        const sameType = categories.filter((x) => x.type === c.type);
-        const index = sameType.findIndex((x) => x.id === c.id);
-        const swapWith = direction === "up" ? index - 1 : index + 1;
-        if (swapWith < 0 || swapWith >= sameType.length) return;
+    async function handleDeleteAllTransactions() {
+        if (
+            !confirm(
+                "Delete ALL transactions? This also resets every account's initial balance to 0. This cannot be undone."
+            )
+        ) {
+            return;
+        }
+        setError("");
+        const res = await fetch("/api/danger", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete-transactions" }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not delete transactions.");
+            return;
+        }
+        onRefresh();
+    }
 
-        const reordered = [...sameType];
-        [reordered[index], reordered[swapWith]] = [reordered[swapWith], reordered[index]];
+    async function handleDeleteMyAccount() {
+        if (
+            !confirm(
+                "Permanently delete your account and ALL of your data (transactions, accounts, categories)? You will be logged out immediately. This cannot be undone."
+            )
+        ) {
+            return;
+        }
+        setError("");
+        const res = await fetch("/api/danger", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "delete-account" }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not delete your account.");
+            return;
+        }
+        onAccountDeleted();
+    }
 
+    async function handleReorderCategories(type: "income" | "expense", orderedIds: string[]) {
         setError("");
         const res = await fetch("/api/config", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ action: "reorder", type: c.type, orderedIds: reordered.map((x) => x.id) }),
+            body: JSON.stringify({ action: "reorder", type, orderedIds }),
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
@@ -1337,6 +1645,7 @@ function ConfigView({
                         chevron={false}
                         onClick={() => setShowChangePassword(true)}
                     />
+                    <MenuRow label="Delete Data" danger onClick={() => setSection("danger")} />
                     <MenuRow label="Log Out" chevron={false} danger last onClick={onLogout} />
                 </div>
 
@@ -1367,33 +1676,35 @@ function ConfigView({
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
             {section === "accounts" && (
-                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
-                    <div className="mb-4 flex flex-wrap gap-2">
-                        {accounts.map((a) => (
-                            <span
-                                key={a.id}
-                                className="inline-flex items-center gap-1.5 rounded-full bg-chip py-1.5 pl-3 pr-1.5 text-sm font-medium text-ink"
-                            >
-                                {a.name}
-                                <button
-                                    type="button"
-                                    onClick={() => handleDeleteAccount(a)}
-                                    aria-label={`Delete ${a.name}`}
-                                    className="rounded-full p-0.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
-                                >
-                                    <IconClose className="h-3.5 w-3.5" />
-                                </button>
-                            </span>
-                        ))}
-                    </div>
-                    <form onSubmit={handleAddAccount} className="flex gap-2">
+                <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <p className="text-sm text-muted">
+                        Tap <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> next to the name to rename
+                        an account — it updates everywhere automatically. Tap the other{" "}
+                        <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set its initial balance,
+                        useful when you start tracking an account that already has money in it, so you don&apos;t
+                        have to add an income transaction for it.
+                    </p>
+                    <AccountList
+                        items={accounts}
+                        onRename={handleRenameAccount}
+                        onSetInitialBalance={handleSetInitialBalance}
+                        onDelete={handleDeleteAccount}
+                    />
+                    <form onSubmit={handleAddAccount} className="space-y-2">
                         <input
                             value={accountName}
                             onChange={(e) => setAccountName(e.target.value)}
                             placeholder="New account name"
-                            className={`flex-1 ${INPUT_CLS}`}
+                            className={INPUT_CLS}
                         />
-                        <button type="submit" disabled={savingAccount} className={`${PRIMARY_BTN} bg-brand px-5 py-3 text-base hover:bg-brand-dark`}>
+                        <input
+                            value={accountInitialBalance}
+                            onChange={(e) => setAccountInitialBalance(e.target.value)}
+                            inputMode="decimal"
+                            placeholder="Initial balance (optional, defaults to 0)"
+                            className={INPUT_CLS}
+                        />
+                        <button type="submit" disabled={savingAccount} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
                             Add
                         </button>
                     </form>
@@ -1403,16 +1714,18 @@ function ConfigView({
             {section === "categories" && (
                 <section className="space-y-5 rounded-2xl border border-line bg-paper p-5 shadow-sm">
                     <p className="text-sm text-muted">
-                        Tap <IconStar className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default category
+                        Drag <IconGrip className="inline h-3.5 w-3.5 -translate-y-0.5" /> to reorder categories. Tap{" "}
+                        <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default category
                         for that type — it&apos;ll be pre-selected when you add a new transaction. Tap the color dot
-                        to change the color shown on that category&apos;s transactions, or the name to rename it
-                        (existing transactions update automatically). Use the arrows to reorder how categories
-                        appear in the transaction form.
+                        to change the color shown on that category&apos;s transactions, or{" "}
+                        <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> to rename it (existing
+                        transactions update automatically).
                     </p>
                     <CategoryList
                         title="Income"
+                        type="income"
                         items={categories.filter((c) => c.type === "income")}
-                        onMove={handleMoveCategory}
+                        onReorder={handleReorderCategories}
                         onSetDefault={handleSetDefault}
                         onSetColor={handleSetCategoryColor}
                         onRename={handleRenameCategory}
@@ -1420,8 +1733,9 @@ function ConfigView({
                     />
                     <CategoryList
                         title="Expense"
+                        type="expense"
                         items={categories.filter((c) => c.type === "expense")}
-                        onMove={handleMoveCategory}
+                        onReorder={handleReorderCategories}
                         onSetDefault={handleSetDefault}
                         onSetColor={handleSetCategoryColor}
                         onRename={handleRenameCategory}
@@ -1465,6 +1779,26 @@ function ConfigView({
 
             {section === "import" && (
                 <ImportView accounts={accounts} categories={categories} onImported={onImported} />
+            )}
+
+            {section === "danger" && (
+                <section className="space-y-3 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <p className="text-sm text-muted">These actions are permanent and cannot be undone.</p>
+                    <button
+                        type="button"
+                        onClick={handleDeleteAllTransactions}
+                        className={`${PRIMARY_BTN} w-full bg-danger hover:bg-danger-dark`}
+                    >
+                        Delete All Transactions
+                    </button>
+                    <button
+                        type="button"
+                        onClick={handleDeleteMyAccount}
+                        className={`${PRIMARY_BTN} w-full bg-danger hover:bg-danger-dark`}
+                    >
+                        Delete My Account
+                    </button>
+                </section>
             )}
         </div>
     );

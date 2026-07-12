@@ -39,7 +39,7 @@ export async function GET() {
         let totalNetWorth = 0;
 
         const rawBalances: Record<string, number> = {};
-        for (const accId in accountBalances) rawBalances[accId] = 0;
+        for (const acc of userAccounts) rawBalances[acc.id] = acc.initialBalance;
 
         for (const tx of allTransactions) {
             applyTransactionToBalances(rawBalances, tx);

@@ -3,8 +3,10 @@ improve transactions page
 better session control -> auth api calls
 add a todo list
 
-
-limit transactions import
+footer sometimes disappears
+when delete all transactions, update home page
+change default bank accounts and categories!
+you cannot see all of your transactions
 
 ---done---
 export transaction data

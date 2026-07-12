@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import { MAX_IMPORT_TRANSACTIONS } from "@/app/shared";
+
+// A CSV row with this exact category name sets the account's starting balance
+// instead of becoming a normal income transaction/category (see ImportView.tsx).
+const INITIAL_BALANCE_CATEGORY = "initial balance";
 
 type ImportRow = {
     date: string;
@@ -92,7 +96,7 @@ export async function POST(request: Request) {
             for (const c of existingCategories) categoryMap.set(`${c.type}:${c.name.trim().toLowerCase()}`, c.id);
         }
 
-        const newAccounts: { id: string; userId: string; name: string }[] = [];
+        const newAccounts: { id: string; userId: string; name: string; initialBalance: number }[] = [];
         const newCategories: { id: string; userId: string; name: string; type: "income" | "expense" }[] = [];
 
         function resolveAccount(name: string): string {
@@ -101,7 +105,7 @@ export async function POST(request: Request) {
             if (existing) return existing;
             const id = crypto.randomUUID();
             accountMap.set(key, id);
-            newAccounts.push({ id, userId: user!.id, name: name.trim() });
+            newAccounts.push({ id, userId: user!.id, name: name.trim(), initialBalance: 0 });
             return id;
         }
 
@@ -115,14 +119,32 @@ export async function POST(request: Request) {
             return id;
         }
 
-        const transactionRows = importRows.map((row) => {
+        const initialBalanceDeltas = new Map<string, number>();
+        const transactionRows: {
+            id: string;
+            userId: string;
+            date: string;
+            description: string;
+            type: "income" | "expense" | "transfer";
+            amount: number;
+            accountId: string;
+            destinationId: string;
+        }[] = [];
+
+        for (const row of importRows) {
             const accountId = resolveAccount(row.accountName);
+
+            if (row.type === "income" && row.destinationName.trim().toLowerCase() === INITIAL_BALANCE_CATEGORY) {
+                initialBalanceDeltas.set(accountId, (initialBalanceDeltas.get(accountId) ?? 0) + row.amount);
+                continue;
+            }
+
             const destinationId =
                 row.type === "transfer"
                     ? resolveAccount(row.destinationName)
                     : resolveCategory(row.destinationName, row.type);
 
-            return {
+            transactionRows.push({
                 id: crypto.randomUUID(),
                 userId: user.id,
                 date: row.date,
@@ -131,8 +153,21 @@ export async function POST(request: Request) {
                 amount: row.amount,
                 accountId,
                 destinationId,
-            };
-        });
+            });
+        }
+
+        const newAccountsById = new Map(newAccounts.map((a) => [a.id, a]));
+        for (const [accountId, delta] of initialBalanceDeltas) {
+            const pending = newAccountsById.get(accountId);
+            if (pending) {
+                pending.initialBalance += delta;
+            } else {
+                await db
+                    .update(account)
+                    .set({ initialBalance: sql`${account.initialBalance} + ${delta}` })
+                    .where(and(eq(account.id, accountId), eq(account.userId, user.id)));
+            }
+        }
 
         // D1's bound-parameter limit applies across an entire db.batch() call, not per statement,
         // so each chunk is sent as its own independent round trip rather than batched together.
@@ -151,6 +186,7 @@ export async function POST(request: Request) {
             imported: transactionRows.length,
             accountsCreated: newAccounts.length,
             categoriesCreated: newCategories.length,
+            initialBalancesSet: initialBalanceDeltas.size,
         });
     } catch (error) {
         console.error("Import error:", error);

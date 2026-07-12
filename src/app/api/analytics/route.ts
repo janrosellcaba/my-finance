@@ -140,7 +140,7 @@ export async function GET(request: Request) {
         });
 
         const sortedAllTx = [...allTx].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : 1));
-        let running = 0;
+        let running = userAccounts.reduce((sum, acc) => sum + acc.initialBalance, 0);
         const netWorthByDate = new Map<string, number>();
         for (const tx of sortedAllTx) {
             running = applyTransactionToNetWorth(running, tx);
