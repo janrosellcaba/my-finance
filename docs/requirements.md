@@ -20,7 +20,7 @@
         - account
         - expense category
         - amount
-    - income:
+    - transfer:
         - date
         - description
         - account
