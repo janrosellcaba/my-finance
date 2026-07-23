@@ -81,3 +81,12 @@ export function parseAmountEs(raw: string): number | null {
     if (Number.isNaN(value)) return null;
     return negative ? -value : value;
 }
+
+// A CSV import row with this exact category name (as Income) adds to the account's initial
+// balance instead of becoming a normal transaction/category. Shared by ImportView.tsx (client
+// preview) and api/import/route.ts (server) so the two can't drift out of sync.
+export const INITIAL_BALANCE_CATEGORY = "initial balance";
+
+export function isInitialBalanceRow(type: string, categoryName: string): boolean {
+    return type === "income" && categoryName.trim().toLowerCase() === INITIAL_BALANCE_CATEGORY;
+}

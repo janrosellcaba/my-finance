@@ -3,11 +3,8 @@ import { getDb } from "@/db";
 import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { and, eq, sql } from "drizzle-orm";
-import { MAX_IMPORT_TRANSACTIONS } from "@/app/shared";
-
-// A CSV row with this exact category name sets the account's starting balance
-// instead of becoming a normal income transaction/category (see ImportView.tsx).
-const INITIAL_BALANCE_CATEGORY = "initial balance";
+import type { BatchItem } from "drizzle-orm/batch";
+import { isInitialBalanceRow, MAX_IMPORT_TRANSACTIONS } from "@/app/shared";
 
 type ImportRow = {
     date: string;
@@ -131,11 +128,14 @@ export async function POST(request: Request) {
             destinationId: string;
         }[] = [];
 
+        let initialBalanceRowsApplied = 0;
+
         for (const row of importRows) {
             const accountId = resolveAccount(row.accountName);
 
-            if (row.type === "income" && row.destinationName.trim().toLowerCase() === INITIAL_BALANCE_CATEGORY) {
+            if (isInitialBalanceRow(row.type, row.destinationName)) {
                 initialBalanceDeltas.set(accountId, (initialBalanceDeltas.get(accountId) ?? 0) + row.amount);
+                initialBalanceRowsApplied++;
                 continue;
             }
 
@@ -157,16 +157,25 @@ export async function POST(request: Request) {
         }
 
         const newAccountsById = new Map(newAccounts.map((a) => [a.id, a]));
+        const existingAccountDeltas: [string, number][] = [];
         for (const [accountId, delta] of initialBalanceDeltas) {
             const pending = newAccountsById.get(accountId);
             if (pending) {
                 pending.initialBalance += delta;
             } else {
-                await db
-                    .update(account)
-                    .set({ initialBalance: sql`${account.initialBalance} + ${delta}` })
-                    .where(and(eq(account.id, accountId), eq(account.userId, user.id)));
+                existingAccountDeltas.push([accountId, delta]);
             }
+        }
+        for (let i = 0; i < existingAccountDeltas.length; i += TRANSACTION_CHUNK_SIZE) {
+            const chunk = existingAccountDeltas.slice(i, i + TRANSACTION_CHUNK_SIZE);
+            await db.batch(
+                chunk.map(([accountId, delta]) =>
+                    db
+                        .update(account)
+                        .set({ initialBalance: sql`${account.initialBalance} + ${delta}` })
+                        .where(and(eq(account.id, accountId), eq(account.userId, user.id)))
+                ) as unknown as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]
+            );
         }
 
         // D1's bound-parameter limit applies across an entire db.batch() call, not per statement,
@@ -186,7 +195,7 @@ export async function POST(request: Request) {
             imported: transactionRows.length,
             accountsCreated: newAccounts.length,
             categoriesCreated: newCategories.length,
-            initialBalancesSet: initialBalanceDeltas.size,
+            initialBalanceRowsApplied,
         });
     } catch (error) {
         console.error("Import error:", error);

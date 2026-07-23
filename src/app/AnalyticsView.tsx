@@ -41,6 +41,7 @@ type AnalyticsData = {
     topExpenses: TopExpenseRow[];
     accountActivity: AccountActivityRow[];
     netWorthOverTime: NetWorthPoint[];
+    currentNetWorth: number;
 };
 
 export function AnalyticsView({ privacyMode }: { privacyMode: boolean }) {
@@ -125,7 +126,11 @@ export function AnalyticsView({ privacyMode }: { privacyMode: boolean }) {
 
             <div>
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Net Worth Over Time</h2>
-                <NetWorthChart series={data.netWorthOverTime} privacyMode={privacyMode} />
+                <NetWorthChart
+                    series={data.netWorthOverTime}
+                    currentNetWorth={data.currentNetWorth}
+                    privacyMode={privacyMode}
+                />
             </div>
         </div>
     );
@@ -299,9 +304,22 @@ function AccountActivityTable({ rows, privacyMode }: { rows: AccountActivityRow[
     );
 }
 
-function NetWorthChart({ series, privacyMode }: { series: NetWorthPoint[]; privacyMode: boolean }) {
+function NetWorthChart({
+    series,
+    currentNetWorth,
+    privacyMode,
+}: {
+    series: NetWorthPoint[];
+    currentNetWorth: number;
+    privacyMode: boolean;
+}) {
     if (series.length < 2) {
-        return <p className="text-sm text-muted">Not enough data yet.</p>;
+        return (
+            <p className="text-sm text-muted">
+                Not enough transaction history yet for a trend chart. Current net worth:{" "}
+                <span className="font-semibold text-ink">{formatCurrency(currentNetWorth, privacyMode)}</span>.
+            </p>
+        );
     }
 
     return (

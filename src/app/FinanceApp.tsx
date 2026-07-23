@@ -29,6 +29,7 @@ import {
     eur,
     formatCurrency,
     formatDate,
+    parseAmountEs,
     INPUT_CLS,
     INK_BTN,
     PRIMARY_BTN,
@@ -406,6 +407,7 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                         <ConfigView
                             accounts={accounts}
                             categories={categories}
+                            privacyMode={privacyMode}
                             onRefresh={loadConfig}
                             onLogout={handleLogout}
                             onPasswordChanged={handlePasswordChanged}
@@ -1036,13 +1038,15 @@ function MenuRow({
 
 function AccountList({
     items,
+    privacyMode,
     onRename,
     onSetInitialBalance,
     onDelete,
 }: {
     items: Account[];
+    privacyMode: boolean;
     onRename: (a: Account, name: string) => void;
-    onSetInitialBalance: (a: Account, value: number) => void;
+    onSetInitialBalance: (a: Account, rawValue: string) => void;
     onDelete: (a: Account) => void;
 }) {
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
@@ -1069,9 +1073,9 @@ function AccountList({
     }
 
     function commitEditingBalance(a: Account) {
-        const parsed = Number(editingBalanceValue.trim().replace(",", "."));
-        if (Number.isFinite(parsed) && parsed !== a.initialBalance) {
-            onSetInitialBalance(a, parsed);
+        const trimmed = editingBalanceValue.trim();
+        if (trimmed && trimmed !== String(a.initialBalance)) {
+            onSetInitialBalance(a, trimmed);
         }
         setEditingBalanceId(null);
     }
@@ -1131,7 +1135,9 @@ function AccountList({
                             className="w-24 shrink-0 rounded-lg border border-line bg-paper px-2 py-1 text-right text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
                         />
                     ) : (
-                        <span className="shrink-0 text-sm text-muted">Starts at {eur.format(a.initialBalance)}</span>
+                        <span className="shrink-0 text-sm text-muted">
+                            Starts at {formatCurrency(a.initialBalance, privacyMode)}
+                        </span>
                     )}
                     <button
                         type="button"
@@ -1289,7 +1295,7 @@ function CategoryList({
     title: string;
     type: "income" | "expense";
     items: Category[];
-    onReorder: (type: "income" | "expense", orderedIds: string[]) => void;
+    onReorder: (type: "income" | "expense", orderedIds: string[]) => Promise<boolean>;
     onSetDefault: (c: Category) => void;
     onSetColor: (c: Category, color: string) => void;
     onRename: (c: Category, name: string) => void;
@@ -1322,15 +1328,17 @@ function CategoryList({
         setEditingId(null);
     }
 
-    function handleDragEnd(event: DragEndEvent) {
+    async function handleDragEnd(event: DragEndEvent) {
         const { active, over } = event;
         if (!over || active.id === over.id) return;
         const oldIndex = localItems.findIndex((x) => x.id === active.id);
         const newIndex = localItems.findIndex((x) => x.id === over.id);
         if (oldIndex === -1 || newIndex === -1) return;
+        const previous = localItems;
         const reordered = arrayMove(localItems, oldIndex, newIndex);
         setLocalItems(reordered);
-        onReorder(type, reordered.map((x) => x.id));
+        const ok = await onReorder(type, reordered.map((x) => x.id));
+        if (!ok) setLocalItems(previous);
     }
 
     return (
@@ -1373,6 +1381,7 @@ function CategoryList({
 function ConfigView({
     accounts,
     categories,
+    privacyMode,
     onRefresh,
     onLogout,
     onPasswordChanged,
@@ -1381,6 +1390,7 @@ function ConfigView({
 }: {
     accounts: Account[];
     categories: Category[];
+    privacyMode: boolean;
     onRefresh: () => void;
     onLogout: () => void;
     onPasswordChanged: () => void;
@@ -1401,8 +1411,8 @@ function ConfigView({
         e.preventDefault();
         if (!accountName.trim()) return;
         const trimmedBalance = accountInitialBalance.trim();
-        const initialBalance = trimmedBalance ? Number(trimmedBalance.replace(",", ".")) : 0;
-        if (!Number.isFinite(initialBalance)) {
+        const initialBalance = trimmedBalance ? parseAmountEs(trimmedBalance) : 0;
+        if (initialBalance === null) {
             setError("Invalid initial balance.");
             return;
         }
@@ -1427,7 +1437,12 @@ function ConfigView({
         }
     }
 
-    async function handleSetInitialBalance(a: Account, value: number) {
+    async function handleSetInitialBalance(a: Account, rawValue: string) {
+        const value = parseAmountEs(rawValue);
+        if (value === null) {
+            setError("Invalid initial balance.");
+            return;
+        }
         setError("");
         const res = await fetch("/api/config", {
             method: "PATCH",
@@ -1568,7 +1583,7 @@ function ConfigView({
         onAccountDeleted();
     }
 
-    async function handleReorderCategories(type: "income" | "expense", orderedIds: string[]) {
+    async function handleReorderCategories(type: "income" | "expense", orderedIds: string[]): Promise<boolean> {
         setError("");
         const res = await fetch("/api/config", {
             method: "PATCH",
@@ -1578,9 +1593,10 @@ function ConfigView({
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
             setError(data.error || "Could not reorder categories.");
-            return;
+            return false;
         }
         onRefresh();
+        return true;
     }
 
     async function handleSetDefault(c: Category) {
@@ -1686,6 +1702,7 @@ function ConfigView({
                     </p>
                     <AccountList
                         items={accounts}
+                        privacyMode={privacyMode}
                         onRename={handleRenameAccount}
                         onSetInitialBalance={handleSetInitialBalance}
                         onDelete={handleDeleteAccount}

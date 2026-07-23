@@ -223,7 +223,15 @@
       "Read(//home/jan/.claude/**)",
       "Bash(git grep *)",
       "Bash(find / -maxdepth 3 -iname \"CLAUDE.md\")",
-      "WebSearch"
+      "WebSearch",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix1.mjs)",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix2.mjs)",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix3.mjs)",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix4.mjs)",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix5.mjs)",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix6.mjs)",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix7.mjs)",
+      "Bash(node /tmp/claude-1000/-home-jan-personal-my-finance/c3918326-1220-42ee-9ef4-ad5b41312400/scratchpad/drive_fix8.mjs)"
     ],
     "additionalDirectories": [
       "/home/jan/.npm/_npx/e41f203b7505f1fb"

@@ -5,6 +5,7 @@ import {
     type Account,
     type Category,
     formatDate,
+    isInitialBalanceRow as isInitialBalanceRowShared,
     parseAmountEs,
     parseDateDDMMYYYY,
     INPUT_CLS,
@@ -40,6 +41,7 @@ type ParseResult = {
     newAccountNames: string[];
     newCategoryNames: { name: string; type: "income" | "expense" }[];
     initialBalanceCount: number;
+    transactionCount: number;
     dateRange: { from: string; to: string } | null;
 };
 
@@ -49,11 +51,8 @@ const TYPE_ALIASES: Record<string, TransactionType> = {
     transfer: "transfer",
 };
 
-// A row with this exact category sets the account's starting balance instead of
-// creating an "Initial Balance" category and a normal income transaction.
-const INITIAL_BALANCE_CATEGORY = "initial balance";
 function isInitialBalanceRow(row: ImportRow): boolean {
-    return row.type === "income" && row.destinationName.trim().toLowerCase() === INITIAL_BALANCE_CATEGORY;
+    return isInitialBalanceRowShared(row.type, row.destinationName);
 }
 
 function parseImportText(text: string, existingAccounts: Account[], existingCategories: Category[]): ParseResult {
@@ -206,6 +205,7 @@ function parseImportText(text: string, existingAccounts: Account[], existingCate
         newAccountNames: Array.from(newAccountNamesSet),
         newCategoryNames: Array.from(newCategoryMap.values()),
         initialBalanceCount,
+        transactionCount: rows.length - initialBalanceCount,
         dateRange,
     };
 }
@@ -227,7 +227,7 @@ export function ImportView({
         imported: number;
         accountsCreated: number;
         categoriesCreated: number;
-        initialBalancesSet: number;
+        initialBalanceRowsApplied: number;
     } | null>(null);
     const [error, setError] = useState("");
 
@@ -260,17 +260,17 @@ export function ImportView({
                 imported?: number;
                 accountsCreated?: number;
                 categoriesCreated?: number;
-                initialBalancesSet?: number;
+                initialBalanceRowsApplied?: number;
             };
             if (!res.ok) {
                 setError(data.error || "Could not import your data.");
                 return;
             }
             setResult({
-                imported: data.imported ?? parsed.rows.length,
+                imported: data.imported ?? parsed.transactionCount,
                 accountsCreated: data.accountsCreated ?? 0,
                 categoriesCreated: data.categoriesCreated ?? 0,
-                initialBalancesSet: data.initialBalancesSet ?? 0,
+                initialBalanceRowsApplied: data.initialBalanceRowsApplied ?? 0,
             });
             setText("");
             setParsed(null);
@@ -303,7 +303,8 @@ export function ImportView({
                     <li>Each Transfer needs two rows: one negative on the source account, one positive on the destination account.</li>
                     <li>
                         Use category <span className="font-semibold text-ink">Initial Balance</span> (as Income) to
-                        set an account&apos;s starting balance instead of creating a transaction.
+                        add to an account&apos;s starting balance instead of creating a transaction — importing the
+                        same row twice adds twice, it doesn&apos;t just set the value once.
                     </li>
                 </ul>
             </section>
@@ -335,8 +336,8 @@ export function ImportView({
                         {result.imported} transactions imported
                         {result.accountsCreated > 0 ? `, ${result.accountsCreated} new account(s)` : ""}
                         {result.categoriesCreated > 0 ? `, ${result.categoriesCreated} new category(ies)` : ""}
-                        {result.initialBalancesSet > 0
-                            ? `, ${result.initialBalancesSet} account initial balance(s) set`
+                        {result.initialBalanceRowsApplied > 0
+                            ? `, ${result.initialBalanceRowsApplied} row(s) added to an account's initial balance`
                             : ""}
                         .
                     </p>
@@ -363,7 +364,7 @@ export function ImportView({
 
                     <div className="space-y-1.5 text-sm text-ink">
                         <p>
-                            <span className="font-semibold">{parsed.rows.length}</span> transactions ready to import
+                            <span className="font-semibold">{parsed.transactionCount}</span> transactions ready to import
                             {parsed.dateRange && (
                                 <>
                                     {" "}
@@ -389,7 +390,7 @@ export function ImportView({
                         {parsed.initialBalanceCount > 0 && (
                             <p>
                                 <span className="font-semibold">{parsed.initialBalanceCount}</span> row
-                                {parsed.initialBalanceCount === 1 ? "" : "s"} will set an account&apos;s initial
+                                {parsed.initialBalanceCount === 1 ? "" : "s"} will add to an account&apos;s initial
                                 balance instead of creating a transaction.
                             </p>
                         )}

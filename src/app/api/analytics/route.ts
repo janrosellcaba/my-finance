@@ -158,6 +158,7 @@ export async function GET(request: Request) {
             topExpenses,
             accountActivity,
             netWorthOverTime,
+            currentNetWorth: round2(running),
         });
     } catch (error) {
         console.error("Analytics calculation error:", error);
