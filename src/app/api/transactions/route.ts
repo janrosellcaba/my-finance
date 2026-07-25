@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
-import { and, eq, desc, like, gte, lte } from "drizzle-orm";
+import { and, eq, desc, like, gte, lte, lt, or } from "drizzle-orm";
 
 export async function POST(request: Request) {
     try {
@@ -164,14 +164,14 @@ export async function GET(request: Request) {
         }
 
         const { searchParams } = new URL(request.url);
-        const page = Math.max(1, parseInt(searchParams.get("page") || "1", 10));
         const searchWord = searchParams.get("search") || "";
         const categoryFilter = searchParams.get("category") || "";
         const startDate = searchParams.get("startDate") || "";
         const endDate = searchParams.get("endDate") || "";
+        const cursorDate = searchParams.get("cursorDate") || "";
+        const cursorId = searchParams.get("cursorId") || "";
 
-        const LIMIT = 100;
-        const OFFSET = (page - 1) * LIMIT;
+        const LIMIT = 50;
 
         const db = await getDb();
 
@@ -189,21 +189,34 @@ export async function GET(request: Request) {
         if (endDate) {
             conditions.push(lte(transaction.date, endDate));
         }
+        if (cursorDate && cursorId) {
+            // Keyset pagination: fetch strictly-older rows than the last one seen, using the
+            // (userId, date) index instead of an OFFSET that would re-scan every skipped row.
+            conditions.push(
+                or(
+                    lt(transaction.date, cursorDate),
+                    and(eq(transaction.date, cursorDate), lt(transaction.id, cursorId))
+                )!
+            );
+        }
 
         const transactionsList = await db
             .select()
             .from(transaction)
             .where(and(...conditions))
-            .orderBy(desc(transaction.date))
+            .orderBy(desc(transaction.date), desc(transaction.id))
             .limit(LIMIT)
-            .offset(OFFSET)
             .all();
+
+        const last = transactionsList[transactionsList.length - 1];
+        const nextCursor =
+            transactionsList.length === LIMIT && last ? { date: last.date, id: last.id } : null;
 
         return NextResponse.json({
             success: true,
-            page,
             limit: LIMIT,
             transactions: transactionsList,
+            nextCursor,
         });
     } catch (error) {
         console.error("Transaction read error:", error);

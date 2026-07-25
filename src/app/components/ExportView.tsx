@@ -14,18 +14,25 @@ type Transaction = {
     destinationId: string;
 };
 
-const PAGE_LIMIT = 100;
-
 async function fetchAllTransactions(): Promise<Transaction[]> {
     const all: Transaction[] = [];
-    let page = 1;
+    let cursor: { date: string; id: string } | null = null;
     for (;;) {
-        const res = await fetch(`/api/transactions?page=${page}`);
-        const data = (await res.json()) as { success: boolean; transactions?: Transaction[] };
+        const params = new URLSearchParams();
+        if (cursor) {
+            params.set("cursorDate", cursor.date);
+            params.set("cursorId", cursor.id);
+        }
+        const res = await fetch(`/api/transactions?${params.toString()}`);
+        const data = (await res.json()) as {
+            success: boolean;
+            transactions?: Transaction[];
+            nextCursor?: { date: string; id: string } | null;
+        };
         if (!data.success || !data.transactions) break;
         all.push(...data.transactions);
-        if (data.transactions.length < PAGE_LIMIT) break;
-        page += 1;
+        if (!data.nextCursor) break;
+        cursor = data.nextCursor;
     }
     return all;
 }

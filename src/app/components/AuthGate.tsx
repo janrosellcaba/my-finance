@@ -42,7 +42,7 @@ export function AuthGate() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-cream px-5">
+        <div className="flex h-full items-center justify-center overflow-y-auto bg-cream px-5 py-10">
             <div className="w-full max-w-sm rounded-3xl border border-line bg-paper p-8 shadow-sm">
                 <div className="mb-3 flex justify-center">
                     <Image src="/logo.png" alt="" width={52} height={52} priority className="opacity-90" />

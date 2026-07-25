@@ -86,7 +86,7 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
     }
 
     return (
-        <div className="flex h-dvh flex-col bg-cream">
+        <div className="fixed inset-0 flex flex-col bg-cream">
             <header className="shrink-0 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
@@ -105,7 +105,7 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                 </div>
             </header>
 
-            <main ref={mainRef} className="flex-1 overflow-y-auto [scrollbar-gutter:stable]">
+            <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
                 <div className={`mx-auto pb-6 ${tab === "analytics" ? "max-w-md lg:max-w-6xl" : "max-w-md"}`}>
                     {tab === "home" && (
                         <HomeView

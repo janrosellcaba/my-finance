@@ -15,7 +15,10 @@ cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty')"
 
 # Normalize glued operators (e.g. `>.dev.vars`, `2>>file`) and separators into
 # standalone whitespace-delimited tokens so naive splitting below is reliable.
-norm="$(printf '%s' "$cmd" | sed -E 's/(&>>|>>|&>|>)/ \1 /g; s/(&&|\|\||;|\|)/ \1 /g')"
+# Newlines are folded to `;` first: they separate commands just as much as `;` does, and
+# without this an `rm` on one line kept "looking for targets" into the lines below it,
+# so an unrelated later mention of .dev.vars was misread as that rm's argument.
+norm="$(printf '%s' "$cmd" | tr '\n' ';' | sed -E 's/(&>>|>>|&>|>)/ \1 /g; s/(&&|\|\||;|\|)/ \1 /g')"
 
 is_protected() {
     local f="$1"
