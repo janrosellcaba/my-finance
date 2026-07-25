@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { INPUT_CLS, PRIMARY_BTN } from "../shared";
+import { PRIMARY_BTN } from "../shared";
 import { IconClose } from "./icons";
+import { PasswordInput } from "./PasswordInput";
 
 export function ChangePasswordModal({ onClose, onChanged }: { onClose: () => void; onChanged: () => void }) {
     const [currentPassword, setCurrentPassword] = useState("");
@@ -65,40 +66,34 @@ export function ChangePasswordModal({ onClose, onChanged }: { onClose: () => voi
 
                 <label className="mb-3 block">
                     <span className="mb-1 block text-sm font-semibold text-ink">Current Password</span>
-                    <input
-                        type="password"
+                    <PasswordInput
                         value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        onChange={setCurrentPassword}
                         required
                         minLength={1}
                         autoComplete="current-password"
-                        className={INPUT_CLS}
                     />
                 </label>
 
                 <label className="mb-3 block">
                     <span className="mb-1 block text-sm font-semibold text-ink">New Password</span>
-                    <input
-                        type="password"
+                    <PasswordInput
                         value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
+                        onChange={setNewPassword}
                         required
                         minLength={1}
                         autoComplete="new-password"
-                        className={INPUT_CLS}
                     />
                 </label>
 
                 <label className="mb-4 block">
                     <span className="mb-1 block text-sm font-semibold text-ink">Confirm New Password</span>
-                    <input
-                        type="password"
+                    <PasswordInput
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={setConfirmPassword}
                         required
                         minLength={1}
                         autoComplete="new-password"
-                        className={INPUT_CLS}
                     />
                 </label>
 

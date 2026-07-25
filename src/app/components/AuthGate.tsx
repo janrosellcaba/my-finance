@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { INPUT_CLS, PRIMARY_BTN } from "../shared";
+import { PasswordInput } from "./PasswordInput";
 
 export function AuthGate() {
     const router = useRouter();
@@ -67,14 +68,12 @@ export function AuthGate() {
 
                     <label className="block">
                         <span className="mb-1 block text-sm font-semibold text-ink">Password</span>
-                        <input
-                            type="password"
+                        <PasswordInput
                             value={password}
-                            onChange={(e) => setPassword(e.target.value)}
+                            onChange={setPassword}
                             required
                             minLength={1}
                             autoComplete={mode === "login" ? "current-password" : "new-password"}
-                            className={INPUT_CLS}
                         />
                     </label>
 
