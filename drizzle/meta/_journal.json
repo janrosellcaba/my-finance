@@ -43,6 +43,13 @@
       "when": 1783891189512,
       "tag": "0005_peaceful_proemial_gods",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1784985556152,
+      "tag": "0006_fat_may_parker",
+      "breakpoints": true
     }
   ]
 }

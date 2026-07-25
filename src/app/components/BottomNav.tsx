@@ -2,12 +2,13 @@
 
 import { type ReactElement } from "react";
 import { type Tab } from "../shared";
-import { IconChart, IconHome, IconList, IconSettings } from "./icons";
+import { IconChart, IconCheckSquare, IconHome, IconList, IconSettings } from "./icons";
 
 export function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: Tab) => void }) {
     const items: { key: Tab; label: string; Icon: (props: { className?: string }) => ReactElement }[] = [
         { key: "home", label: "Home", Icon: IconHome },
         { key: "transactions", label: "Transactions", Icon: IconList },
+        { key: "todo", label: "To-Do", Icon: IconCheckSquare },
         { key: "analytics", label: "Analytics", Icon: IconChart },
         { key: "config", label: "Settings", Icon: IconSettings },
     ];

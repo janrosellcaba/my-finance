@@ -46,6 +46,17 @@ export const transaction = sqliteTable("transaction", {
     index("idx_transaction_user_category").on(table.userId, table.destinationId),
 ]);
 
+export const todo = sqliteTable("todo", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    text: text("text").notNull(),
+    dueDate: text("due_date"),
+    completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
+}, (table) => [
+    index("idx_todo_user").on(table.userId)
+]);
+
 export const session = sqliteTable("session", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -59,3 +70,4 @@ export type Account = typeof account.$inferSelect;
 export type Category = typeof category.$inferSelect;
 export type Transaction = typeof transaction.$inferSelect;
 export type Session = typeof session.$inferSelect;
+export type Todo = typeof todo.$inferSelect;

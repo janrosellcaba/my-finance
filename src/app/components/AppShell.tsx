@@ -9,6 +9,7 @@ import { AnalyticsView } from "./AnalyticsView";
 import { BottomNav } from "./BottomNav";
 import { ConfigView } from "./ConfigView";
 import { HomeView } from "./HomeView";
+import { TodoView } from "./TodoView";
 import { TransactionsView } from "./TransactionsView";
 import { IconEye, IconEyeOff } from "./icons";
 
@@ -125,6 +126,7 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                             onTransactionChanged={loadDashboard}
                         />
                     )}
+                    {tab === "todo" && <TodoView />}
                     {tab === "analytics" && <AnalyticsView privacyMode={privacyMode} />}
                     {tab === "config" && (
                         <ConfigView

@@ -27,7 +27,14 @@ export type DashboardSummary = {
     accounts: { id: string; name: string; balance: number }[];
     recentTransactions: Transaction[];
 };
-export type Tab = "home" | "transactions" | "analytics" | "config";
+export type Todo = {
+    id: string;
+    text: string;
+    dueDate: string | null;
+    completed: boolean;
+    createdAt: string;
+};
+export type Tab = "home" | "transactions" | "todo" | "analytics" | "config";
 
 // 20 evenly-spaced light pastel colors, offered as the category color picker palette.
 export const CATEGORY_COLOR_PALETTE = [
