@@ -1,5 +1,6 @@
 import { validateSession } from "@/lib/session";
-import { AuthGate, AppShell } from "./FinanceApp";
+import { AuthGate } from "./components/AuthGate";
+import { AppShell } from "./components/AppShell";
 
 export default async function Home() {
     const user = await validateSession();

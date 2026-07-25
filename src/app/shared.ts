@@ -12,6 +12,23 @@ export type Category = {
     color: string | null;
 };
 
+export type TransactionType = "income" | "expense" | "transfer";
+export type Transaction = {
+    id: string;
+    date: string;
+    description: string;
+    type: TransactionType;
+    amount: number;
+    accountId: string;
+    destinationId: string;
+};
+export type DashboardSummary = {
+    totalNetWorth: number;
+    accounts: { id: string; name: string; balance: number }[];
+    recentTransactions: Transaction[];
+};
+export type Tab = "home" | "transactions" | "analytics" | "config";
+
 // 20 evenly-spaced light pastel colors, offered as the category color picker palette.
 export const CATEGORY_COLOR_PALETTE = [
     "#f3bfbf",

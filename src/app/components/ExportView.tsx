@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { type Account, type Category, eur, formatDate, INK_BTN, INPUT_CLS } from "./shared";
+import { type Account, type Category, eur, formatDate, INK_BTN, INPUT_CLS } from "../shared";
 
 type TransactionType = "income" | "expense" | "transfer";
 type Transaction = {

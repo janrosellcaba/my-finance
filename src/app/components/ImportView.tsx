@@ -12,7 +12,7 @@ import {
     INK_BTN,
     MAX_IMPORT_TRANSACTIONS,
     PRIMARY_BTN,
-} from "./shared";
+} from "../shared";
 
 type TransactionType = "income" | "expense" | "transfer";
 

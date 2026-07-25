@@ -1,9 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { Cell, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { formatCurrency, formatDate, INPUT_CLS } from "./shared";
+import { formatCurrency, formatDate, INPUT_CLS } from "../shared";
+
+type AnalyticsTab = "overview" | "categories" | "accounts" | "trends";
+const ANALYTICS_TABS: { key: AnalyticsTab; label: string }[] = [
+    { key: "overview", label: "Overview" },
+    { key: "categories", label: "Categories" },
+    { key: "accounts", label: "Accounts" },
+    { key: "trends", label: "Trends" },
+];
 
 const CATEGORY_COLORS = ["#2a78d6", "#1baf7a", "#eda100", "#008300", "#4a3aa7", "#e34948", "#e87ba4", "#eb6834"];
 const OTHER_COLOR = "#918c7c";
@@ -51,6 +59,7 @@ export function AnalyticsView({ privacyMode }: { privacyMode: boolean }) {
     const [month, setMonth] = useState(String(now.getMonth() + 1));
     const [data, setData] = useState<AnalyticsData | null>(null);
     const [loading, setLoading] = useState(true);
+    const [tab, setTab] = useState<AnalyticsTab>("overview");
 
     const fetchData = useCallback(async () => {
         const params = new URLSearchParams();
@@ -82,7 +91,7 @@ export function AnalyticsView({ privacyMode }: { privacyMode: boolean }) {
     }
 
     return (
-        <div className="space-y-6 px-5 pt-6">
+        <div className="space-y-6 px-5 pt-6 lg:px-8">
             <h1 className="text-2xl font-extrabold text-ink">Analytics</h1>
 
             <div className="flex gap-2">
@@ -109,29 +118,115 @@ export function AnalyticsView({ privacyMode }: { privacyMode: boolean }) {
                 </select>
             </div>
 
-            <SummaryCards summary={data.summary} privacyMode={privacyMode} />
+            <div className="space-y-6 lg:hidden">
+                <AnalyticsTabBar active={tab} onChange={setTab} />
 
-            <CategoryBreakdown title="Spending by Category" rows={data.spendingByCategory} privacyMode={privacyMode} />
-            <CategoryBreakdown title="Income by Source" rows={data.incomeBySource} privacyMode={privacyMode} />
+                {tab === "overview" && (
+                    <>
+                        <SummaryCards summary={data.summary} privacyMode={privacyMode} />
+                        <AnalyticsSection title="Top 15 Largest Expenses">
+                            <TopExpensesList items={data.topExpenses} privacyMode={privacyMode} />
+                        </AnalyticsSection>
+                    </>
+                )}
 
-            <div>
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Top 15 Largest Expenses</h2>
-                <TopExpensesList items={data.topExpenses} privacyMode={privacyMode} />
+                {tab === "categories" && (
+                    <>
+                        <CategoryBreakdown
+                            title="Spending by Category"
+                            rows={data.spendingByCategory}
+                            privacyMode={privacyMode}
+                        />
+                        <CategoryBreakdown title="Income by Source" rows={data.incomeBySource} privacyMode={privacyMode} />
+                    </>
+                )}
+
+                {tab === "accounts" && (
+                    <AnalyticsSection title="Account Activity Summary">
+                        <AccountActivityTable rows={data.accountActivity} privacyMode={privacyMode} />
+                    </AnalyticsSection>
+                )}
+
+                {tab === "trends" && (
+                    <AnalyticsSection title="Net Worth Over Time">
+                        <NetWorthChart
+                            series={data.netWorthOverTime}
+                            currentNetWorth={data.currentNetWorth}
+                            privacyMode={privacyMode}
+                        />
+                    </AnalyticsSection>
+                )}
             </div>
 
-            <div>
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Account Activity Summary</h2>
-                <AccountActivityTable rows={data.accountActivity} privacyMode={privacyMode} />
-            </div>
+            <div className="hidden lg:grid lg:grid-cols-6 lg:gap-6">
+                <div className="lg:col-span-6">
+                    <SummaryCards summary={data.summary} privacyMode={privacyMode} />
+                </div>
 
-            <div>
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Net Worth Over Time</h2>
-                <NetWorthChart
-                    series={data.netWorthOverTime}
-                    currentNetWorth={data.currentNetWorth}
-                    privacyMode={privacyMode}
-                />
+                <div className="lg:col-span-4">
+                    <AnalyticsSection title="Net Worth Over Time">
+                        <NetWorthChart
+                            series={data.netWorthOverTime}
+                            currentNetWorth={data.currentNetWorth}
+                            privacyMode={privacyMode}
+                        />
+                    </AnalyticsSection>
+                </div>
+
+                <div className="lg:col-span-2">
+                    <AnalyticsSection title="Top 15 Largest Expenses">
+                        <div className="max-h-[320px] overflow-y-auto pr-1">
+                            <TopExpensesList items={data.topExpenses} privacyMode={privacyMode} />
+                        </div>
+                    </AnalyticsSection>
+                </div>
+
+                <div className="lg:col-span-3">
+                    <CategoryBreakdown
+                        title="Spending by Category"
+                        rows={data.spendingByCategory}
+                        privacyMode={privacyMode}
+                    />
+                </div>
+
+                <div className="lg:col-span-3">
+                    <CategoryBreakdown title="Income by Source" rows={data.incomeBySource} privacyMode={privacyMode} />
+                </div>
+
+                <div className="lg:col-span-6">
+                    <AnalyticsSection title="Account Activity Summary">
+                        <AccountActivityTable rows={data.accountActivity} privacyMode={privacyMode} />
+                    </AnalyticsSection>
+                </div>
             </div>
+        </div>
+    );
+}
+
+function AnalyticsTabBar({ active, onChange }: { active: AnalyticsTab; onChange: (tab: AnalyticsTab) => void }) {
+    return (
+        <div className="grid grid-cols-4 gap-1 rounded-xl bg-chip p-1">
+            {ANALYTICS_TABS.map(({ key, label }) => (
+                <button
+                    key={key}
+                    type="button"
+                    onClick={() => onChange(key)}
+                    className={`rounded-lg py-2 text-xs font-bold transition-colors duration-150 select-none ${
+                        active === key ? "bg-paper text-ink shadow-sm" : "text-muted hover:text-ink"
+                    }`}
+                >
+                    {label}
+                </button>
+            ))}
+        </div>
+    );
+}
+
+function AnalyticsSection({ title, children }: { title: string; children: ReactNode }) {
+    return (
+        <div>
+            <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{title}</h2>
+            {children}
         </div>
     );
 }
@@ -147,7 +242,7 @@ function SummaryCards({
         summary.savingsRate === null ? "—" : privacyMode ? "****" : `${(summary.savingsRate * 100).toFixed(1)}%`;
 
     return (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             <StatCard label="Income" value={formatCurrency(summary.income, privacyMode)} tone="brand" />
             <StatCard label="Expenses" value={formatCurrency(summary.expenses, privacyMode)} tone="danger" />
             <StatCard
