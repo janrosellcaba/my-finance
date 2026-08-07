@@ -98,7 +98,7 @@ Working checklist for the next batch of improvements. Tick off `- [ ]` → `- [x
 
 ## 7. MoversPanel drill-down
 
-- [ ] Not started
+- [x] Done — entirely self-contained in `panels.tsx` (no need to thread props through `AdvancedDashboard`/`AnalyticsView` after all, since `data.period.start`/`.end` were already available on the same `data` object `MoversPanel` receives). Each mover row is now a button opening a modal that fetches `/api/transactions?category=X&startDate=...&endDate=...` for that exact period. Verified live with a real baseline (3 months steady spending) + a real spike: the analytics engine's computed `absChange` matched exactly, and each category's drill-down returned only its own period transactions -- no cross-category or cross-period leakage.
 
 **Goal:** Tapping a mover in `MoversPanel` (`panels.tsx:277`, has `m.categoryId`) shows the actual transactions behind that change for the selected period.
 

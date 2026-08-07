@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     Bar,
     Cell,
@@ -17,6 +17,7 @@ import {
 } from "recharts";
 import type { AnalyticsResult } from "@/lib/analytics";
 import { AMOUNT_MASK, formatCurrency, formatDate } from "../../shared";
+import { IconClose } from "../icons";
 import { Card, EmptyNote, Sparkline } from "./primitives";
 
 type A = AnalyticsResult;
@@ -312,7 +313,103 @@ export function CategoryPanel({
 
 // ---------- biggest movers ----------
 
+type DrillTx = { id: string; date: string; description: string; amount: number };
+
+function MoverDrillDown({
+    categoryId,
+    name,
+    startDate,
+    endDate,
+    privacyMode,
+    onClose,
+}: {
+    categoryId: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    privacyMode: boolean;
+    onClose: () => void;
+}) {
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
+    const [txs, setTxs] = useState<DrillTx[]>([]);
+
+    useEffect(() => {
+        let cancelled = false;
+        setLoading(true);
+        setError("");
+        const params = new URLSearchParams({ category: categoryId, startDate, endDate });
+        fetch(`/api/transactions?${params.toString()}`)
+            .then((res) => res.json())
+            .then((json: { success: boolean; transactions?: DrillTx[] }) => {
+                if (cancelled) return;
+                if (json.success && json.transactions) setTxs(json.transactions);
+                else setError("Could not load transactions.");
+            })
+            .catch(() => {
+                if (!cancelled) setError("Could not load transactions.");
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [categoryId, startDate, endDate]);
+
+    const total = txs.reduce((s, t) => s + t.amount, 0);
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
+            <div
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
+            >
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-lg font-bold text-ink">{name}</h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        aria-label="Close"
+                        className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
+                    >
+                        <IconClose className="h-5 w-5" />
+                    </button>
+                </div>
+                {loading ? (
+                    <p className="py-6 text-center text-sm text-muted">Loading…</p>
+                ) : error ? (
+                    <p className="py-6 text-center text-sm text-danger">{error}</p>
+                ) : txs.length === 0 ? (
+                    <p className="py-6 text-center text-sm text-muted">No transactions in this category for this period.</p>
+                ) : (
+                    <>
+                        <p className="mb-2 text-sm text-muted">
+                            {txs.length} transaction{txs.length === 1 ? "" : "s"} · {formatCurrency(total, privacyMode)} total
+                        </p>
+                        <div className="divide-y divide-line rounded-2xl border border-line">
+                            {txs.map((tx) => (
+                                <div key={tx.id} className="flex items-center justify-between gap-3 px-4 py-2.5">
+                                    <div className="min-w-0">
+                                        <p className="truncate text-sm font-medium text-ink">{tx.description}</p>
+                                        <p className="text-xs text-muted">{formatDate(tx.date)}</p>
+                                    </div>
+                                    <p className="shrink-0 text-sm font-bold text-danger">
+                                        {formatCurrency(tx.amount, privacyMode)}
+                                    </p>
+                                </div>
+                            ))}
+                        </div>
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export function MoversPanel({ data, privacyMode }: { data: A; privacyMode: boolean }) {
+    const [selected, setSelected] = useState<{ categoryId: string; name: string } | null>(null);
+
     if (data.movers.length === 0) {
         return <EmptyNote>Nothing moved much against your usual pattern.</EmptyNote>;
     }
@@ -324,7 +421,12 @@ export function MoversPanel({ data, privacyMode }: { data: A; privacyMode: boole
                     const up = m.absChange > 0;
                     const pct = maxAbs === 0 ? 0 : (Math.abs(m.absChange) / maxAbs) * 100;
                     return (
-                        <div key={m.categoryId}>
+                        <button
+                            type="button"
+                            key={m.categoryId}
+                            onClick={() => setSelected({ categoryId: m.categoryId, name: m.name })}
+                            className="block w-full rounded-lg text-left transition-colors duration-150 hover:bg-chip"
+                        >
                             <div className="flex items-baseline justify-between gap-2 text-sm">
                                 <span className="min-w-0 truncate text-ink">{m.name}</span>
                                 <span className={`shrink-0 font-bold ${up ? "text-danger" : "text-brand"}`}>
@@ -342,10 +444,20 @@ export function MoversPanel({ data, privacyMode }: { data: A; privacyMode: boole
                                     {up && <div className="h-full rounded-r-full bg-danger" style={{ width: `${pct}%` }} />}
                                 </div>
                             </div>
-                        </div>
+                        </button>
                     );
                 })}
             </div>
+            {selected && (
+                <MoverDrillDown
+                    categoryId={selected.categoryId}
+                    name={selected.name}
+                    startDate={data.period.start}
+                    endDate={data.period.end}
+                    privacyMode={privacyMode}
+                    onClose={() => setSelected(null)}
+                />
+            )}
         </Card>
     );
 }
