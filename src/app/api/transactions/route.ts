@@ -166,10 +166,16 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const searchWord = searchParams.get("search") || "";
         const categoryFilter = searchParams.get("category") || "";
+        const accountFilter = searchParams.get("account") || "";
+        const typeFilter = searchParams.get("type") || "";
         const startDate = searchParams.get("startDate") || "";
         const endDate = searchParams.get("endDate") || "";
         const cursorDate = searchParams.get("cursorDate") || "";
         const cursorId = searchParams.get("cursorId") || "";
+
+        if (typeFilter && !["income", "expense", "transfer"].includes(typeFilter)) {
+            return NextResponse.json({ error: "Invalid type filter." }, { status: 400 });
+        }
 
         const LIMIT = 50;
 
@@ -182,6 +188,15 @@ export async function GET(request: Request) {
         }
         if (categoryFilter) {
             conditions.push(eq(transaction.destinationId, categoryFilter));
+        }
+        if (accountFilter) {
+            // A transaction "involves" an account if it's the source (always true for
+            // income/expense/transfer) or the destination of a transfer -- transfers move
+            // money between two of the user's own accounts, so both sides count.
+            conditions.push(or(eq(transaction.accountId, accountFilter), eq(transaction.destinationId, accountFilter))!);
+        }
+        if (typeFilter) {
+            conditions.push(eq(transaction.type, typeFilter as "income" | "expense" | "transfer"));
         }
         if (startDate) {
             conditions.push(gte(transaction.date, startDate));

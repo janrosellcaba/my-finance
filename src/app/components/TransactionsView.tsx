@@ -23,6 +23,10 @@ export function TransactionsView({
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
+    const [accountFilter, setAccountFilter] = useState("");
+    const [typeFilter, setTypeFilter] = useState<"" | "income" | "expense" | "transfer">("");
+    const [dateFrom, setDateFrom] = useState("");
+    const [dateTo, setDateTo] = useState("");
     const [showFilters, setShowFilters] = useState(false);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -36,6 +40,10 @@ export function TransactionsView({
             const params = new URLSearchParams();
             if (search) params.set("search", search);
             if (categoryFilter) params.set("category", categoryFilter);
+            if (accountFilter) params.set("account", accountFilter);
+            if (typeFilter) params.set("type", typeFilter);
+            if (dateFrom) params.set("startDate", dateFrom);
+            if (dateTo) params.set("endDate", dateTo);
             if (after) {
                 params.set("cursorDate", after.date);
                 params.set("cursorId", after.id);
@@ -53,7 +61,7 @@ export function TransactionsView({
                 setCursor(data.nextCursor ?? null);
             }
         },
-        [search, categoryFilter]
+        [search, categoryFilter, accountFilter, typeFilter, dateFrom, dateTo]
     );
 
     useEffect(() => {
@@ -130,46 +138,117 @@ export function TransactionsView({
                 <button
                     type="button"
                     onClick={() => setShowFilters((v) => !v)}
-                    aria-label="Toggle category filters"
+                    aria-label="Toggle filters"
                     aria-pressed={showFilters}
                     className={`relative shrink-0 rounded-xl p-3 transition-colors duration-150 ${
                         showFilters ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
                     }`}
                 >
                     <IconFilter className="h-5 w-5" />
-                    {categoryFilter && (
+                    {(categoryFilter || accountFilter || typeFilter || dateFrom || dateTo) && (
                         <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-brand" />
                     )}
                 </button>
             </div>
 
             {showFilters && (
-                <div className="flex gap-2 overflow-x-auto pb-1">
-                    <button
-                        type="button"
-                        onClick={() => setCategoryFilter("")}
-                        className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
-                            categoryFilter === "" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
-                        }`}
-                    >
-                        All
-                    </button>
-                    {categories.map((c) => (
+                <div className="space-y-3 rounded-2xl border border-line bg-paper p-3">
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                        {(["", "income", "expense", "transfer"] as const).map((t) => (
+                            <button
+                                type="button"
+                                key={t || "all"}
+                                onClick={() => setTypeFilter(t)}
+                                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold capitalize transition-colors duration-150 select-none ${
+                                    typeFilter === t
+                                        ? t === "income"
+                                            ? "bg-brand text-white"
+                                            : t === "expense"
+                                              ? "bg-danger text-white"
+                                              : "bg-ink text-white"
+                                        : "bg-chip text-muted hover:bg-chip-hover"
+                                }`}
+                            >
+                                {t || "All types"}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex gap-2 overflow-x-auto pb-1">
                         <button
                             type="button"
-                            key={c.id}
-                            onClick={() => setCategoryFilter(c.id)}
+                            onClick={() => setAccountFilter("")}
                             className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
-                                categoryFilter === c.id
-                                    ? c.type === "income"
-                                        ? "bg-brand text-white"
-                                        : "bg-danger text-white"
-                                    : "bg-chip text-muted hover:bg-chip-hover"
+                                accountFilter === "" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
-                            {c.name}
+                            All accounts
                         </button>
-                    ))}
+                        {accounts.map((a) => (
+                            <button
+                                type="button"
+                                key={a.id}
+                                onClick={() => setAccountFilter(a.id)}
+                                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
+                                    accountFilter === a.id ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                }`}
+                            >
+                                {a.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex gap-2 overflow-x-auto pb-1">
+                        <button
+                            type="button"
+                            onClick={() => setCategoryFilter("")}
+                            className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
+                                categoryFilter === "" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                            }`}
+                        >
+                            All categories
+                        </button>
+                        {categories.map((c) => (
+                            <button
+                                type="button"
+                                key={c.id}
+                                onClick={() => setCategoryFilter(c.id)}
+                                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
+                                    categoryFilter === c.id
+                                        ? c.type === "income"
+                                            ? "bg-brand text-white"
+                                            : "bg-danger text-white"
+                                        : "bg-chip text-muted hover:bg-chip-hover"
+                                }`}
+                            >
+                                {c.name}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="flex items-end gap-2">
+                        <label className="flex-1 block">
+                            <span className="mb-1 block text-xs font-semibold text-muted">From</span>
+                            <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={INPUT_CLS} />
+                        </label>
+                        <label className="flex-1 block">
+                            <span className="mb-1 block text-xs font-semibold text-muted">To</span>
+                            <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={INPUT_CLS} />
+                        </label>
+                        {(dateFrom || dateTo) && (
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setDateFrom("");
+                                    setDateTo("");
+                                }}
+                                aria-label="Clear date range"
+                                className="shrink-0 rounded-xl bg-chip p-3 text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
+                            >
+                                <IconClose className="h-4 w-4" />
+                            </button>
+                        )}
+                    </div>
                 </div>
             )}
 

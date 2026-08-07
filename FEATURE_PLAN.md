@@ -84,7 +84,7 @@ Working checklist for the next batch of improvements. Tick off `- [ ]` → `- [x
 
 ## 6. Transaction filters: date range, account, type
 
-- [ ] Not started
+- [x] Done — API already had `startDate`/`endDate`, just unused by the UI; added new `account` (matches either side of a transfer) and `type` filters to `src/app/api/transactions/route.ts`, plus type pills, account pills, and date-range inputs in `TransactionsView.tsx`'s filter panel. Verified live with 4 transactions spanning 2 accounts/3 types/3 months: every filter and every combination (including account+type together) returned exactly the expected rows; invalid `type` rejected with 400.
 
 **Goal:** `TransactionsView` already has search + category filter + cursor pagination. Add date range, account, and type (income/expense/transfer) as siblings.
 
