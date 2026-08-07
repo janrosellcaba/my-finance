@@ -20,18 +20,18 @@ export async function POST(request: Request) {
         const db = await getDb();
 
         if (action === "delete-transactions") {
-            await db.batch([
-                db.delete(transaction).where(eq(transaction.userId, user.id)),
-                db.update(account).set({ initialBalance: 0 }).where(eq(account.userId, user.id)),
-            ]);
+            db.transaction((tx) => {
+                tx.delete(transaction).where(eq(transaction.userId, user.id)).run();
+                tx.update(account).set({ initialBalance: 0 }).where(eq(account.userId, user.id)).run();
+            });
         } else if (action === "delete-account") {
             // Transactions are deleted first because transaction.accountId is onDelete: "restrict" —
             // deleting the user row cascades into account/category/session, which would otherwise
             // trip that constraint while transactions still referenced the about-to-vanish accounts.
-            await db.batch([
-                db.delete(transaction).where(eq(transaction.userId, user.id)),
-                db.delete(users).where(eq(users.id, user.id)),
-            ]);
+            db.transaction((tx) => {
+                tx.delete(transaction).where(eq(transaction.userId, user.id)).run();
+                tx.delete(users).where(eq(users.id, user.id)).run();
+            });
             await invalidateAllSessions(user.id);
         } else {
             return NextResponse.json({ error: "Invalid action." }, { status: 400 });

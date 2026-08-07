@@ -3,7 +3,6 @@ import { getDb } from "@/db";
 import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { and, eq, sql } from "drizzle-orm";
-import type { BatchItem } from "drizzle-orm/batch";
 import { isInitialBalanceRow, MAX_IMPORT_TRANSACTIONS } from "@/app/shared";
 
 type ImportRow = {
@@ -79,11 +78,11 @@ export async function POST(request: Request) {
         const categoryMap = new Map<string, string>();
 
         if (mode === "replace") {
-            await db.batch([
-                db.delete(transaction).where(eq(transaction.userId, user.id)),
-                db.delete(category).where(eq(category.userId, user.id)),
-                db.delete(account).where(eq(account.userId, user.id)),
-            ]);
+            db.transaction((tx) => {
+                tx.delete(transaction).where(eq(transaction.userId, user.id)).run();
+                tx.delete(category).where(eq(category.userId, user.id)).run();
+                tx.delete(account).where(eq(account.userId, user.id)).run();
+            });
         } else {
             const [existingAccounts, existingCategories] = await Promise.all([
                 db.select().from(account).where(eq(account.userId, user.id)).all(),
@@ -166,20 +165,15 @@ export async function POST(request: Request) {
                 existingAccountDeltas.push([accountId, delta]);
             }
         }
-        for (let i = 0; i < existingAccountDeltas.length; i += TRANSACTION_CHUNK_SIZE) {
-            const chunk = existingAccountDeltas.slice(i, i + TRANSACTION_CHUNK_SIZE);
-            await db.batch(
-                chunk.map(([accountId, delta]) =>
-                    db
-                        .update(account)
-                        .set({ initialBalance: sql`${account.initialBalance} + ${delta}` })
-                        .where(and(eq(account.id, accountId), eq(account.userId, user.id)))
-                ) as unknown as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]
-            );
-        }
+        db.transaction((tx) => {
+            for (const [accountId, delta] of existingAccountDeltas) {
+                tx.update(account)
+                    .set({ initialBalance: sql`${account.initialBalance} + ${delta}` })
+                    .where(and(eq(account.id, accountId), eq(account.userId, user.id)))
+                    .run();
+            }
+        });
 
-        // D1's bound-parameter limit applies across an entire db.batch() call, not per statement,
-        // so each chunk is sent as its own independent round trip rather than batched together.
         for (let i = 0; i < newAccounts.length; i += TRANSACTION_CHUNK_SIZE) {
             await db.insert(account).values(newAccounts.slice(i, i + TRANSACTION_CHUNK_SIZE));
         }

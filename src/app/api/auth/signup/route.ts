@@ -71,15 +71,17 @@ export async function POST(request: Request) {
             })),
         ];
 
-        await db.batch([
-            db.insert(users).values({
-                id: userId,
-                username,
-                passwordHash,
-            }),
-            db.insert(account).values(accountsToInsert),
-            db.insert(category).values(categoriesToInsert),
-        ]);
+        db.transaction((tx) => {
+            tx.insert(users)
+                .values({
+                    id: userId,
+                    username,
+                    passwordHash,
+                })
+                .run();
+            tx.insert(account).values(accountsToInsert).run();
+            tx.insert(category).values(categoriesToInsert).run();
+        });
 
         const { token, expiresAt } = await createSession(userId);
 

@@ -3,7 +3,6 @@ import { getDb } from "@/db";
 import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { and, eq } from "drizzle-orm";
-import type { BatchItem } from "drizzle-orm/batch";
 import { CATEGORY_COLOR_PALETTE } from "@/app/shared";
 
 export async function GET() {
@@ -136,11 +135,13 @@ export async function DELETE(request: Request) {
                 return NextResponse.json({ error: "Account not found." }, { status: 404 });
             }
 
-            await db.batch([
-                db.delete(transaction).where(and(eq(transaction.userId, user.id), eq(transaction.accountId, id))),
-                db.delete(transaction).where(and(eq(transaction.userId, user.id), eq(transaction.destinationId, id))),
-                db.delete(account).where(and(eq(account.id, id), eq(account.userId, user.id))),
-            ]);
+            db.transaction((tx) => {
+                tx.delete(transaction).where(and(eq(transaction.userId, user.id), eq(transaction.accountId, id))).run();
+                tx.delete(transaction)
+                    .where(and(eq(transaction.userId, user.id), eq(transaction.destinationId, id)))
+                    .run();
+                tx.delete(account).where(and(eq(account.id, id), eq(account.userId, user.id))).run();
+            });
         } else if (target === "category") {
             const existing = await db
                 .select()
@@ -151,10 +152,12 @@ export async function DELETE(request: Request) {
                 return NextResponse.json({ error: "Category not found." }, { status: 404 });
             }
 
-            await db.batch([
-                db.delete(transaction).where(and(eq(transaction.userId, user.id), eq(transaction.destinationId, id))),
-                db.delete(category).where(and(eq(category.id, id), eq(category.userId, user.id))),
-            ]);
+            db.transaction((tx) => {
+                tx.delete(transaction)
+                    .where(and(eq(transaction.userId, user.id), eq(transaction.destinationId, id)))
+                    .run();
+                tx.delete(category).where(and(eq(category.id, id), eq(category.userId, user.id))).run();
+            });
         } else {
             return NextResponse.json({ error: "Invalid configuration target." }, { status: 400 });
         }
@@ -240,21 +243,15 @@ export async function PATCH(request: Request) {
             if (!Array.isArray(orderedIds) || orderedIds.some((id) => typeof id !== "string")) {
                 return NextResponse.json({ error: "orderedIds must be an array of strings." }, { status: 400 });
             }
-            // D1's bound-parameter limit applies across an entire db.batch() call, so reorder
-            // updates are chunked into small groups rather than sent as one big batch.
-            const REORDER_CHUNK_SIZE = 15;
             const ids = orderedIds as string[];
-            for (let i = 0; i < ids.length; i += REORDER_CHUNK_SIZE) {
-                const chunk = ids.slice(i, i + REORDER_CHUNK_SIZE);
-                await db.batch(
-                    chunk.map((id, chunkIndex) =>
-                        db
-                            .update(category)
-                            .set({ sortOrder: i + chunkIndex })
-                            .where(and(eq(category.id, id), eq(category.userId, user.id), eq(category.type, categoryType)))
-                    ) as unknown as [BatchItem<"sqlite">, ...BatchItem<"sqlite">[]]
-                );
-            }
+            db.transaction((tx) => {
+                ids.forEach((id, index) => {
+                    tx.update(category)
+                        .set({ sortOrder: index })
+                        .where(and(eq(category.id, id), eq(category.userId, user.id), eq(category.type, categoryType)))
+                        .run();
+                });
+            });
         } else if (action === "set-default") {
             const { id } = body;
             if (id !== null && typeof id !== "string") {
