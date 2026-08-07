@@ -36,7 +36,11 @@ set -a
 source .env
 set +a
 mkdir -p /home/jan/my-finance/backups
-cp "$DATABASE_URL" "/home/jan/my-finance/backups/pre-deploy-$(date +%Y%m%d-%H%M%S).db"
+# `.backup` goes through SQLite's own consistent-snapshot machinery -- safe to run
+# against a live WAL-mode database. A plain `cp` here would risk capturing a torn
+# snapshot (recent commits can still be sitting in the -wal file, not yet in the
+# main .db file), which is exactly the kind of silent corruption we can't afford.
+sqlite3 "$DATABASE_URL" ".backup '/home/jan/my-finance/backups/pre-deploy-$(date +%Y%m%d-%H%M%S).db'"
 
 echo "==> 🗄️ Applying database migrations..."
 # Replays the reviewed, committed SQL files in drizzle/ — never use `drizzle-kit push` here.
