@@ -27,6 +27,7 @@ export const category = sqliteTable("category", {
     sortOrder: integer("sort_order").notNull().default(0),
     isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
     color: text("color"),
+    icon: text("icon"),
 }, (table) => [
     index("idx_category_user").on(table.userId)
 ]);

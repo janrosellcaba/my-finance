@@ -50,7 +50,7 @@ Working checklist for the next batch of improvements. Tick off `- [ ]` → `- [x
 
 ## 4. Category icons
 
-- [ ] Not started
+- [x] Done — `category.icon` (nullable, migration `0008_organic_impossible_man.sql`), 12-icon curated set in `icons.tsx`, icon picker in `SortableCategoryRow`/`CategoryList`, `set-icon` PATCH action, icon badge on `TransactionCard`, and matching icons auto-assigned to the signup-seeded categories (Salary, Investments, Food & Drinks, Transport, Shopping, Services). Verified live: seed icons correct, set/validate/clear all work, invalid icon key rejected with 400, wrong-owner id rejected with 404, and a real transaction's `destinationId` correctly resolves to an icon-tagged category.
 
 **Goal:** Icon in addition to color per category (income/expense), shown on `TransactionCard` and in category config.
 

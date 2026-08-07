@@ -26,6 +26,7 @@ export function CategoryList({
     onReorder,
     onSetDefault,
     onSetColor,
+    onSetIcon,
     onRename,
     onDelete,
 }: {
@@ -35,10 +36,12 @@ export function CategoryList({
     onReorder: (type: "income" | "expense", orderedIds: string[]) => Promise<boolean>;
     onSetDefault: (c: Category) => void;
     onSetColor: (c: Category, color: string) => void;
+    onSetIcon: (c: Category, icon: string | null) => void;
     onRename: (c: Category, name: string) => void;
     onDelete: (c: Category) => void;
 }) {
     const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
+    const [iconPickerFor, setIconPickerFor] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editingValue, setEditingValue] = useState("");
     const [localItems, setLocalItems] = useState(items);
@@ -93,10 +96,16 @@ export function CategoryList({
                                     category={c}
                                     isColorPickerOpen={colorPickerFor === c.id}
                                     onToggleColorPicker={() => setColorPickerFor(colorPickerFor === c.id ? null : c.id)}
+                                    isIconPickerOpen={iconPickerFor === c.id}
+                                    onToggleIconPicker={() => setIconPickerFor(iconPickerFor === c.id ? null : c.id)}
                                     onSetDefault={() => onSetDefault(c)}
                                     onSetColor={(color) => {
                                         onSetColor(c, color);
                                         setColorPickerFor(null);
+                                    }}
+                                    onSetIcon={(icon) => {
+                                        onSetIcon(c, icon);
+                                        setIconPickerFor(null);
                                     }}
                                     onDelete={() => onDelete(c)}
                                     isEditing={editingId === c.id}

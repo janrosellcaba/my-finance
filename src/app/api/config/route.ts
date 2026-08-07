@@ -3,7 +3,7 @@ import { getDb } from "@/db";
 import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { and, eq } from "drizzle-orm";
-import { CATEGORY_COLOR_PALETTE } from "@/app/shared";
+import { CATEGORY_COLOR_PALETTE, CATEGORY_ICON_KEYS } from "@/app/shared";
 
 export async function GET() {
     try {
@@ -182,6 +182,7 @@ export async function PATCH(request: Request) {
             orderedIds?: unknown;
             id?: unknown;
             color?: unknown;
+            icon?: unknown;
             name?: unknown;
             initialBalance?: unknown;
         } | null;
@@ -313,6 +314,23 @@ export async function PATCH(request: Request) {
                 return NextResponse.json({ error: "Category not found." }, { status: 404 });
             }
             await db.update(category).set({ color }).where(eq(category.id, id));
+        } else if (action === "set-icon") {
+            const { id, icon } = body;
+            if (typeof id !== "string" || id.length < 1) {
+                return NextResponse.json({ error: "Id is required." }, { status: 400 });
+            }
+            if (icon !== null && (typeof icon !== "string" || !CATEGORY_ICON_KEYS.includes(icon as (typeof CATEGORY_ICON_KEYS)[number]))) {
+                return NextResponse.json({ error: "Invalid icon." }, { status: 400 });
+            }
+            const existing = await db
+                .select({ id: category.id })
+                .from(category)
+                .where(and(eq(category.id, id), eq(category.userId, user.id), eq(category.type, categoryType)))
+                .get();
+            if (!existing) {
+                return NextResponse.json({ error: "Category not found." }, { status: 404 });
+            }
+            await db.update(category).set({ icon }).where(eq(category.id, id));
         } else if (action === "rename") {
             const { id, name } = body;
             if (typeof id !== "string" || id.length < 1) {

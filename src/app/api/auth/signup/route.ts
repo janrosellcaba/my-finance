@@ -6,8 +6,18 @@ import { createSession, setSessionCookie } from "@/lib/session";
 import { eq } from "drizzle-orm";
 
 const DEFAULT_ACCOUNTS = ["Main Bank", "Cash"];
-const DEFAULT_INCOME_CATEGORIES = ["Salary", "Investments", "Other Income"];
-const DEFAULT_EXPENSE_CATEGORIES = ["Food & Drinks", "Transport", "Shopping", "Services", "Other Expense"];
+const DEFAULT_INCOME_CATEGORIES: { name: string; icon: string | null }[] = [
+    { name: "Salary", icon: "salary" },
+    { name: "Investments", icon: "investments" },
+    { name: "Other Income", icon: null },
+];
+const DEFAULT_EXPENSE_CATEGORIES: { name: string; icon: string | null }[] = [
+    { name: "Food & Drinks", icon: "food" },
+    { name: "Transport", icon: "transport" },
+    { name: "Shopping", icon: "shopping" },
+    { name: "Services", icon: "services" },
+    { name: "Other Expense", icon: null },
+];
 
 export async function POST(request: Request) {
     try {
@@ -57,17 +67,19 @@ export async function POST(request: Request) {
         }));
 
         const categoriesToInsert = [
-            ...DEFAULT_INCOME_CATEGORIES.map((catName) => ({
+            ...DEFAULT_INCOME_CATEGORIES.map(({ name, icon }) => ({
                 id: crypto.randomUUID(),
                 userId,
-                name: catName,
+                name,
                 type: "income" as const,
+                icon,
             })),
-            ...DEFAULT_EXPENSE_CATEGORIES.map((catName) => ({
+            ...DEFAULT_EXPENSE_CATEGORIES.map(({ name, icon }) => ({
                 id: crypto.randomUUID(),
                 userId,
-                name: catName,
+                name,
                 type: "expense" as const,
+                icon,
             })),
         ];
 

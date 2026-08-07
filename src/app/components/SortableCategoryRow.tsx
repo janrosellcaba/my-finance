@@ -2,15 +2,18 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { type Category, CATEGORY_COLOR_PALETTE } from "../shared";
-import { IconClose, IconGrip, IconPencil, IconRadioDot } from "./icons";
+import { type Category, CATEGORY_COLOR_PALETTE, CATEGORY_ICON_KEYS } from "../shared";
+import { CATEGORY_ICON_COMPONENTS, CategoryIcon, IconClose, IconGrip, IconPencil, IconRadioDot } from "./icons";
 
 export function SortableCategoryRow({
     category,
     isColorPickerOpen,
     onToggleColorPicker,
+    isIconPickerOpen,
+    onToggleIconPicker,
     onSetDefault,
     onSetColor,
+    onSetIcon,
     onDelete,
     isEditing,
     editingValue,
@@ -22,8 +25,11 @@ export function SortableCategoryRow({
     category: Category;
     isColorPickerOpen: boolean;
     onToggleColorPicker: () => void;
+    isIconPickerOpen: boolean;
+    onToggleIconPicker: () => void;
     onSetDefault: () => void;
     onSetColor: (color: string) => void;
+    onSetIcon: (icon: string | null) => void;
     onDelete: () => void;
     isEditing: boolean;
     editingValue: string;
@@ -67,6 +73,18 @@ export function SortableCategoryRow({
                     className="h-5 w-5 shrink-0 rounded-full border border-line/50"
                     style={{ backgroundColor: category.color ?? "#e5e0d8" }}
                 />
+                <button
+                    type="button"
+                    onClick={onToggleIconPicker}
+                    aria-label={`Change icon for ${category.name}`}
+                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                >
+                    {category.icon ? (
+                        <CategoryIcon iconKey={category.icon} className="h-4 w-4" />
+                    ) : (
+                        <span className="block h-4 w-4 rounded border border-dashed border-line" />
+                    )}
+                </button>
                 {isEditing ? (
                     <input
                         autoFocus
@@ -120,6 +138,36 @@ export function SortableCategoryRow({
                             style={{ backgroundColor: swatch }}
                         />
                     ))}
+                </div>
+            )}
+            {isIconPickerOpen && (
+                <div className="flex flex-wrap gap-2 border-t border-line bg-chip px-3 py-3">
+                    <button
+                        type="button"
+                        onClick={() => onSetIcon(null)}
+                        aria-label={`Remove icon from ${category.name}`}
+                        className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-150 hover:scale-110 ${
+                            category.icon === null ? "border-ink bg-paper" : "border-white/60 bg-paper"
+                        }`}
+                    >
+                        <IconClose className="h-3.5 w-3.5 text-muted" />
+                    </button>
+                    {CATEGORY_ICON_KEYS.map((key) => {
+                        const Icon = CATEGORY_ICON_COMPONENTS[key];
+                        return (
+                            <button
+                                key={key}
+                                type="button"
+                                onClick={() => onSetIcon(key)}
+                                aria-label={`Set ${category.name} icon to ${key}`}
+                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-paper text-ink transition-transform duration-150 hover:scale-110 ${
+                                    category.icon === key ? "border-ink" : "border-white/60"
+                                }`}
+                            >
+                                <Icon className="h-4 w-4" />
+                            </button>
+                        );
+                    })}
                 </div>
             )}
         </div>

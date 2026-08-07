@@ -298,6 +298,21 @@ export function ConfigView({
         onRefresh();
     }
 
+    async function handleSetCategoryIcon(c: Category, icon: string | null) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "set-icon", type: c.type, id: c.id, icon }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not update category icon.");
+            return;
+        }
+        onRefresh();
+    }
+
     async function handleRenameCategory(c: Category, name: string) {
         setError("");
         const res = await fetch("/api/config", {
@@ -407,7 +422,8 @@ export function ConfigView({
                         Drag <IconGrip className="inline h-3.5 w-3.5 -translate-y-0.5" /> to reorder categories. Tap{" "}
                         <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default category
                         for that type — it&apos;ll be pre-selected when you add a new transaction. Tap the color dot
-                        to change the color shown on that category&apos;s transactions, or{" "}
+                        to change the color shown on that category&apos;s transactions, the icon next to it to pick
+                        a picture for it, or{" "}
                         <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> to rename it (existing
                         transactions update automatically).
                     </p>
@@ -418,6 +434,7 @@ export function ConfigView({
                         onReorder={handleReorderCategories}
                         onSetDefault={handleSetDefault}
                         onSetColor={handleSetCategoryColor}
+                        onSetIcon={handleSetCategoryIcon}
                         onRename={handleRenameCategory}
                         onDelete={handleDeleteCategory}
                     />
@@ -428,6 +445,7 @@ export function ConfigView({
                         onReorder={handleReorderCategories}
                         onSetDefault={handleSetDefault}
                         onSetColor={handleSetCategoryColor}
+                        onSetIcon={handleSetCategoryIcon}
                         onRename={handleRenameCategory}
                         onDelete={handleDeleteCategory}
                     />

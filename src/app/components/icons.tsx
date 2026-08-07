@@ -1,3 +1,6 @@
+import { type ReactElement } from "react";
+import { type CategoryIconKey } from "../shared";
+
 export function IconHome({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -154,4 +157,127 @@ export function IconGrip({ className }: { className?: string }) {
             <circle cx="15" cy="18" r="1.4" />
         </svg>
     );
+}
+
+// ---------- category icon picker set ----------
+
+export function IconUtensils({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 2v7a2 2 0 0 0 4 0V2M8 9v13" />
+            <path d="M17 2c-1.7 0-3 2-3 5s1.3 5 3 5M17 2v18" />
+        </svg>
+    );
+}
+
+export function IconCar({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 16 5.5 10.5A2 2 0 0 1 7.4 9h9.2a2 2 0 0 1 1.9 1.5L20 16" />
+            <rect x="2.5" y="16" width="19" height="4" rx="1.5" />
+            <circle cx="7" cy="20.3" r="1.3" fill="currentColor" stroke="none" />
+            <circle cx="17" cy="20.3" r="1.3" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
+export function IconShoppingBag({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z" />
+            <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+        </svg>
+    );
+}
+
+export function IconBolt({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2 5 13h5l-1 9 8-11h-5l1-9Z" />
+        </svg>
+    );
+}
+
+export function IconBriefcase({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="7.5" width="18" height="12" rx="2" />
+            <path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5" />
+            <path d="M3 12.5h18" />
+        </svg>
+    );
+}
+
+export function IconTrendingUp({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 17 9.5 10.5 13.5 14.5 21 7" />
+            <path d="M15 7h6v6" />
+        </svg>
+    );
+}
+
+export function IconGift({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3.5" y="9" width="17" height="4" rx="1" />
+            <path d="M5 13v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7M12 9v12" />
+            <path d="M12 9C10.5 9 8 8.2 8 6a2 2 0 1 1 4 0 2 2 0 1 1 4 0c0 2.2-2.5 3-4 3Z" />
+        </svg>
+    );
+}
+
+export function IconHeart({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 20.5s-8-5-8-11.2A4.3 4.3 0 0 1 12 6a4.3 4.3 0 0 1 8 3.3c0 6.2-8 11.2-8 11.2Z" />
+        </svg>
+    );
+}
+
+export function IconFilm({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2" />
+            <path d="M3 9h18M3 15h18M8 4v16M16 4v16" />
+        </svg>
+    );
+}
+
+export function IconPlane({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 3 3 10.5l7 2.5M21 3 13.5 21l-2.5-8M21 3 10 13.5" />
+        </svg>
+    );
+}
+
+export function IconBook({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 4.5A2 2 0 0 1 6 3h5v18H6a2 2 0 0 1-2-2Z" />
+            <path d="M20 4.5A2 2 0 0 0 18 3h-5v18h5a2 2 0 0 0 2-2Z" />
+        </svg>
+    );
+}
+
+export const CATEGORY_ICON_COMPONENTS: Record<CategoryIconKey, (props: { className?: string }) => ReactElement> = {
+    food: IconUtensils,
+    transport: IconCar,
+    shopping: IconShoppingBag,
+    services: IconBolt,
+    salary: IconBriefcase,
+    investments: IconTrendingUp,
+    gift: IconGift,
+    home: IconHome,
+    health: IconHeart,
+    entertainment: IconFilm,
+    travel: IconPlane,
+    education: IconBook,
+};
+
+export function CategoryIcon({ iconKey, className }: { iconKey: string | null; className?: string }) {
+    if (!iconKey || !(iconKey in CATEGORY_ICON_COMPONENTS)) return null;
+    const Icon = CATEGORY_ICON_COMPONENTS[iconKey as CategoryIconKey];
+    return <Icon className={className} />;
 }

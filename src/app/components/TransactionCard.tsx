@@ -1,6 +1,7 @@
 "use client";
 
 import { type Account, type Category, type Transaction, AMOUNT_MASK, eur, formatDate } from "../shared";
+import { CategoryIcon } from "./icons";
 
 function resolveName(id: string, accounts: Account[], categories: Category[]): string {
     return accounts.find((a) => a.id === id)?.name ?? categories.find((c) => c.id === id)?.name ?? "Unknown";
@@ -26,8 +27,9 @@ export function TransactionCard({
     const fromName = resolveName(tx.accountId, accounts, categories);
     const toName = resolveName(tx.destinationId, accounts, categories);
     const subtitle = tx.type === "transfer" ? `${fromName} → ${toName}` : `${toName} · ${fromName}`;
-    const categoryColor =
-        tx.type !== "transfer" ? categories.find((c) => c.id === tx.destinationId)?.color ?? null : null;
+    const category = tx.type !== "transfer" ? categories.find((c) => c.id === tx.destinationId) : undefined;
+    const categoryColor = category?.color ?? null;
+    const categoryIcon = category?.icon ?? null;
     const Tag = onClick ? "button" : "div";
 
     return (
@@ -45,11 +47,18 @@ export function TransactionCard({
                       }`
             }
         >
-            <div className="min-w-0">
-                <p className="truncate font-semibold text-ink">{tx.description}</p>
-                <p className="truncate text-xs text-muted">
-                    {subtitle} · {formatDate(tx.date)}
-                </p>
+            <div className="flex min-w-0 items-center gap-2.5">
+                {categoryIcon && (
+                    <span className="shrink-0 text-ink/60">
+                        <CategoryIcon iconKey={categoryIcon} className="h-5 w-5" />
+                    </span>
+                )}
+                <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink">{tx.description}</p>
+                    <p className="truncate text-xs text-muted">
+                        {subtitle} · {formatDate(tx.date)}
+                    </p>
+                </div>
             </div>
             <p className={`ml-3 shrink-0 font-bold ${compact ? "text-base" : "text-lg"} ${color}`}>
                 {privacyMode ? AMOUNT_MASK : `${sign}${eur.format(Math.abs(tx.amount))}`}

@@ -10,6 +10,7 @@ export type Category = {
     sortOrder: number;
     isDefault: boolean;
     color: string | null;
+    icon: string | null;
 };
 
 export type TransactionType = "income" | "expense" | "transfer";
@@ -59,6 +60,24 @@ export const CATEGORY_COLOR_PALETTE = [
     "#f3bfde",
     "#f3bfce",
 ];
+
+// Curated icon keys offered as the category icon picker — resolved to actual icon
+// components in icons.tsx (kept separate so this file stays framework-agnostic).
+export const CATEGORY_ICON_KEYS = [
+    "food",
+    "transport",
+    "shopping",
+    "services",
+    "salary",
+    "investments",
+    "gift",
+    "home",
+    "health",
+    "entertainment",
+    "travel",
+    "education",
+] as const;
+export type CategoryIconKey = (typeof CATEGORY_ICON_KEYS)[number];
 
 export const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", useGrouping: true });
 export const AMOUNT_MASK = "****";
