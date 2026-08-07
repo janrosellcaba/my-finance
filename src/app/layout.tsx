@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Outfit } from "next/font/google";
 import "./globals.css";
+import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
 
 const geistSans = Geist({
 	variable: "--font-geist-sans",
@@ -21,9 +22,15 @@ const outfit = Outfit({
 export const metadata: Metadata = {
 	title: "MyFinance",
 	description: "Track your income, expenses, and transfers",
+	manifest: "/manifest.json",
 	icons: {
 		icon: "/favicon.ico",
-		apple: "/logo.png",
+		apple: "/apple-touch-icon.png",
+	},
+	appleWebApp: {
+		capable: true,
+		title: "MyFinance",
+		statusBarStyle: "default",
 	},
 };
 
@@ -38,7 +45,10 @@ export default function RootLayout({
 }>) {
 	return (
 		<html lang="en">
-			<body className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}>{children}</body>
+			<body className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}>
+				{children}
+				<ServiceWorkerRegister />
+			</body>
 		</html>
 	);
 }

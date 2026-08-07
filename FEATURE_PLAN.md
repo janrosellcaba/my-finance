@@ -68,7 +68,7 @@ Working checklist for the next batch of improvements. Tick off `- [ ]` → `- [x
 
 ## 5. PWA: manifest.json + service worker
 
-- [ ] Not started
+- [x] Done — `public/manifest.json`, icons generated from `logo.png` (192, 512, apple-touch 180), linked via `layout.tsx`'s `metadata.manifest`/`appleWebApp`, `public/sw.js` registered by `ServiceWorkerRegister.tsx`. Deliberately network-only (no caching at all) to avoid any risk of showing stale financial data. Also removed `public/_headers`, a dead Cloudflare Pages config file that nginx never read and Next was serving verbatim at `/_headers`. Verified live: manifest/sw/icons all serve with correct content-types, HTML correctly links them, `/_headers` now 404s, `sw.js` is valid JS.
 
 **Goal:** Installable to the home screen.
 
