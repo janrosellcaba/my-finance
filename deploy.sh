@@ -18,6 +18,16 @@ fi
 echo "==> 📥 Pulling latest changes..."
 git pull --ff-only
 
+# Re-exec from a fresh read of this file. Bash keeps streaming a running script
+# from the file handle it opened at start, so without this, a `git pull` that
+# changes deploy.sh itself has no effect on the rest of THIS run -- everything
+# below would silently execute the pre-pull version even though the pull
+# succeeded and the file on disk is already updated.
+if [ -z "${DEPLOY_REEXECED:-}" ]; then
+    export DEPLOY_REEXECED=1
+    exec "$0" "$@"
+fi
+
 echo "==> 📦 Installing dependencies..."
 npm ci
 
