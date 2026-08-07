@@ -49,7 +49,7 @@ export default async function RootLayout({
 	const theme = user?.themePreference ?? "light";
 
 	return (
-		<html lang="en" data-theme={theme}>
+		<html lang="en-GB" data-theme={theme}>
 			<body className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}>
 				{children}
 				<ServiceWorkerRegister />
