@@ -11,13 +11,14 @@ import { MenuRow } from "./MenuRow";
 import { useUndoToast } from "./UndoToastProvider";
 import { IconArrowLeft, IconGrip, IconPencil, IconRadioDot } from "./icons";
 
-type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import" | "danger";
+type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import" | "backup" | "danger";
 
 const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
     accounts: "Accounts",
     categories: "Categories",
     export: "Export Data",
     import: "Import Data",
+    backup: "Backup",
     danger: "Delete Data",
 };
 
@@ -324,6 +325,7 @@ export function ConfigView({
                     <MenuRow label="Categories" onClick={() => setSection("categories")} />
                     <MenuRow label="Export Data" onClick={() => setSection("export")} />
                     <MenuRow label="Import Data" onClick={() => setSection("import")} />
+                    <MenuRow label="Backup" onClick={() => setSection("backup")} />
                     <MenuRow
                         label="Change Password"
                         chevron={false}
@@ -467,6 +469,23 @@ export function ConfigView({
 
             {section === "import" && (
                 <ImportView accounts={accounts} categories={categories} onImported={onImported} />
+            )}
+
+            {section === "backup" && (
+                <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <p className="text-sm text-muted">
+                        Downloads a full snapshot of your database — every account, category, and transaction —
+                        as a single file. Unlike Export Data (a spreadsheet-friendly transaction list), this is a
+                        complete copy you could restore from if needed. It doesn&apos;t replace the server&apos;s
+                        own nightly backups, but it&apos;s a copy you hold yourself, on demand.
+                    </p>
+                    <a
+                        href="/api/backup"
+                        className={`${PRIMARY_BTN} block w-full text-center bg-brand hover:bg-brand-dark`}
+                    >
+                        Download Backup Now
+                    </a>
+                </section>
             )}
 
             {section === "danger" && (

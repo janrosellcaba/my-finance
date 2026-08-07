@@ -22,7 +22,7 @@ Working checklist for the next batch of improvements. Tick off `- [ ]` → `- [x
 
 ## 2. "Download backup now" button
 
-- [ ] Not started
+- [x] Done — `src/app/api/backup/route.ts` (uses `db.$client.serialize()`, no temp file needed) + a new "Backup" section in `ConfigView.tsx`. Verified live: downloaded file passes `PRAGMA integrity_check`, contains a real canary transaction, all tables present; unauthenticated requests get 401.
 
 **Goal:** A button in `ConfigView` that triggers an on-demand snapshot and returns it as a download, independent of the nightly cron.
 
