@@ -3,7 +3,7 @@
 :root {
 	--background: #faf8f2;
 	--foreground: #23221d;
-	color-scheme: light dark;
+	color-scheme: light;
 
 	--color-cream: #faf8f2;
 	--color-paper: #fffdf8;
@@ -23,28 +23,30 @@
 	--color-chip-hover: #e9e4d6;
 }
 
-@media (prefers-color-scheme: dark) {
-	:root {
-		--background: #1b1a17;
-		--foreground: #f3efe4;
+/* Explicit choice only — set via the Appearance section in Config, never inferred from
+   the OS. Defaults to light (see :root above) for anyone who hasn't chosen yet. */
+:root[data-theme="dark"] {
+	color-scheme: dark;
 
-		--color-cream: #1b1a17;
-		--color-paper: #242320;
-		--color-ink: #f3efe4;
-		--color-muted: #a39c8a;
-		--color-line: #3a3830;
+	--background: #1b1a17;
+	--foreground: #f3efe4;
 
-		--color-brand: #35a377;
-		--color-brand-dark: #2c8564;
-		--color-brand-soft: #1d3328;
+	--color-cream: #1b1a17;
+	--color-paper: #242320;
+	--color-ink: #f3efe4;
+	--color-muted: #a39c8a;
+	--color-line: #3a3830;
 
-		--color-danger: #d6685a;
-		--color-danger-dark: #c14f40;
-		--color-danger-soft: #3a2420;
+	--color-brand: #35a377;
+	--color-brand-dark: #2c8564;
+	--color-brand-soft: #1d3328;
 
-		--color-chip: #2c2a24;
-		--color-chip-hover: #363329;
-	}
+	--color-danger: #d6685a;
+	--color-danger-dark: #c14f40;
+	--color-danger-soft: #3a2420;
+
+	--color-chip: #2c2a24;
+	--color-chip-hover: #363329;
 }
 
 @theme inline {

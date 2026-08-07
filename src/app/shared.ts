@@ -38,6 +38,7 @@ export type Todo = {
     createdAt: string;
 };
 export type Tab = "home" | "transactions" | "todo" | "analytics" | "config";
+export type Theme = "light" | "dark";
 
 // 20 evenly-spaced light pastel colors, offered as the category color picker palette.
 export const CATEGORY_COLOR_PALETTE = [

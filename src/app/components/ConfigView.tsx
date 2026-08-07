@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { type Account, type Category, INK_BTN, INPUT_CLS, parseAmountEs, PRIMARY_BTN } from "../shared";
+import { type Account, type Category, type Theme, INK_BTN, INPUT_CLS, parseAmountEs, PRIMARY_BTN } from "../shared";
 import { AccountList } from "./AccountList";
 import { CategoryList } from "./CategoryList";
 import { ChangePasswordModal } from "./ChangePasswordModal";
@@ -11,7 +11,7 @@ import { MenuRow } from "./MenuRow";
 import { useUndoToast } from "./UndoToastProvider";
 import { IconArrowLeft, IconGrip, IconPencil, IconRadioDot } from "./icons";
 
-type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import" | "backup" | "danger";
+type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import" | "backup" | "appearance" | "danger";
 
 const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
     accounts: "Accounts",
@@ -19,6 +19,7 @@ const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
     export: "Export Data",
     import: "Import Data",
     backup: "Backup",
+    appearance: "Appearance",
     danger: "Delete Data",
 };
 
@@ -26,6 +27,8 @@ export function ConfigView({
     accounts,
     categories,
     privacyMode,
+    theme,
+    onSetTheme,
     onRefresh,
     onLogout,
     onPasswordChanged,
@@ -35,6 +38,8 @@ export function ConfigView({
     accounts: Account[];
     categories: Category[];
     privacyMode: boolean;
+    theme: Theme;
+    onSetTheme: (theme: Theme) => void;
     onRefresh: () => void;
     onLogout: () => void;
     onPasswordChanged: () => void;
@@ -356,6 +361,7 @@ export function ConfigView({
                     <MenuRow label="Export Data" onClick={() => setSection("export")} />
                     <MenuRow label="Import Data" onClick={() => setSection("import")} />
                     <MenuRow label="Backup" onClick={() => setSection("backup")} />
+                    <MenuRow label="Appearance" onClick={() => setSection("appearance")} />
                     <MenuRow
                         label="Change Password"
                         chevron={false}
@@ -520,6 +526,32 @@ export function ConfigView({
                     >
                         Download Backup Now
                     </a>
+                </section>
+            )}
+
+            {section === "appearance" && (
+                <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                    <p className="text-sm text-muted">Choose how MyFinance looks. Defaults to Light.</p>
+                    <div className="flex gap-2">
+                        <button
+                            type="button"
+                            onClick={() => onSetTheme("light")}
+                            className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
+                                theme === "light" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                            }`}
+                        >
+                            Light
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => onSetTheme("dark")}
+                            className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
+                                theme === "dark" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                            }`}
+                        >
+                            Dark
+                        </button>
+                    </div>
                 </section>
             )}
 

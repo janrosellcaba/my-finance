@@ -1,0 +1,1 @@
+ALTER TABLE `users` ADD `theme_preference` text DEFAULT 'light' NOT NULL;

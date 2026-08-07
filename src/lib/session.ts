@@ -1,5 +1,6 @@
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
+import { cache } from "react";
 import { getDb } from "@/db";
 import { session, users, type User } from "@/db/schema";
 
@@ -38,7 +39,9 @@ export async function createSession(userId: string): Promise<{ token: string; ex
     return { token, expiresAt };
 }
 
-export async function validateSession(): Promise<User | null> {
+// Wrapped in React's cache() so the layout and the page (both server components on the
+// same request) share one lookup instead of hitting the DB twice for the same session.
+export const validateSession = cache(async (): Promise<User | null> => {
     const cookieStore = await cookies();
     const token = cookieStore.get(COOKIE_NAME)?.value;
     if (!token) return null;
@@ -61,7 +64,7 @@ export async function validateSession(): Promise<User | null> {
     }
 
     return result.user;
-}
+});
 
 export async function invalidateSession(): Promise<void> {
     const cookieStore = await cookies();

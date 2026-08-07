@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { type Account, type Category, type DashboardSummary, type Tab } from "../shared";
+import { type Account, type Category, type DashboardSummary, type Tab, type Theme } from "../shared";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { AnalyticsView } from "./AnalyticsView";
 import { BottomNav } from "./BottomNav";
@@ -14,7 +14,15 @@ import { TransactionsView } from "./TransactionsView";
 import { UndoToastProvider } from "./UndoToastProvider";
 import { IconEye, IconEyeOff } from "./icons";
 
-export function AppShell({ username, initialPrivacyMode }: { username: string; initialPrivacyMode: boolean }) {
+export function AppShell({
+    username,
+    initialPrivacyMode,
+    initialTheme,
+}: {
+    username: string;
+    initialPrivacyMode: boolean;
+    initialTheme: Theme;
+}) {
     const router = useRouter();
     const [tab, setTab] = useState<Tab>("home");
     const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
@@ -23,6 +31,7 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
     const [categories, setCategories] = useState<Category[]>([]);
     const [showAddModal, setShowAddModal] = useState(false);
     const [privacyMode, setPrivacyMode] = useState(initialPrivacyMode);
+    const [theme, setTheme] = useState<Theme>(initialTheme);
     const mainRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
@@ -74,6 +83,21 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
     async function handleTransactionSaved() {
         setShowAddModal(false);
         await loadDashboard();
+    }
+
+    async function handleSetTheme(next: Theme) {
+        const previous = theme;
+        setTheme(next);
+        document.documentElement.dataset.theme = next;
+        const res = await fetch("/api/theme", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ theme: next }),
+        });
+        if (!res.ok) {
+            setTheme(previous);
+            document.documentElement.dataset.theme = previous;
+        }
     }
 
     async function handleTogglePrivacy() {
@@ -135,6 +159,8 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
                                 accounts={accounts}
                                 categories={categories}
                                 privacyMode={privacyMode}
+                                theme={theme}
+                                onSetTheme={handleSetTheme}
                                 onRefresh={loadConfig}
                                 onLogout={handleLogout}
                                 onPasswordChanged={handlePasswordChanged}
