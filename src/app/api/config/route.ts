@@ -232,6 +232,28 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ success: true });
         }
 
+        if (action === "set-default-account") {
+            const { id } = body;
+            if (id !== null && typeof id !== "string") {
+                return NextResponse.json({ error: "id must be a string or null." }, { status: 400 });
+            }
+            if (id) {
+                const existing = await db
+                    .select({ id: account.id })
+                    .from(account)
+                    .where(and(eq(account.id, id), eq(account.userId, user.id)))
+                    .get();
+                if (!existing) {
+                    return NextResponse.json({ error: "Account not found." }, { status: 404 });
+                }
+            }
+            await db.update(account).set({ isDefault: false }).where(eq(account.userId, user.id));
+            if (id) {
+                await db.update(account).set({ isDefault: true }).where(eq(account.id, id));
+            }
+            return NextResponse.json({ success: true });
+        }
+
         const { type } = body;
         if (typeof type !== "string" || !["income", "expense"].includes(type)) {
             return NextResponse.json({ error: "Invalid category type." }, { status: 400 });

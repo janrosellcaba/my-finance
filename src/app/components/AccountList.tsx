@@ -2,19 +2,21 @@
 
 import { useState } from "react";
 import { type Account, formatCurrency } from "../shared";
-import { IconClose, IconPencil } from "./icons";
+import { IconClose, IconPencil, IconRadioDot } from "./icons";
 
 export function AccountList({
     items,
     privacyMode,
     onRename,
     onSetInitialBalance,
+    onSetDefault,
     onDelete,
 }: {
     items: Account[];
     privacyMode: boolean;
     onRename: (a: Account, name: string) => void;
     onSetInitialBalance: (a: Account, rawValue: string) => void;
+    onSetDefault: (a: Account) => void;
     onDelete: (a: Account) => void;
 }) {
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
@@ -56,6 +58,19 @@ export function AccountList({
         <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
             {items.map((a) => (
                 <div key={a.id} className="flex items-center gap-1 bg-paper px-3 py-2.5">
+                    <button
+                        type="button"
+                        onClick={() => onSetDefault(a)}
+                        role="radio"
+                        aria-checked={a.isDefault}
+                        title={a.isDefault ? "Default account" : "Set as default"}
+                        aria-label={a.isDefault ? `${a.name} is the default` : `Set ${a.name} as default`}
+                        className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
+                            a.isDefault ? "text-brand" : "text-muted hover:text-ink"
+                        }`}
+                    >
+                        <IconRadioDot className="h-4 w-4" checked={a.isDefault} />
+                    </button>
                     {editingNameId === a.id ? (
                         <input
                             autoFocus

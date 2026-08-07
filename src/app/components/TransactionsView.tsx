@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { type Account, type Category, type Transaction, INPUT_CLS } from "../shared";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { TransactionCard } from "./TransactionCard";
+import { useUndoToast } from "./UndoToastProvider";
 import { IconClose, IconFilter, IconSearch } from "./icons";
 
 export function TransactionsView({
@@ -27,6 +28,8 @@ export function TransactionsView({
     const [loadingMore, setLoadingMore] = useState(false);
     const [hasMore, setHasMore] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+    const { requestDelete } = useUndoToast();
 
     const fetchPage = useCallback(
         async (after: { date: string; id: string } | null, replace: boolean) => {
@@ -58,6 +61,35 @@ export function TransactionsView({
         fetchPage(null, true).finally(() => setLoading(false));
     }, [fetchPage]);
 
+    function handleDeleteTransaction(tx: Transaction) {
+        setEditingTransaction(null);
+        setPendingDeleteIds((prev) => new Set(prev).add(tx.id));
+        requestDelete({
+            message: "Transaction deleted.",
+            onUndo: () => {
+                setPendingDeleteIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(tx.id);
+                    return next;
+                });
+            },
+            onCommit: async () => {
+                await fetch("/api/transactions", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: tx.id }),
+                });
+                setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
+                setPendingDeleteIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(tx.id);
+                    return next;
+                });
+                onTransactionChanged();
+            },
+        });
+    }
+
     async function handleShowMore() {
         setLoadingMore(true);
         await fetchPage(cursor, false);
@@ -68,6 +100,8 @@ export function TransactionsView({
         const handle = setTimeout(() => setSearch(searchInput.trim()), 350);
         return () => clearTimeout(handle);
     }, [searchInput]);
+
+    const visibleTransactions = transactions.filter((tx) => !pendingDeleteIds.has(tx.id));
 
     return (
         <div className="space-y-4 px-5 pt-6">
@@ -151,7 +185,7 @@ export function TransactionsView({
                         </div>
                     ))}
                 </div>
-            ) : transactions.length === 0 ? (
+            ) : visibleTransactions.length === 0 ? (
                 <div className="flex flex-col items-center gap-2 pt-14 text-center">
                     <div className="rounded-full bg-chip p-3 text-muted">
                         <IconSearch className="h-5 w-5" />
@@ -161,7 +195,7 @@ export function TransactionsView({
                 </div>
             ) : (
                 <div className="divide-y divide-line rounded-2xl border border-line bg-paper shadow-sm">
-                    {transactions.map((tx) => (
+                    {visibleTransactions.map((tx) => (
                         <TransactionCard
                             key={tx.id}
                             tx={tx}
@@ -186,6 +220,7 @@ export function TransactionsView({
                         fetchPage(null, true);
                         onTransactionChanged();
                     }}
+                    onDelete={handleDeleteTransaction}
                 />
             )}
 

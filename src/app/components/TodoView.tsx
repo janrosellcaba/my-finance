@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { type Todo, formatDate } from "../shared";
 import { AddTodoModal } from "./AddTodoModal";
+import { useUndoToast } from "./UndoToastProvider";
 import { IconCheckSquare, IconTrash } from "./icons";
 
 function TodoRow({ todo, onToggle, onDelete }: { todo: Todo; onToggle: () => void; onDelete: () => void }) {
@@ -40,6 +41,8 @@ export function TodoView() {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+    const { requestDelete } = useUndoToast();
 
     const loadTodos = useCallback(async () => {
         const res = await fetch("/api/todos");
@@ -61,17 +64,36 @@ export function TodoView() {
         });
     }
 
-    async function handleDelete(id: string) {
-        setTodos((prev) => prev.filter((x) => x.id !== id));
-        await fetch("/api/todos", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id }),
+    function handleDelete(id: string) {
+        setPendingDeleteIds((prev) => new Set(prev).add(id));
+        requestDelete({
+            message: "Task deleted.",
+            onUndo: () => {
+                setPendingDeleteIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(id);
+                    return next;
+                });
+            },
+            onCommit: async () => {
+                await fetch("/api/todos", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id }),
+                });
+                setTodos((prev) => prev.filter((x) => x.id !== id));
+                setPendingDeleteIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(id);
+                    return next;
+                });
+            },
         });
     }
 
-    const active = todos.filter((t) => !t.completed);
-    const completed = todos.filter((t) => t.completed);
+    const visibleTodos = todos.filter((t) => !pendingDeleteIds.has(t.id));
+    const active = visibleTodos.filter((t) => !t.completed);
+    const completed = visibleTodos.filter((t) => t.completed);
 
     return (
         <div className="space-y-4 px-5 pt-6">

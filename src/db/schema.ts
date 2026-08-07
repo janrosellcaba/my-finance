@@ -14,6 +14,7 @@ export const account = sqliteTable("account", {
     userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     name: text("name").notNull(),
     initialBalance: real("initial_balance").notNull().default(0),
+    isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
 }, (table) => [
     index("idx_account_user").on(table.userId)
 ]);

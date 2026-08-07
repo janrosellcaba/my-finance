@@ -11,6 +11,7 @@ import { ConfigView } from "./ConfigView";
 import { HomeView } from "./HomeView";
 import { TodoView } from "./TodoView";
 import { TransactionsView } from "./TransactionsView";
+import { UndoToastProvider } from "./UndoToastProvider";
 import { IconEye, IconEyeOff } from "./icons";
 
 export function AppShell({ username, initialPrivacyMode }: { username: string; initialPrivacyMode: boolean }) {
@@ -87,74 +88,76 @@ export function AppShell({ username, initialPrivacyMode }: { username: string; i
     }
 
     return (
-        <div className="fixed inset-0 flex flex-col bg-cream">
-            <header className="shrink-0 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
-                <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2">
-                        <Image src="/logo.png" alt="" width={20} height={20} className="opacity-80" />
-                        <p className="text-lg font-extrabold text-ink">Hi, {username}</p>
+        <UndoToastProvider>
+            <div className="fixed inset-0 flex flex-col bg-cream">
+                <header className="shrink-0 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                            <Image src="/logo.png" alt="" width={20} height={20} className="opacity-80" />
+                            <p className="text-lg font-extrabold text-ink">Hi, {username}</p>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={handleTogglePrivacy}
+                            aria-label={privacyMode ? "Show amounts" : "Hide amounts"}
+                            aria-pressed={privacyMode}
+                            className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
+                        >
+                            {privacyMode ? <IconEyeOff className="h-5 w-5" /> : <IconEye className="h-5 w-5" />}
+                        </button>
                     </div>
-                    <button
-                        type="button"
-                        onClick={handleTogglePrivacy}
-                        aria-label={privacyMode ? "Show amounts" : "Hide amounts"}
-                        aria-pressed={privacyMode}
-                        className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
-                    >
-                        {privacyMode ? <IconEyeOff className="h-5 w-5" /> : <IconEye className="h-5 w-5" />}
-                    </button>
-                </div>
-            </header>
+                </header>
 
-            <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-                <div className={`mx-auto pb-6 ${tab === "analytics" ? "max-w-md lg:max-w-6xl" : "max-w-md"}`}>
-                    {tab === "home" && (
-                        <HomeView
-                            dashboard={dashboard}
-                            loading={loadingDashboard}
-                            accounts={accounts}
-                            categories={categories}
-                            privacyMode={privacyMode}
-                            onAddClick={() => setShowAddModal(true)}
-                        />
-                    )}
-                    {tab === "transactions" && (
-                        <TransactionsView
-                            accounts={accounts}
-                            categories={categories}
-                            privacyMode={privacyMode}
-                            onTransactionChanged={loadDashboard}
-                        />
-                    )}
-                    {tab === "todo" && <TodoView />}
-                    {tab === "analytics" && <AnalyticsView privacyMode={privacyMode} />}
-                    {tab === "config" && (
-                        <ConfigView
-                            accounts={accounts}
-                            categories={categories}
-                            privacyMode={privacyMode}
-                            onRefresh={loadConfig}
-                            onLogout={handleLogout}
-                            onPasswordChanged={handlePasswordChanged}
-                            onAccountDeleted={handleAccountDeleted}
-                            onImported={async () => {
-                                await Promise.all([loadConfig(), loadDashboard()]);
-                            }}
-                        />
-                    )}
-                </div>
-            </main>
+                <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
+                    <div className={`mx-auto pb-6 ${tab === "analytics" ? "max-w-md lg:max-w-6xl" : "max-w-md"}`}>
+                        {tab === "home" && (
+                            <HomeView
+                                dashboard={dashboard}
+                                loading={loadingDashboard}
+                                accounts={accounts}
+                                categories={categories}
+                                privacyMode={privacyMode}
+                                onAddClick={() => setShowAddModal(true)}
+                            />
+                        )}
+                        {tab === "transactions" && (
+                            <TransactionsView
+                                accounts={accounts}
+                                categories={categories}
+                                privacyMode={privacyMode}
+                                onTransactionChanged={loadDashboard}
+                            />
+                        )}
+                        {tab === "todo" && <TodoView />}
+                        {tab === "analytics" && <AnalyticsView privacyMode={privacyMode} />}
+                        {tab === "config" && (
+                            <ConfigView
+                                accounts={accounts}
+                                categories={categories}
+                                privacyMode={privacyMode}
+                                onRefresh={loadConfig}
+                                onLogout={handleLogout}
+                                onPasswordChanged={handlePasswordChanged}
+                                onAccountDeleted={handleAccountDeleted}
+                                onImported={async () => {
+                                    await Promise.all([loadConfig(), loadDashboard()]);
+                                }}
+                            />
+                        )}
+                    </div>
+                </main>
 
-            <BottomNav active={tab} onChange={setTab} />
+                <BottomNav active={tab} onChange={setTab} />
 
-            {showAddModal && (
-                <AddTransactionModal
-                    accounts={accounts}
-                    categories={categories}
-                    onClose={() => setShowAddModal(false)}
-                    onSaved={handleTransactionSaved}
-                />
-            )}
-        </div>
+                {showAddModal && (
+                    <AddTransactionModal
+                        accounts={accounts}
+                        categories={categories}
+                        onClose={() => setShowAddModal(false)}
+                        onSaved={handleTransactionSaved}
+                    />
+                )}
+            </div>
+        </UndoToastProvider>
     );
 }

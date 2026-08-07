@@ -1,14 +1,17 @@
-view password
 improve transactions page
 better session control -> auth api calls
 add a todo list
 
 footer sometimes disappears
 when delete all transactions, update home page
-change default bank accounts and categories!
-you cannot see all of your transactions
+
+
+add onboarding
 
 ---done---
+when add transactions have a default bank that appears first
+toast/undo on delete (transaction, todo, category)
+view password
 export transaction data
 import transaction data
 admin

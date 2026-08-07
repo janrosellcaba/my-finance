@@ -8,6 +8,7 @@ import { ChangePasswordModal } from "./ChangePasswordModal";
 import { ExportView } from "./ExportView";
 import { ImportView } from "./ImportView";
 import { MenuRow } from "./MenuRow";
+import { useUndoToast } from "./UndoToastProvider";
 import { IconArrowLeft, IconGrip, IconPencil, IconRadioDot } from "./icons";
 
 type ConfigSection = "menu" | "accounts" | "categories" | "export" | "import" | "danger";
@@ -48,6 +49,8 @@ export function ConfigView({
     const [savingCategory, setSavingCategory] = useState(false);
     const [error, setError] = useState("");
     const [showChangePassword, setShowChangePassword] = useState(false);
+    const [pendingDeleteCategoryIds, setPendingDeleteCategoryIds] = useState<Set<string>>(new Set());
+    const { requestDelete } = useUndoToast();
 
     async function handleAddAccount(e: FormEvent) {
         e.preventDefault();
@@ -159,26 +162,34 @@ export function ConfigView({
         onRefresh();
     }
 
-    async function handleDeleteCategory(c: Category) {
-        if (
-            !confirm(
-                `Delete "${c.name}"? Are you sure? If there is money or transactions linked to this category, they will be lost.`
-            )
-        ) {
-            return;
-        }
+    function handleDeleteCategory(c: Category) {
         setError("");
-        const res = await fetch("/api/config", {
-            method: "DELETE",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ target: "category", id: c.id }),
+        setPendingDeleteCategoryIds((prev) => new Set(prev).add(c.id));
+        requestDelete({
+            message: `"${c.name}" deleted.`,
+            onUndo: () => {
+                setPendingDeleteCategoryIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(c.id);
+                    return next;
+                });
+            },
+            onCommit: async () => {
+                const res = await fetch("/api/config", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ target: "category", id: c.id }),
+                });
+                const data = (await res.json()) as { error?: string };
+                if (!res.ok) setError(data.error || "Could not delete category.");
+                setPendingDeleteCategoryIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(c.id);
+                    return next;
+                });
+                onRefresh();
+            },
         });
-        const data = (await res.json()) as { error?: string };
-        if (!res.ok) {
-            setError(data.error || "Could not delete category.");
-            return;
-        }
-        onRefresh();
     }
 
     async function handleDeleteAllTransactions() {
@@ -239,6 +250,21 @@ export function ConfigView({
         }
         onRefresh();
         return true;
+    }
+
+    async function handleSetDefaultAccount(a: Account) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "set-default-account", id: a.isDefault ? null : a.id }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not update default account.");
+            return;
+        }
+        onRefresh();
     }
 
     async function handleSetDefault(c: Category) {
@@ -336,7 +362,9 @@ export function ConfigView({
             {section === "accounts" && (
                 <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
                     <p className="text-sm text-muted">
-                        Tap <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> next to the name to rename
+                        Tap <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default
+                        account — it&apos;ll be pre-selected when you add a new transaction. Tap{" "}
+                        <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> next to the name to rename
                         an account — it updates everywhere automatically. Tap the other{" "}
                         <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set its initial balance,
                         useful when you start tracking an account that already has money in it, so you don&apos;t
@@ -347,6 +375,7 @@ export function ConfigView({
                         privacyMode={privacyMode}
                         onRename={handleRenameAccount}
                         onSetInitialBalance={handleSetInitialBalance}
+                        onSetDefault={handleSetDefaultAccount}
                         onDelete={handleDeleteAccount}
                     />
                     <form onSubmit={handleAddAccount} className="space-y-2">
@@ -383,7 +412,7 @@ export function ConfigView({
                     <CategoryList
                         title="Income"
                         type="income"
-                        items={categories.filter((c) => c.type === "income")}
+                        items={categories.filter((c) => c.type === "income" && !pendingDeleteCategoryIds.has(c.id))}
                         onReorder={handleReorderCategories}
                         onSetDefault={handleSetDefault}
                         onSetColor={handleSetCategoryColor}
@@ -393,7 +422,7 @@ export function ConfigView({
                     <CategoryList
                         title="Expense"
                         type="expense"
-                        items={categories.filter((c) => c.type === "expense")}
+                        items={categories.filter((c) => c.type === "expense" && !pendingDeleteCategoryIds.has(c.id))}
                         onReorder={handleReorderCategories}
                         onSetDefault={handleSetDefault}
                         onSetColor={handleSetCategoryColor}

@@ -2,7 +2,7 @@
 // costs its own sequential D1 round trip (see api/import/route.ts), so this bounds worst-case time.
 export const MAX_IMPORT_TRANSACTIONS = 2000;
 
-export type Account = { id: string; name: string; initialBalance: number };
+export type Account = { id: string; name: string; initialBalance: number; isDefault: boolean };
 export type Category = {
     id: string;
     name: string;

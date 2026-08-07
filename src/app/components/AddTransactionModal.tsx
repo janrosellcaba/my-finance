@@ -17,12 +17,14 @@ export function AddTransactionModal({
     transaction,
     onClose,
     onSaved,
+    onDelete,
 }: {
     accounts: Account[];
     categories: Category[];
     transaction?: Transaction;
     onClose: () => void;
     onSaved: () => void;
+    onDelete?: (transaction: Transaction) => void;
 }) {
     const isEditing = !!transaction;
 
@@ -33,12 +35,13 @@ export function AddTransactionModal({
     const [date, setDate] = useState(() => transaction?.date ?? new Date().toISOString().slice(0, 10));
     const [description, setDescription] = useState(transaction?.description ?? "");
     const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense");
-    const [accountId, setAccountId] = useState(transaction?.accountId ?? "");
+    const [accountId, setAccountId] = useState(
+        transaction?.accountId ?? accounts.find((a) => a.isDefault)?.id ?? ""
+    );
     const [destinationId, setDestinationId] = useState(transaction ? transaction.destinationId : defaultCategoryFor("expense"));
     const [amount, setAmount] = useState(transaction ? String(Math.abs(transaction.amount)) : "");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
-    const [deleting, setDeleting] = useState(false);
 
     const destinationOptions: { id: string; name: string }[] =
         type === "transfer" ? accounts.filter((a) => a.id !== accountId) : categories.filter((c) => c.type === type);
@@ -103,29 +106,9 @@ export function AddTransactionModal({
         }
     }
 
-    async function handleDelete() {
+    function handleDelete() {
         if (!transaction) return;
-        if (!confirm("Delete this transaction? This cannot be undone.")) return;
-
-        setError("");
-        setDeleting(true);
-        try {
-            const res = await fetch("/api/transactions", {
-                method: "DELETE",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: transaction.id }),
-            });
-            const data = (await res.json()) as { error?: string };
-            if (!res.ok) {
-                setError(data.error || "Could not delete transaction.");
-                setDeleting(false);
-                return;
-            }
-            onSaved();
-        } catch {
-            setError("Network error. Please try again.");
-            setDeleting(false);
-        }
+        onDelete?.(transaction);
     }
 
     return (
@@ -224,7 +207,7 @@ export function AddTransactionModal({
 
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
-                <button type="submit" disabled={saving || deleting} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
                     {saving ? "Saving…" : isEditing ? "Save Changes" : "Save Transaction"}
                 </button>
 
@@ -232,10 +215,10 @@ export function AddTransactionModal({
                     <button
                         type="button"
                         onClick={handleDelete}
-                        disabled={saving || deleting}
+                        disabled={saving}
                         className="mt-3 w-full rounded-2xl border-2 border-danger/25 bg-danger-soft py-4 text-lg font-bold text-danger transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-danger/40 hover:shadow-md active:translate-y-0 disabled:opacity-60 select-none"
                     >
-                        {deleting ? "Deleting…" : "Delete Transaction"}
+                        Delete Transaction
                     </button>
                 )}
             </form>
