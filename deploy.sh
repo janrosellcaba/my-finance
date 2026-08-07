@@ -21,9 +21,18 @@ git pull --ff-only
 echo "==> 📦 Installing dependencies..."
 npm ci
 
-echo "==> 🗄️ Updating SQLite database schema..."
-# Pushes any Drizzle schema changes directly to data/sqlite.db
-npx drizzle-kit push
+echo "==> 💾 Backing up database before migration..."
+set -a
+source .env
+set +a
+mkdir -p /home/jan/my-finance/backups
+cp "$DATABASE_URL" "/home/jan/my-finance/backups/pre-deploy-$(date +%Y%m%d-%H%M%S).db"
+
+echo "==> 🗄️ Applying database migrations..."
+# Replays the reviewed, committed SQL files in drizzle/ — never use `drizzle-kit push` here.
+# push diffs live schema at runtime and can decide a change is "unsafe" even when schema.ts
+# has a default, offering to truncate the table instead. migrate just runs the exact SQL.
+npx drizzle-kit migrate
 
 echo "==> 🏗️ Building Next.js application..."
 npm run build
