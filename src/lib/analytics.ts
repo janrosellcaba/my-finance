@@ -6,7 +6,7 @@
 // safe for that format and avoids timezone drift entirely (a Date-based implementation
 // would shift days depending on where the Worker runs).
 
-import { round2 } from "./balances";
+import { applyTransactionToBalances, round2 } from "./balances";
 
 export type TxType = "income" | "expense" | "transfer";
 
@@ -596,6 +596,38 @@ export function buildAnalytics(input: {
     const allTimeHigh = nwPointsRaw.reduce((mx, p) => (p.netWorth > mx ? p.netWorth : mx), currentNetWorth);
     const drawdown = round2(allTimeHigh - currentNetWorth);
     const drawdownPct = allTimeHigh > 0 ? round2((drawdown / allTimeHigh) * 100) : 0;
+
+    // ---- net worth series, per account ----
+    // Unlike the aggregate series above (where transfers cancel out — moving money
+    // between your own accounts doesn't change your total), transfers DO matter here:
+    // a transfer changes each account's individual balance even though the total is
+    // unaffected. Reuses the exact same day range and downsample `step` as the
+    // aggregate series so every account's series lines up index-for-index with it.
+    const txsByDate = new Map<string, AnalyticsTx[]>();
+    for (const tx of txs) {
+        const list = txsByDate.get(tx.date);
+        if (list) list.push(tx);
+        else txsByDate.set(tx.date, [tx]);
+    }
+    const perAccountRun: Record<string, number> = {};
+    for (const acc of accounts) perAccountRun[acc.id] = acc.initialBalance;
+    const perAccountRaw = new Map<string, { date: string; netWorth: number }[]>();
+    for (const acc of accounts) perAccountRaw.set(acc.id, []);
+    for (let d = nwStart; d <= nwEnd; d = addDays(d, 1)) {
+        for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
+        for (const acc of accounts) {
+            perAccountRaw.get(acc.id)!.push({ date: d, netWorth: round2(perAccountRun[acc.id]) });
+        }
+    }
+    const netWorthByAccount = accounts.map((acc) => {
+        const raw = perAccountRaw.get(acc.id)!;
+        return {
+            accountId: acc.id,
+            name: acc.name,
+            current: raw.length > 0 ? raw[raw.length - 1].netWorth : round2(acc.initialBalance),
+            series: raw.filter((_, i) => i % step === 0 || i === raw.length - 1),
+        };
+    });
 
     // ---- daily totals for the heatmap (expenses only) ----
     const dailyExpense = new Map<string, number>();
@@ -2177,6 +2209,7 @@ export function buildAnalytics(input: {
             drawdownPct,
             series: netWorthSeries,
         },
+        netWorthByAccount,
         monthlySeries,
         paceCurve,
         dailyTotals,

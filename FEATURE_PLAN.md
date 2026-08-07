@@ -36,7 +36,7 @@ Working checklist for the next batch of improvements. Tick off `- [ ]` → `- [x
 
 ## 3. Net worth over time, per account
 
-- [ ] Not started
+- [x] Done — `src/lib/analytics.ts` (`netWorthByAccount`, reuses `applyTransactionToBalances` so transfers move money between accounts correctly while leaving the aggregate untouched) + an account-selector toggle in `NetWorthChart` (`panels.tsx`). Verified with a standalone math check (transfer moves exactly the right amount between two accounts, aggregate provably unchanged) and live through the real `/api/analytics` route with a real income + transfer.
 
 **Goal:** `NetWorthChart` (`src/app/components/analytics/panels.tsx:75`) currently renders one aggregate series (`data.netWorth.series`). Add a per-account breakdown.
 

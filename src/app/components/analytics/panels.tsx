@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
     Bar,
     Cell,
@@ -73,6 +74,8 @@ export function MonthlyBars({ data, privacyMode }: { data: A; privacyMode: boole
 // ---------- net worth ----------
 
 export function NetWorthChart({ data, privacyMode }: { data: A; privacyMode: boolean }) {
+    const [selectedAccountId, setSelectedAccountId] = useState<string>("all");
+
     if (data.netWorth.series.length < 2) {
         return (
             <EmptyNote>
@@ -81,10 +84,40 @@ export function NetWorthChart({ data, privacyMode }: { data: A; privacyMode: boo
             </EmptyNote>
         );
     }
+
+    const selectedAccount = data.netWorthByAccount.find((a) => a.accountId === selectedAccountId);
+    const activeSeries = selectedAccount ? selectedAccount.series : data.netWorth.series;
+    const activeCurrent = selectedAccount ? selectedAccount.current : data.netWorth.current;
+
     return (
         <Card>
+            {data.netWorthByAccount.length > 1 && (
+                <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+                    <button
+                        type="button"
+                        onClick={() => setSelectedAccountId("all")}
+                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
+                            selectedAccountId === "all" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                        }`}
+                    >
+                        All accounts
+                    </button>
+                    {data.netWorthByAccount.map((a) => (
+                        <button
+                            key={a.accountId}
+                            type="button"
+                            onClick={() => setSelectedAccountId(a.accountId)}
+                            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
+                                selectedAccountId === a.accountId ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                            }`}
+                        >
+                            {a.name}
+                        </button>
+                    ))}
+                </div>
+            )}
             <ResponsiveContainer width="100%" height={240}>
-                <LineChart data={data.netWorth.series}>
+                <LineChart data={activeSeries}>
                     <XAxis
                         dataKey="date"
                         stroke={AXIS}
@@ -103,7 +136,7 @@ export function NetWorthChart({ data, privacyMode }: { data: A; privacyMode: boo
                         labelFormatter={(l) => (typeof l === "string" ? formatDate(l) : String(l))}
                         isAnimationActive={false}
                     />
-                    {data.netWorth.allTimeHigh > 0 && (
+                    {!selectedAccount && data.netWorth.allTimeHigh > 0 && (
                         <ReferenceLine
                             y={data.netWorth.allTimeHigh}
                             stroke={NEUTRAL}
@@ -121,6 +154,11 @@ export function NetWorthChart({ data, privacyMode }: { data: A; privacyMode: boo
                     />
                 </LineChart>
             </ResponsiveContainer>
+            {selectedAccount && (
+                <p className="mt-2 text-xs text-muted">
+                    {selectedAccount.name} balance: <span className="font-semibold text-ink">{formatCurrency(activeCurrent, privacyMode)}</span>
+                </p>
+            )}
         </Card>
     );
 }
