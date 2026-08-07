@@ -8,7 +8,7 @@ Working checklist for the next batch of improvements. Tick off `- [ ]` → `- [x
 
 ## 1. Rate-limit login attempts
 
-- [ ] Not started
+- [x] Done — `src/lib/rateLimit.ts` + `src/app/api/auth/login/route.ts`, verified live: 5 failed attempts lock the account for 15 minutes (429, even with the correct password), other usernames stay unaffected, and a successful login clears the counter.
 
 **Goal:** Lock out after N failed attempts (e.g. 5) for a window, per username or IP.
 
