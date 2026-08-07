@@ -52,7 +52,25 @@ export function AnalyticsView({ privacyMode }: { privacyMode: boolean }) {
     }
 
     if (loading && !data) {
-        return <p className="px-5 pt-10 text-center text-muted">Loading your analytics…</p>;
+        return (
+            <div className="animate-pulse space-y-6 px-5 pt-6 lg:px-8">
+                <div className="flex items-center justify-between gap-2">
+                    <div className="h-7 w-28 rounded-full bg-chip" />
+                    <div className="h-8 w-24 rounded-xl bg-chip" />
+                </div>
+                <div className="h-11 w-full rounded-xl bg-chip" />
+                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+                    {Array.from({ length: 4 }).map((_, i) => (
+                        <div key={i} className="space-y-2 rounded-2xl border border-line bg-paper p-4 shadow-sm">
+                            <div className="h-3 w-16 rounded-full bg-chip" />
+                            <div className="h-6 w-20 rounded-full bg-chip" />
+                            <div className="h-3 w-12 rounded-full bg-chip" />
+                        </div>
+                    ))}
+                </div>
+                <div className="h-48 w-full rounded-2xl border border-line bg-paper p-4 shadow-sm" />
+            </div>
+        );
     }
     if (!data) {
         return <p className="px-5 pt-10 text-center text-muted">Could not load your analytics.</p>;

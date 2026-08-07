@@ -200,7 +200,7 @@ export function Sparkline({
     const min = Math.min(...values);
     const max = Math.max(...values);
     const span = max - min || 1;
-    const stroke = tone === "brand" ? "#1f7a54" : tone === "danger" ? "#a8402f" : "#918c7c";
+    const stroke = tone === "brand" ? "var(--color-brand)" : tone === "danger" ? "var(--color-danger)" : "var(--color-muted)";
     const pts = values
         .map((v, i) => {
             const x = (i / (values.length - 1)) * width;

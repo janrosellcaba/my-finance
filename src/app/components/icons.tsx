@@ -1,5 +1,5 @@
 import { type ReactElement } from "react";
-import { type CategoryIconKey } from "../shared";
+import { type AccountIconKey, type CategoryIconKey } from "../shared";
 
 export function IconHome({ className }: { className?: string }) {
     return (
@@ -279,5 +279,81 @@ export const CATEGORY_ICON_COMPONENTS: Record<CategoryIconKey, (props: { classNa
 export function CategoryIcon({ iconKey, className }: { iconKey: string | null; className?: string }) {
     if (!iconKey || !(iconKey in CATEGORY_ICON_COMPONENTS)) return null;
     const Icon = CATEGORY_ICON_COMPONENTS[iconKey as CategoryIconKey];
+    return <Icon className={className} />;
+}
+
+// ---------- account icon picker set ----------
+
+export function IconBank({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M12 3 3 8h18L12 3Z" />
+            <path d="M5 8v10M9 8v10M15 8v10M19 8v10" />
+            <path d="M3 21h18" />
+        </svg>
+    );
+}
+
+export function IconWallet({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 8a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z" />
+            <path d="M16 12.5h3.5a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H16a1.5 1.5 0 0 1 0-4Z" />
+        </svg>
+    );
+}
+
+export function IconCard({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2.5" y="6" width="19" height="13" rx="2.2" />
+            <path d="M2.5 10.5h19" />
+            <path d="M6 15h4" />
+        </svg>
+    );
+}
+
+export function IconCash({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="2.5" y="6.5" width="19" height="11" rx="2" />
+            <circle cx="12" cy="12" r="2.5" />
+            <path d="M5.5 9v.01M18.5 15v.01" />
+        </svg>
+    );
+}
+
+export function IconPiggyBank({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M4 12.5c0-3 2.6-5.5 6-5.8V5l2 1.3 2-1.3v1.7c2 .5 3.5 2 3.9 3.8H19a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1h-1.1c-.4 1.9-2 3.4-4 3.9V19h-2v-1.1a7 7 0 0 1-1-.1V19H9v-1.6c-3-.9-5-3.6-5-6.9Z" />
+            <circle cx="14.5" cy="10.5" r=".6" fill="currentColor" stroke="none" />
+        </svg>
+    );
+}
+
+export function IconSafe({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="4" y="4" width="16" height="16" rx="2" />
+            <circle cx="12" cy="12" r="3.5" />
+            <path d="M12 12V9.8" />
+            <path d="M7 7h.01M17 7h.01M7 17h.01M17 17h.01" />
+        </svg>
+    );
+}
+
+export const ACCOUNT_ICON_COMPONENTS: Record<AccountIconKey, (props: { className?: string }) => ReactElement> = {
+    bank: IconBank,
+    wallet: IconWallet,
+    card: IconCard,
+    cash: IconCash,
+    piggybank: IconPiggyBank,
+    safe: IconSafe,
+};
+
+export function AccountIcon({ iconKey, className }: { iconKey: string | null; className?: string }) {
+    if (!iconKey || !(iconKey in ACCOUNT_ICON_COMPONENTS)) return null;
+    const Icon = ACCOUNT_ICON_COMPONENTS[iconKey as AccountIconKey];
     return <Icon className={className} />;
 }

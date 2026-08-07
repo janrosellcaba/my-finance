@@ -49,8 +49,11 @@ export function TransactionCard({
         >
             <div className="flex min-w-0 items-center gap-2.5">
                 {categoryIcon && (
-                    <span className="shrink-0 text-ink/60">
-                        <CategoryIcon iconKey={categoryIcon} className="h-5 w-5" />
+                    <span
+                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-ink/10 text-ink/70"
+                        style={{ backgroundColor: categoryColor ?? "#e5e0d8" }}
+                    >
+                        <CategoryIcon iconKey={categoryIcon} className="h-4 w-4" />
                     </span>
                 )}
                 <div className="min-w-0">

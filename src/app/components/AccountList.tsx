@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { type Account, formatCurrency } from "../shared";
-import { IconClose, IconPencil, IconRadioDot } from "./icons";
+import { type Account, ACCOUNT_ICON_KEYS, formatCurrency } from "../shared";
+import { ACCOUNT_ICON_COMPONENTS, AccountIcon, IconClose, IconPencil, IconRadioDot } from "./icons";
 
 export function AccountList({
     items,
@@ -10,6 +10,7 @@ export function AccountList({
     onRename,
     onSetInitialBalance,
     onSetDefault,
+    onSetIcon,
     onDelete,
 }: {
     items: Account[];
@@ -17,12 +18,14 @@ export function AccountList({
     onRename: (a: Account, name: string) => void;
     onSetInitialBalance: (a: Account, rawValue: string) => void;
     onSetDefault: (a: Account) => void;
+    onSetIcon: (a: Account, icon: string | null) => void;
     onDelete: (a: Account) => void;
 }) {
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
     const [editingNameValue, setEditingNameValue] = useState("");
     const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
     const [editingBalanceValue, setEditingBalanceValue] = useState("");
+    const [iconPickerFor, setIconPickerFor] = useState<string | null>(null);
 
     function startEditingName(a: Account) {
         setEditingNameId(a.id);
@@ -57,7 +60,8 @@ export function AccountList({
     return (
         <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
             {items.map((a) => (
-                <div key={a.id} className="flex items-center gap-1 bg-paper px-3 py-2.5">
+                <div key={a.id} className="bg-paper">
+                <div className="flex items-center gap-1 px-3 py-2.5">
                     <button
                         type="button"
                         onClick={() => onSetDefault(a)}
@@ -70,6 +74,18 @@ export function AccountList({
                         }`}
                     >
                         <IconRadioDot className="h-4 w-4" checked={a.isDefault} />
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIconPickerFor(iconPickerFor === a.id ? null : a.id)}
+                        aria-label={`Change icon for ${a.name}`}
+                        className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                    >
+                        {a.icon ? (
+                            <AccountIcon iconKey={a.icon} className="h-4 w-4" />
+                        ) : (
+                            <span className="block h-4 w-4 rounded border border-dashed border-line" />
+                        )}
                     </button>
                     {editingNameId === a.id ? (
                         <input
@@ -138,6 +154,43 @@ export function AccountList({
                     >
                         <IconClose className="h-4 w-4" />
                     </button>
+                </div>
+                {iconPickerFor === a.id && (
+                    <div className="flex flex-wrap gap-2 border-t border-line bg-chip px-3 py-3">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onSetIcon(a, null);
+                                setIconPickerFor(null);
+                            }}
+                            aria-label={`Remove icon from ${a.name}`}
+                            className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-paper transition-transform duration-150 hover:scale-110 ${
+                                a.icon === null ? "border-ink" : "border-white/60"
+                            }`}
+                        >
+                            <IconClose className="h-3.5 w-3.5 text-muted" />
+                        </button>
+                        {ACCOUNT_ICON_KEYS.map((key) => {
+                            const Icon = ACCOUNT_ICON_COMPONENTS[key];
+                            return (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => {
+                                        onSetIcon(a, key);
+                                        setIconPickerFor(null);
+                                    }}
+                                    aria-label={`Set ${a.name} icon to ${key}`}
+                                    className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-paper text-ink transition-transform duration-150 hover:scale-110 ${
+                                        a.icon === key ? "border-ink" : "border-white/60"
+                                    }`}
+                                >
+                                    <Icon className="h-4 w-4" />
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
                 </div>
             ))}
         </div>

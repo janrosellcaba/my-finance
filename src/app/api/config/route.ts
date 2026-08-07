@@ -3,7 +3,7 @@ import { getDb } from "@/db";
 import { account, category, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { and, eq } from "drizzle-orm";
-import { CATEGORY_COLOR_PALETTE, CATEGORY_ICON_KEYS } from "@/app/shared";
+import { ACCOUNT_ICON_KEYS, CATEGORY_COLOR_PALETTE, CATEGORY_ICON_KEYS } from "@/app/shared";
 
 export async function GET() {
     try {
@@ -230,6 +230,26 @@ export async function PATCH(request: Request) {
                 return NextResponse.json({ error: "Account not found." }, { status: 404 });
             }
             await db.update(account).set({ name: name.trim() }).where(eq(account.id, id));
+            return NextResponse.json({ success: true });
+        }
+
+        if (action === "set-account-icon") {
+            const { id, icon } = body;
+            if (typeof id !== "string" || id.length < 1) {
+                return NextResponse.json({ error: "Id is required." }, { status: 400 });
+            }
+            if (icon !== null && (typeof icon !== "string" || !ACCOUNT_ICON_KEYS.includes(icon as (typeof ACCOUNT_ICON_KEYS)[number]))) {
+                return NextResponse.json({ error: "Invalid icon." }, { status: 400 });
+            }
+            const existing = await db
+                .select({ id: account.id })
+                .from(account)
+                .where(and(eq(account.id, id), eq(account.userId, user.id)))
+                .get();
+            if (!existing) {
+                return NextResponse.json({ error: "Account not found." }, { status: 404 });
+            }
+            await db.update(account).set({ icon }).where(eq(account.id, id));
             return NextResponse.json({ success: true });
         }
 

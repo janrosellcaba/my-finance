@@ -268,6 +268,21 @@ export function ConfigView({
         onRefresh();
     }
 
+    async function handleSetAccountIcon(a: Account, icon: string | null) {
+        setError("");
+        const res = await fetch("/api/config", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "set-account-icon", id: a.id, icon }),
+        });
+        const data = (await res.json()) as { error?: string };
+        if (!res.ok) {
+            setError(data.error || "Could not update account icon.");
+            return;
+        }
+        onRefresh();
+    }
+
     async function handleSetDefault(c: Category) {
         setError("");
         const res = await fetch("/api/config", {
@@ -380,7 +395,8 @@ export function ConfigView({
                 <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
                     <p className="text-sm text-muted">
                         Tap <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default
-                        account — it&apos;ll be pre-selected when you add a new transaction. Tap{" "}
+                        account — it&apos;ll be pre-selected when you add a new transaction. Tap the icon next to
+                        it to pick a picture for the account. Tap{" "}
                         <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> next to the name to rename
                         an account — it updates everywhere automatically. Tap the other{" "}
                         <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set its initial balance,
@@ -393,6 +409,7 @@ export function ConfigView({
                         onRename={handleRenameAccount}
                         onSetInitialBalance={handleSetInitialBalance}
                         onSetDefault={handleSetDefaultAccount}
+                        onSetIcon={handleSetAccountIcon}
                         onDelete={handleDeleteAccount}
                     />
                     <form onSubmit={handleAddAccount} className="space-y-2">

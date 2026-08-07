@@ -2,7 +2,7 @@
 // costs its own sequential D1 round trip (see api/import/route.ts), so this bounds worst-case time.
 export const MAX_IMPORT_TRANSACTIONS = 2000;
 
-export type Account = { id: string; name: string; initialBalance: number; isDefault: boolean };
+export type Account = { id: string; name: string; initialBalance: number; isDefault: boolean; icon: string | null };
 export type Category = {
     id: string;
     name: string;
@@ -23,9 +23,11 @@ export type Transaction = {
     accountId: string;
     destinationId: string;
 };
+export type Delta = { current: number; previous: number; change: number; changePct: number | null };
 export type DashboardSummary = {
     totalNetWorth: number;
-    accounts: { id: string; name: string; balance: number }[];
+    netWorthHistory: number[];
+    accounts: { id: string; name: string; balance: number; icon: string | null; delta: Delta }[];
     recentTransactions: Transaction[];
 };
 export type Todo = {
@@ -78,6 +80,11 @@ export const CATEGORY_ICON_KEYS = [
     "education",
 ] as const;
 export type CategoryIconKey = (typeof CATEGORY_ICON_KEYS)[number];
+
+// Curated icon keys offered as the account icon picker — same pattern/rationale as
+// CATEGORY_ICON_KEYS, resolved to components in icons.tsx.
+export const ACCOUNT_ICON_KEYS = ["bank", "wallet", "card", "cash", "piggybank", "safe"] as const;
+export type AccountIconKey = (typeof ACCOUNT_ICON_KEYS)[number];
 
 export const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", useGrouping: true });
 export const AMOUNT_MASK = "****";
