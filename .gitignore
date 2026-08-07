@@ -41,5 +41,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-*.db.open-next/
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+.open-next/
 .wrangler/
+
+# database snapshots (production server)
+/backups/
