@@ -1,4 +1,3 @@
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users, account, category } from "@/db/schema";
@@ -21,13 +20,11 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
         }
 
-        const { env } = await getCloudflareContext({ async: true });
-
         const username = typeof body.username === "string" ? body.username.trim() : "";
         const password = typeof body.password === "string" ? body.password : "";
         const secretCode = typeof body.secretCode === "string" ? body.secretCode : "";
 
-        if (secretCode !== env.REGISTRATION_SECRET) {
+        if (secretCode !== process.env.REGISTRATION_SECRET) {
             return NextResponse.json({ error: "Unauthorized: Invalid registration safety code." }, { status: 403 });
         }
 
