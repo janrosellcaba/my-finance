@@ -61,91 +61,99 @@ export function AccountList({
         <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
             {items.map((a) => (
                 <div key={a.id} className="bg-paper">
-                <div className="flex items-center gap-1 px-3 py-2.5">
-                    <button
-                        type="button"
-                        onClick={() => onSetDefault(a)}
-                        role="radio"
-                        aria-checked={a.isDefault}
-                        title={a.isDefault ? "Default account" : "Set as default"}
-                        aria-label={a.isDefault ? `${a.name} is the default` : `Set ${a.name} as default`}
-                        className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
-                            a.isDefault ? "text-brand" : "text-muted hover:text-ink"
-                        }`}
-                    >
-                        <IconRadioDot className="h-4 w-4" checked={a.isDefault} />
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setIconPickerFor(iconPickerFor === a.id ? null : a.id)}
-                        aria-label={`Change icon for ${a.name}`}
-                        className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
-                    >
-                        {a.icon ? (
-                            <AccountIcon iconKey={a.icon} className="h-4 w-4" />
-                        ) : (
-                            <span className="block h-4 w-4 rounded border border-dashed border-line" />
-                        )}
-                    </button>
-                    {editingNameId === a.id ? (
-                        <input
-                            autoFocus
-                            value={editingNameValue}
-                            onChange={(e) => setEditingNameValue(e.target.value)}
-                            onBlur={() => commitEditingName(a)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    commitEditingName(a);
-                                } else if (e.key === "Escape") {
-                                    e.preventDefault();
-                                    setEditingNameId(null);
-                                }
-                            }}
-                            className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2 py-1 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
-                        />
-                    ) : (
-                        <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{a.name}</span>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => startEditingName(a)}
-                        aria-label={`Rename ${a.name}`}
-                        className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
-                    >
-                        <IconPencil className="h-4 w-4" />
-                    </button>
-                    {editingBalanceId === a.id ? (
-                        <input
-                            autoFocus
-                            inputMode="decimal"
-                            value={editingBalanceValue}
-                            onChange={(e) => setEditingBalanceValue(e.target.value)}
-                            onBlur={() => commitEditingBalance(a)}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") {
-                                    e.preventDefault();
-                                    commitEditingBalance(a);
-                                } else if (e.key === "Escape") {
-                                    e.preventDefault();
-                                    setEditingBalanceId(null);
-                                }
-                            }}
-                            className="w-24 shrink-0 rounded-lg border border-line bg-paper px-2 py-1 text-right text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
-                        />
-                    ) : (
-                        <span className="shrink-0 text-sm text-muted">
-                            Starts at {formatCurrency(a.initialBalance, privacyMode)}
-                        </span>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => startEditingBalance(a)}
-                        aria-label={`Edit initial balance for ${a.name}`}
-                        className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
-                    >
-                        <IconPencil className="h-4 w-4" />
-                    </button>
+                <div className="flex items-center gap-2 px-3 py-2.5">
+                    <div className="flex shrink-0 items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => onSetDefault(a)}
+                            role="radio"
+                            aria-checked={a.isDefault}
+                            title={a.isDefault ? "Default account" : "Set as default"}
+                            aria-label={a.isDefault ? `${a.name} is the default` : `Set ${a.name} as default`}
+                            className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
+                                a.isDefault ? "text-brand" : "text-muted hover:text-ink"
+                            }`}
+                        >
+                            <IconRadioDot className="h-4 w-4" checked={a.isDefault} />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setIconPickerFor(iconPickerFor === a.id ? null : a.id)}
+                            aria-label={`Change icon for ${a.name}`}
+                            className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                        >
+                            {a.icon ? (
+                                <AccountIcon iconKey={a.icon} className="h-4 w-4" />
+                            ) : (
+                                <span className="block h-4 w-4 rounded border border-dashed border-line" />
+                            )}
+                        </button>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1">
+                            {editingNameId === a.id ? (
+                                <input
+                                    autoFocus
+                                    value={editingNameValue}
+                                    onChange={(e) => setEditingNameValue(e.target.value)}
+                                    onBlur={() => commitEditingName(a)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            commitEditingName(a);
+                                        } else if (e.key === "Escape") {
+                                            e.preventDefault();
+                                            setEditingNameId(null);
+                                        }
+                                    }}
+                                    className="min-w-0 flex-1 rounded-lg border border-line bg-paper px-2 py-1 text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
+                                />
+                            ) : (
+                                <span className="min-w-0 flex-1 truncate text-sm font-medium text-ink">{a.name}</span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => startEditingName(a)}
+                                aria-label={`Rename ${a.name}`}
+                                className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                            >
+                                <IconPencil className="h-4 w-4" />
+                            </button>
+                        </div>
+                        <div className="mt-0.5 flex items-center gap-1">
+                            {editingBalanceId === a.id ? (
+                                <input
+                                    autoFocus
+                                    inputMode="decimal"
+                                    value={editingBalanceValue}
+                                    onChange={(e) => setEditingBalanceValue(e.target.value)}
+                                    onBlur={() => commitEditingBalance(a)}
+                                    onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                            e.preventDefault();
+                                            commitEditingBalance(a);
+                                        } else if (e.key === "Escape") {
+                                            e.preventDefault();
+                                            setEditingBalanceId(null);
+                                        }
+                                    }}
+                                    className="w-24 shrink-0 rounded-lg border border-line bg-paper px-2 py-1 text-right text-sm font-medium text-ink focus:outline-none focus:ring-2 focus:ring-brand/20"
+                                />
+                            ) : (
+                                <span className="min-w-0 flex-1 truncate text-sm text-muted">
+                                    Starts at {formatCurrency(a.initialBalance, privacyMode)}
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={() => startEditingBalance(a)}
+                                aria-label={`Edit initial balance for ${a.name}`}
+                                className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
+                            >
+                                <IconPencil className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
                     <button
                         type="button"
                         onClick={() => onDelete(a)}
