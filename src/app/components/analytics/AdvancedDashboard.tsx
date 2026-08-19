@@ -66,13 +66,14 @@ const INFO = {
     accounts: "Balance, share of your total net worth, and money in and out of each account this period. 'Net' is income minus expenses (and transfers) for that account.",
 };
 
-type Tab = "overview" | "insights" | "spending" | "trends" | "accounts";
+type Tab = "overview" | "insights" | "spending" | "trends" | "accounts" | "more";
 const TABS: { key: Tab; label: string }[] = [
     { key: "overview", label: "Overview" },
     { key: "insights", label: "Insights" },
     { key: "spending", label: "Spending" },
     { key: "trends", label: "Trends" },
     { key: "accounts", label: "Accounts" },
+    { key: "more", label: "More" },
 ];
 
 export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult; privacyMode: boolean }) {
@@ -181,13 +182,13 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
         <>
             {/* ---------- mobile: one section at a time ---------- */}
             <div className="space-y-6 lg:hidden">
-                <div className="grid grid-cols-5 gap-1 rounded-xl bg-chip p-1">
+                <div className="grid grid-cols-6 gap-1 rounded-xl bg-chip p-1">
                     {TABS.map((t) => (
                         <button
                             key={t.key}
                             type="button"
                             onClick={() => setTab(t.key)}
-                            className={`rounded-lg py-2 text-[11px] font-bold transition-colors duration-150 select-none ${
+                            className={`rounded-lg py-2 text-[10px] font-bold transition-colors duration-150 select-none ${
                                 tab === t.key ? "bg-paper text-ink shadow-sm" : "text-muted hover:text-ink"
                             }`}
                         >
@@ -231,12 +232,6 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
                         <Section title="Recurring charges" info={INFO.recurringCharges}>
                             <RecurringPanel data={data} privacyMode={privacyMode} />
                         </Section>
-                        <Section title="Gone quiet" info={INFO.goneQuiet}>
-                            <DormantPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                        <Section title="First time buying" info={INFO.firstTimeBuying}>
-                            <FirstTimePanel data={data} privacyMode={privacyMode} />
-                        </Section>
                     </>
                 )}
 
@@ -247,15 +242,6 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
                         </Section>
                         <Section title="Biggest movers" subtitle="Versus your recent typical months" info={INFO.biggestMovers}>
                             <MoversPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                        <Section title="How often you buy" info={INFO.howOftenYouBuy}>
-                            <FrequencyPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                        <Section title="Your pay cycle" info={INFO.payCycle}>
-                            <PaydayPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                        <Section title="Transaction sizes" info={INFO.transactionSizes}>
-                            <SizeDistributionPanel data={data} privacyMode={privacyMode} />
                         </Section>
                         <Section title="Income by source" info={INFO.incomeBySource}>
                             {incomeCats}
@@ -274,15 +260,6 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
                         <Section title="Net worth over time" info={INFO.netWorthOverTime}>
                             <NetWorthChart data={data} privacyMode={privacyMode} />
                         </Section>
-                        <Section title="Versus last year" info={INFO.versusLastYear}>
-                            <YoYPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                        <Section title="Daily spending" subtitle={`${data.noSpendDays} days with no spending`} info={INFO.dailySpending}>
-                            <HeatmapPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                        <Section title="By day of week" info={INFO.byDayOfWeek}>
-                            <WeekdayPanel data={data} privacyMode={privacyMode} />
-                        </Section>
                     </>
                 )}
 
@@ -293,6 +270,38 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
                         </Section>
                         <Section title="Top expenses" info={INFO.topExpenses}>
                             <TopExpensesPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                    </>
+                )}
+
+                {tab === "more" && (
+                    <>
+                        <p className="text-xs text-muted">
+                            Deeper cuts of your data — less often useful day to day, but worth a look now and then.
+                        </p>
+                        <Section title="How often you buy" info={INFO.howOftenYouBuy}>
+                            <FrequencyPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                        <Section title="Your pay cycle" info={INFO.payCycle}>
+                            <PaydayPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                        <Section title="Transaction sizes" info={INFO.transactionSizes}>
+                            <SizeDistributionPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                        <Section title="Versus last year" info={INFO.versusLastYear}>
+                            <YoYPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                        <Section title="Daily spending" subtitle={`${data.noSpendDays} days with no spending`} info={INFO.dailySpending}>
+                            <HeatmapPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                        <Section title="By day of week" info={INFO.byDayOfWeek}>
+                            <WeekdayPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                        <Section title="Gone quiet" info={INFO.goneQuiet}>
+                            <DormantPanel data={data} privacyMode={privacyMode} />
+                        </Section>
+                        <Section title="First time buying" info={INFO.firstTimeBuying}>
+                            <FirstTimePanel data={data} privacyMode={privacyMode} />
                         </Section>
                     </>
                 )}
@@ -331,8 +340,8 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
                         </Section>
                     </div>
                     <div className="col-span-2">
-                        <Section title="Versus last year" info={INFO.versusLastYear}>
-                            <YoYPanel data={data} privacyMode={privacyMode} />
+                        <Section title="Spending pace" subtitle={projection?.basis} info={INFO.spendingPace}>
+                            <PaceChart data={data} privacyMode={privacyMode} />
                         </Section>
                     </div>
 
@@ -344,39 +353,6 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
                     <div className="col-span-2">
                         <Section title="Biggest movers" subtitle="Versus your recent typical months" info={INFO.biggestMovers}>
                             <MoversPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-
-                    <div className="col-span-3">
-                        <Section title="Spending pace" subtitle={projection?.basis} info={INFO.spendingPace}>
-                            <PaceChart data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-                    <div className="col-span-3">
-                        <Section title="How often you buy" info={INFO.howOftenYouBuy}>
-                            <FrequencyPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-
-                    <div className="col-span-3">
-                        <Section title="Your pay cycle" info={INFO.payCycle}>
-                            <PaydayPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-                    <div className="col-span-3">
-                        <Section title="Transaction sizes" info={INFO.transactionSizes}>
-                            <SizeDistributionPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-
-                    <div className="col-span-4">
-                        <Section title="Daily spending" subtitle={`${data.noSpendDays} days with no spending`} info={INFO.dailySpending}>
-                            <HeatmapPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-                    <div className="col-span-2">
-                        <Section title="By day of week" info={INFO.byDayOfWeek}>
-                            <WeekdayPanel data={data} privacyMode={privacyMode} />
                         </Section>
                     </div>
 
@@ -402,23 +378,66 @@ export function AdvancedDashboard({ data, privacyMode }: { data: AnalyticsResult
                         </Section>
                     </div>
 
-                    <div className="col-span-3">
-                        <Section title="Gone quiet" info={INFO.goneQuiet}>
-                            <DormantPanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-                    <div className="col-span-3">
-                        <Section title="First time buying" info={INFO.firstTimeBuying}>
-                            <FirstTimePanel data={data} privacyMode={privacyMode} />
-                        </Section>
-                    </div>
-
                     <div className="col-span-6">
                         <Section title="Accounts" info={INFO.accounts}>
                             <AccountsPanel data={data} privacyMode={privacyMode} />
                         </Section>
                     </div>
                 </div>
+
+                <details className="group rounded-2xl border border-line bg-paper">
+                    <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-bold uppercase tracking-wide text-muted select-none hover:text-ink">
+                        More analysis
+                        <span className="text-xs transition-transform duration-150 group-open:rotate-180" aria-hidden="true">
+                            ▾
+                        </span>
+                    </summary>
+                    <div className="grid grid-cols-6 gap-6 border-t border-line p-6">
+                        <div className="col-span-3">
+                            <Section title="How often you buy" info={INFO.howOftenYouBuy}>
+                                <FrequencyPanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+                        <div className="col-span-3">
+                            <Section title="Your pay cycle" info={INFO.payCycle}>
+                                <PaydayPanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+
+                        <div className="col-span-3">
+                            <Section title="Transaction sizes" info={INFO.transactionSizes}>
+                                <SizeDistributionPanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+                        <div className="col-span-3">
+                            <Section title="Versus last year" info={INFO.versusLastYear}>
+                                <YoYPanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+
+                        <div className="col-span-4">
+                            <Section title="Daily spending" subtitle={`${data.noSpendDays} days with no spending`} info={INFO.dailySpending}>
+                                <HeatmapPanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+                        <div className="col-span-2">
+                            <Section title="By day of week" info={INFO.byDayOfWeek}>
+                                <WeekdayPanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+
+                        <div className="col-span-3">
+                            <Section title="Gone quiet" info={INFO.goneQuiet}>
+                                <DormantPanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+                        <div className="col-span-3">
+                            <Section title="First time buying" info={INFO.firstTimeBuying}>
+                                <FirstTimePanel data={data} privacyMode={privacyMode} />
+                            </Section>
+                        </div>
+                    </div>
+                </details>
             </div>
         </>
     );
