@@ -38,8 +38,12 @@ export function Briefing({ data, privacyMode }: { data: AnalyticsResult; privacy
                     <span className={`h-2 w-2 shrink-0 rounded-full ${dot}`} aria-hidden="true" />
                     <p className={`text-sm font-bold uppercase tracking-wide ${tone}`}>{health.label}</p>
                 </div>
-                {health.score !== null && !privacyMode && (
-                    <div className="text-right">
+                {health.score !== null && (
+                    <div
+                        className={`text-right transition-[filter,opacity] duration-250 ${
+                            privacyMode ? "blur-[6px] select-none opacity-60" : ""
+                        }`}
+                    >
                         <p className="flex items-center justify-end gap-1.5 text-xs font-semibold uppercase tracking-wide text-muted">
                             Health
                             <InfoTip text="A single number combining savings rate, net-worth trend, spending stability, how much of your spend is committed to recurring charges, and your cash cushion — each scored against your own history, not an outside benchmark. Open 'How this score is built' below for the breakdown." />
@@ -75,8 +79,12 @@ export function Briefing({ data, privacyMode }: { data: AnalyticsResult; privacy
                 </div>
             )}
 
-            {health.parts.length > 0 && !privacyMode && (
-                <details className="mt-4 border-t border-line pt-3">
+            {health.parts.length > 0 && (
+                <details
+                    className={`mt-4 border-t border-line pt-3 transition-[filter,opacity] duration-250 ${
+                        privacyMode ? "blur-[5px] select-none opacity-60" : ""
+                    }`}
+                >
                     <summary className="text-xs font-bold uppercase tracking-wide text-muted select-none">
                         How this score is built
                     </summary>

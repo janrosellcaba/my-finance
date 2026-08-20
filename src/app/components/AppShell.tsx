@@ -180,7 +180,11 @@ export function AppShell({
                             onClick={handleTogglePrivacy}
                             aria-label={privacyMode ? "Show amounts" : "Hide amounts"}
                             aria-pressed={privacyMode}
-                            className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
+                            className={`rounded-full p-2.5 transition-all duration-150 active:scale-90 ${
+                                privacyMode
+                                    ? "bg-brand/10 text-brand hover:bg-brand/15"
+                                    : "text-muted hover:bg-chip hover:text-ink"
+                            }`}
                         >
                             {privacyMode ? <IconEyeOff className="h-5 w-5" /> : <IconEye className="h-5 w-5" />}
                         </button>

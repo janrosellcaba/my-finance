@@ -88,10 +88,10 @@ export const ACCOUNT_ICON_KEYS = ["bank", "wallet", "card", "cash", "piggybank",
 export type AccountIconKey = (typeof ACCOUNT_ICON_KEYS)[number];
 
 export const eur = new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", useGrouping: true });
-export const AMOUNT_MASK = "****";
+export const AMOUNT_MASK = "••••••";
 
-export function formatCurrency(value: number, privacyMode: boolean): string {
-    return privacyMode ? AMOUNT_MASK : eur.format(value);
+export function formatCurrency(value: number, privacyMode?: boolean): string {
+    return eur.format(value);
 }
 
 export const INPUT_CLS =

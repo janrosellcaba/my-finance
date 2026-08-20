@@ -1,7 +1,7 @@
 "use client";
 
 import { type Account, type Category, type Transaction, AMOUNT_MASK, eur, formatDate } from "../shared";
-import { CategoryIcon } from "./icons";
+import { CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight } from "./icons";
 
 function resolveName(id: string, accounts: Account[], categories: Category[]): string {
     return accounts.find((a) => a.id === id)?.name ?? categories.find((c) => c.id === id)?.name ?? "Unknown";
@@ -24,13 +24,6 @@ export function TransactionCard({
 }) {
     const sign = tx.type === "expense" ? "-" : tx.type === "income" ? "+" : "";
     const color = tx.type === "expense" ? "text-danger" : tx.type === "income" ? "text-brand" : "text-ink";
-    // Category swatches are always light pastels, in both themes — dark mode's near-white
-    // "ink"/"muted"/"brand"/"danger" text would nearly vanish against them. Once a swatch is
-    // tinting the row (or the icon badge, whose fallback is also a light gray), text on top
-    // is pinned to these fixed light-mode-equivalent colors instead of the theme variables.
-    const fixedInk = "#23221d";
-    const fixedMuted = "#918c7c";
-    const fixedAmountColor = tx.type === "expense" ? "#a8402f" : tx.type === "income" ? "#1f7a54" : fixedInk;
     const fromName = resolveName(tx.accountId, accounts, categories);
     const toName = resolveName(tx.destinationId, accounts, categories);
     const subtitle = tx.type === "transfer" ? `${fromName} → ${toName}` : `${toName} · ${fromName}`;
@@ -43,50 +36,61 @@ export function TransactionCard({
         <Tag
             type={onClick ? "button" : undefined}
             onClick={onClick}
-            style={categoryColor ? { backgroundColor: categoryColor } : undefined}
             className={
                 compact
-                    ? `flex w-full items-center justify-between px-4 py-2.5 text-left ${
-                          onClick ? "transition-colors duration-150 hover:bg-chip" : ""
+                    ? `flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors duration-150 ${
+                          onClick ? "hover:bg-chip/70" : ""
                       }`
-                    : `flex w-full items-center justify-between rounded-2xl border border-line bg-paper p-4 text-left shadow-sm ${
-                          onClick ? "transition-colors duration-150 hover:border-brand hover:bg-chip" : ""
+                    : `group flex w-full items-center justify-between rounded-2xl border border-line bg-paper p-4 text-left shadow-sm transition-all duration-150 ${
+                          onClick ? "hover:border-line hover:bg-chip/50 hover:shadow-md" : ""
                       }`
             }
         >
-            <div className="flex min-w-0 items-center gap-2.5">
-                {categoryIcon && (
-                    <span
-                        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-                        style={{
-                            backgroundColor: categoryColor ?? "#e5e0d8",
-                            color: "rgba(35, 34, 29, 0.7)",
-                            border: "1px solid rgba(35, 34, 29, 0.1)",
-                        }}
-                    >
-                        <CategoryIcon iconKey={categoryIcon} className="h-4 w-4" />
-                    </span>
-                )}
+            <div className="flex min-w-0 items-center gap-3">
+                <span
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 group-hover:scale-105"
+                    style={{
+                        backgroundColor: categoryColor ? `${categoryColor}25` : undefined,
+                    }}
+                >
+                    {categoryIcon ? (
+                        <span
+                            className="flex h-full w-full items-center justify-center rounded-xl"
+                            style={{
+                                color: categoryColor ?? "inherit",
+                            }}
+                        >
+                            <CategoryIcon iconKey={categoryIcon} className="h-4.5 w-4.5" />
+                        </span>
+                    ) : tx.type === "income" ? (
+                        <span className="flex h-full w-full items-center justify-center rounded-xl bg-brand-soft text-brand">
+                            <IconArrowUpRight className="h-4.5 w-4.5" />
+                        </span>
+                    ) : tx.type === "transfer" ? (
+                        <span className="flex h-full w-full items-center justify-center rounded-xl bg-chip text-muted">
+                            <IconArrowLeftRight className="h-4.5 w-4.5" />
+                        </span>
+                    ) : (
+                        <span className="flex h-full w-full items-center justify-center rounded-xl bg-danger-soft text-danger">
+                            <IconArrowDownRight className="h-4.5 w-4.5" />
+                        </span>
+                    )}
+                </span>
                 <div className="min-w-0">
-                    <p
-                        className={`truncate font-semibold ${categoryColor ? "" : "text-ink"}`}
-                        style={categoryColor ? { color: fixedInk } : undefined}
-                    >
+                    <p className="truncate font-semibold text-ink leading-tight">
                         {tx.description}
                     </p>
-                    <p
-                        className={`truncate text-xs ${categoryColor ? "" : "text-muted"}`}
-                        style={categoryColor ? { color: fixedMuted } : undefined}
-                    >
+                    <p className="truncate text-xs text-muted mt-0.5">
                         {subtitle} · {formatDate(tx.date)}
                     </p>
                 </div>
             </div>
             <p
-                className={`ml-3 shrink-0 font-bold ${compact ? "text-base" : "text-lg"} ${categoryColor ? "" : color}`}
-                style={categoryColor ? { color: fixedAmountColor } : undefined}
+                className={`ml-3 shrink-0 font-bold tabular-nums transition-[filter,opacity] duration-250 ${
+                    compact ? "text-base" : "text-lg"
+                } ${color} ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
             >
-                {privacyMode ? AMOUNT_MASK : `${sign}${eur.format(Math.abs(tx.amount))}`}
+                {sign}{eur.format(Math.abs(tx.amount))}
             </p>
         </Tag>
     );

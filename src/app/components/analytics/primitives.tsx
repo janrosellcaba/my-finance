@@ -132,9 +132,13 @@ export function DeltaPill({
     const positive = goodWhenUp ? up : !up;
     const tone = flat ? "text-muted" : positive ? "text-brand" : "text-danger";
     return (
-        <span className={`text-xs font-bold ${tone}`}>
+        <span
+            className={`text-xs font-bold tabular-nums transition-[filter,opacity] duration-250 ${tone} ${
+                privacyMode ? "blur-[5px] select-none opacity-70" : ""
+            }`}
+        >
             {flat ? "±" : up ? "▲" : "▼"}
-            {privacyMode ? AMOUNT_MASK : `${Math.abs(delta.changePct).toFixed(1)}%`}
+            {Math.abs(delta.changePct).toFixed(1)}%
             {suffix ? ` ${suffix}` : ""}
         </span>
     );
@@ -170,7 +174,13 @@ export function StatTile({
                 <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
                 {info && <InfoTip text={info} />}
             </div>
-            <p className={`mt-1 font-bold ${big ? "text-3xl" : "text-xl"} ${toneClass}`}>{value}</p>
+            <p
+                className={`mt-1 font-bold tabular-nums transition-[filter,opacity] duration-250 ${
+                    big ? "text-3xl" : "text-xl"
+                } ${toneClass} ${privacyMode ? "blur-[7px] select-none opacity-70" : ""}`}
+            >
+                {value}
+            </p>
             <div className="mt-1 flex items-center gap-2">
                 <DeltaPill delta={delta ?? null} privacyMode={privacyMode} goodWhenUp={goodWhenUp} />
                 {footnote && <span className="truncate text-xs text-muted">{footnote}</span>}

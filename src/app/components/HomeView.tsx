@@ -71,14 +71,24 @@ export function HomeView({
 
     return (
         <div className="space-y-6 px-5 pt-6">
-            <div className="rounded-3xl border border-line bg-paper p-6 text-center shadow-sm">
-                <p className="text-sm font-semibold text-muted">Total Balance</p>
-                <p className={`mt-2 text-4xl font-extrabold tracking-tight ${positive ? "text-brand" : "text-danger"}`}>
-                    {formatCurrency(dashboard.totalNetWorth, privacyMode)}
+            <div className="relative overflow-hidden rounded-3xl border border-line bg-paper p-6 text-center shadow-sm">
+                <div className="absolute inset-0 bg-gradient-to-b from-brand/5 via-transparent to-transparent pointer-events-none" />
+                <p className="relative text-xs font-bold uppercase tracking-wider text-muted">Total Net Worth</p>
+                <p
+                    className={`relative mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl tabular-nums transition-[filter,opacity] duration-250 ${
+                        positive ? "text-brand" : "text-danger"
+                    } ${privacyMode ? "blur-[9px] select-none opacity-70" : ""}`}
+                >
+                    {formatCurrency(dashboard.totalNetWorth)}
                 </p>
-                {dashboard.netWorthHistory.length > 1 && !privacyMode && (
-                    <div className="mx-auto mt-3 max-w-[160px]">
+                {dashboard.netWorthHistory.length > 1 && (
+                    <div
+                        className={`relative mx-auto mt-4 max-w-[180px] transition-[filter,opacity] duration-250 ${
+                            privacyMode ? "blur-[5px] select-none opacity-40" : ""
+                        }`}
+                    >
                         <Sparkline values={dashboard.netWorthHistory} tone={netWorthTone} />
+                        <p className="mt-1 text-[11px] font-medium text-muted">Past 30 Days</p>
                     </div>
                 )}
             </div>
@@ -86,28 +96,30 @@ export function HomeView({
             <button
                 type="button"
                 onClick={onAddClick}
-                className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}
+                className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark shadow-sm`}
             >
                 + Add Transaction
             </button>
 
             <div>
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Your Accounts</h2>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Your Accounts</h2>
                 <div className="grid grid-cols-2 gap-3">
                     {dashboard.accounts.map((acc) => (
-                        <div key={acc.id} className="rounded-2xl border border-line bg-paper p-4 shadow-sm">
-                            <div className="flex items-center gap-1.5">
-                                {acc.icon && (
-                                    <span className="shrink-0 text-muted">
-                                        <AccountIcon iconKey={acc.icon} className="h-3.5 w-3.5" />
-                                    </span>
-                                )}
-                                <p className="truncate text-sm font-medium text-muted">{acc.name}</p>
+                        <div key={acc.id} className="group rounded-2xl border border-line bg-paper p-4 shadow-sm transition-all duration-150 hover:shadow-md">
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted transition-colors group-hover:text-ink">
+                                    <AccountIcon iconKey={acc.icon ?? "wallet"} className="h-3.5 w-3.5" />
+                                </span>
+                                <p className="truncate text-xs font-semibold text-muted">{acc.name}</p>
                             </div>
-                            <p className={`mt-1 text-xl font-bold ${acc.balance >= 0 ? "text-brand" : "text-danger"}`}>
-                                {formatCurrency(acc.balance, privacyMode)}
+                            <p
+                                className={`mt-2 text-xl font-bold tracking-tight tabular-nums transition-[filter,opacity] duration-250 ${
+                                    acc.balance >= 0 ? "text-brand" : "text-danger"
+                                } ${privacyMode ? "blur-[7px] select-none opacity-70" : ""}`}
+                            >
+                                {formatCurrency(acc.balance)}
                             </p>
-                            <div className="mt-0.5">
+                            <div className="mt-1">
                                 <DeltaPill delta={acc.delta} privacyMode={privacyMode} />
                             </div>
                         </div>
@@ -116,7 +128,7 @@ export function HomeView({
             </div>
 
             <div>
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Recent Activity</h2>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Recent Activity</h2>
                 <div className="space-y-2">
                     {recent.length === 0 && <p className="text-sm text-muted">No transactions yet.</p>}
                     {recent.map((tx) => (

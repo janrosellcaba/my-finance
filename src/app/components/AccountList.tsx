@@ -141,7 +141,14 @@ export function AccountList({
                                 />
                             ) : (
                                 <span className="min-w-0 flex-1 truncate text-sm text-muted">
-                                    Starts at {formatCurrency(a.initialBalance, privacyMode)}
+                                    Starts at{" "}
+                                    <span
+                                        className={`inline-block tabular-nums transition-[filter,opacity] duration-250 ${
+                                            privacyMode ? "blur-[6px] select-none opacity-70" : ""
+                                        }`}
+                                    >
+                                        {formatCurrency(a.initialBalance)}
+                                    </span>
                                 </span>
                             )}
                             <button

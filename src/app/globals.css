@@ -28,25 +28,25 @@
 :root[data-theme="dark"] {
 	color-scheme: dark;
 
-	--background: #1b1a17;
-	--foreground: #f3efe4;
+	--background: #141311;
+	--foreground: #f4f0e6;
 
-	--color-cream: #1b1a17;
-	--color-paper: #242320;
-	--color-ink: #f3efe4;
-	--color-muted: #a39c8a;
-	--color-line: #3a3830;
+	--color-cream: #141311;
+	--color-paper: #1d1c18;
+	--color-ink: #f4f0e6;
+	--color-muted: #999280;
+	--color-line: #2e2b24;
 
-	--color-brand: #35a377;
-	--color-brand-dark: #2c8564;
-	--color-brand-soft: #1d3328;
+	--color-brand: #3ec48e;
+	--color-brand-dark: #32a175;
+	--color-brand-soft: #173224;
 
-	--color-danger: #d6685a;
-	--color-danger-dark: #c14f40;
-	--color-danger-soft: #3a2420;
+	--color-danger: #e06d60;
+	--color-danger-dark: #cc5446;
+	--color-danger-soft: #381e1a;
 
-	--color-chip: #2c2a24;
-	--color-chip-hover: #363329;
+	--color-chip: #24221d;
+	--color-chip-hover: #2f2c25;
 }
 
 @theme inline {
@@ -65,7 +65,7 @@
 	--color-danger-soft: var(--color-danger-soft);
 	--color-chip: var(--color-chip);
 	--color-chip-hover: var(--color-chip-hover);
-	--font-sans: var(--font-geist-sans);
+	--font-sans: var(--font-outfit), var(--font-geist-sans);
 	--font-mono: var(--font-geist-mono);
 }
 
@@ -80,7 +80,8 @@ body {
 body {
 	background: var(--background);
 	color: var(--foreground);
-	font-family: Arial, Helvetica, sans-serif;
+	font-family: var(--font-outfit), var(--font-geist-sans), system-ui, -apple-system, sans-serif;
+	letter-spacing: -0.01em;
 }
 
 /* The cursor always stays the plain system arrow — no pointer/hand on
