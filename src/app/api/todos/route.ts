@@ -33,7 +33,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const body = (await request.json().catch(() => null)) as { text?: unknown; dueDate?: unknown } | null;
+        const body = (await request.json().catch(() => null)) as { id?: unknown; text?: unknown; dueDate?: unknown } | null;
         if (!body || typeof body.text !== "string" || !body.text.trim()) {
             return NextResponse.json({ error: "Text is required." }, { status: 400 });
         }
@@ -42,7 +42,17 @@ export async function POST(request: Request) {
         }
 
         const db = await getDb();
-        const todoId = crypto.randomUUID();
+        const todoId = typeof body.id === "string" && body.id.trim().length > 0 ? body.id.trim() : crypto.randomUUID();
+
+        const existing = await db
+            .select({ id: todo.id })
+            .from(todo)
+            .where(and(eq(todo.id, todoId), eq(todo.userId, user.id)))
+            .get();
+
+        if (existing) {
+            return NextResponse.json({ success: true, todoId, alreadyExisted: true }, { status: 200 });
+        }
 
         await db.insert(todo).values({
             id: todoId,

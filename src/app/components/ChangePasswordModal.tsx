@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { PRIMARY_BTN } from "../shared";
 import { IconClose } from "./icons";
 import { PasswordInput } from "./PasswordInput";
@@ -11,6 +11,14 @@ export function ChangePasswordModal({ onClose, onChanged }: { onClose: () => voi
     const [confirmPassword, setConfirmPassword] = useState("");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") onClose();
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -44,6 +52,9 @@ export function ChangePasswordModal({ onClose, onChanged }: { onClose: () => voi
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
             <form
+                role="dialog"
+                aria-modal="true"
+                aria-label="Change Password"
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
                 className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"

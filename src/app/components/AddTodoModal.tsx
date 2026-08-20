@@ -1,14 +1,23 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { INPUT_CLS, PRIMARY_BTN } from "../shared";
 import { IconClose } from "./icons";
+import { enqueueOutbox } from "@/lib/offlineStore";
 
 export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
     const [text, setText] = useState("");
     const [dueDate, setDueDate] = useState("");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") onClose();
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
@@ -19,12 +28,21 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
             return;
         }
 
+        const id = crypto.randomUUID();
+        const payload = { id, text: text.trim(), dueDate: dueDate || null };
+
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+            await enqueueOutbox({ id, type: "todo", payload });
+            onSaved();
+            return;
+        }
+
         setSaving(true);
         try {
             const res = await fetch("/api/todos", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: text.trim(), dueDate: dueDate || null }),
+                body: JSON.stringify(payload),
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
@@ -34,14 +52,18 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
             }
             onSaved();
         } catch {
-            setError("Network error. Please try again.");
+            await enqueueOutbox({ id, type: "todo", payload });
             setSaving(false);
+            onSaved();
         }
     }
 
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
             <form
+                role="dialog"
+                aria-modal="true"
+                aria-label="Add Task"
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
                 className="w-full max-w-md rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"

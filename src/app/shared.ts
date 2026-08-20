@@ -104,6 +104,13 @@ export const INK_BTN =
     "rounded-xl bg-ink px-5 py-3 font-semibold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none";
 
 // Dates are stored as "YYYY-MM-DD"; displayed/parsed as "DD/MM/YYYY" everywhere in the app.
+export function getTodayLocalDateISO(d = new Date()): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+}
+
 export function formatDate(iso: string): string {
     const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso);
     if (!m) return iso;

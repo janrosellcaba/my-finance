@@ -48,6 +48,7 @@ export const transaction = sqliteTable("transaction", {
 }, (table) => [
     index("idx_transaction_user_date").on(table.userId, table.date),
     index("idx_transaction_user_category").on(table.userId, table.destinationId),
+    index("idx_transaction_user_account").on(table.userId, table.accountId),
 ]);
 
 export const todo = sqliteTable("todo", {
@@ -66,7 +67,8 @@ export const session = sqliteTable("session", {
     userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
     expiresAt: integer("expires_at").notNull(),
 }, (table) => [
-    index("idx_session_user").on(table.userId)
+    index("idx_session_user").on(table.userId),
+    index("idx_session_expires").on(table.expiresAt),
 ]);
 
 export type User = typeof users.$inferSelect;

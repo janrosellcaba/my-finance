@@ -357,11 +357,22 @@ function MoverDrillDown({
         };
     }, [categoryId, startDate, endDate]);
 
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") onClose();
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
+
     const total = txs.reduce((s, t) => s + t.amount, 0);
 
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-label={name}
                 onClick={(e) => e.stopPropagation()}
                 className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
             >

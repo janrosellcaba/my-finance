@@ -3,7 +3,7 @@ import { getDb } from "@/db";
 import { transaction, account } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { applyTransactionToBalances, round2 } from "@/lib/balances";
-import { eq, desc } from "drizzle-orm";
+import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
 
 // How much history the home screen's net-worth sparkline and account "% change"
 // badges look back over. Kept short — this is an at-a-glance widget, not analytics.
@@ -28,41 +28,71 @@ export async function GET() {
         }
 
         const db = await getDb();
-
-        const userAccounts = await db
-            .select()
-            .from(account)
-            .where(eq(account.userId, user.id))
-            .all();
-
-        const allTransactions = await db
-            .select({
-                date: transaction.date,
-                type: transaction.type,
-                amount: transaction.amount,
-                accountId: transaction.accountId,
-                destinationId: transaction.destinationId,
-            })
-            .from(transaction)
-            .where(eq(transaction.userId, user.id))
-            .all();
-
         const today = new Date().toISOString().slice(0, 10);
         const startDate = addDaysISO(today, -(HISTORY_DAYS - 1));
 
-        // Bucket transactions by day within the window; anything older is folded into
-        // the starting balance, anything (unexpectedly) future-dated lands on "today" —
-        // so walking the window still ends at the exact same total as applying every
-        // transaction unconditionally would.
-        const byDate = new Map<string, typeof allTransactions>();
+        const [userAccounts, preWindowSourceDeltas, preWindowTransferInDeltas, windowTransactions] = await Promise.all([
+            db
+                .select()
+                .from(account)
+                .where(eq(account.userId, user.id))
+                .all(),
+            // Fast indexed SQL aggregation for transactions older than the 30-day window
+            db
+                .select({
+                    accountId: transaction.accountId,
+                    delta: sql<number>`SUM(CASE WHEN ${transaction.type} = 'income' THEN ${transaction.amount} ELSE -${transaction.amount} END)`.as("delta"),
+                })
+                .from(transaction)
+                .where(and(eq(transaction.userId, user.id), lt(transaction.date, startDate)))
+                .groupBy(transaction.accountId)
+                .all(),
+            // Incoming transfer legs older than the 30-day window
+            db
+                .select({
+                    accountId: transaction.destinationId,
+                    delta: sql<number>`SUM(${transaction.amount})`.as("delta"),
+                })
+                .from(transaction)
+                .where(
+                    and(
+                        eq(transaction.userId, user.id),
+                        eq(transaction.type, "transfer"),
+                        lt(transaction.date, startDate)
+                    )
+                )
+                .groupBy(transaction.destinationId)
+                .all(),
+            // Only stream the active 30-day window transactions into Node memory
+            db
+                .select({
+                    date: transaction.date,
+                    type: transaction.type,
+                    amount: transaction.amount,
+                    accountId: transaction.accountId,
+                    destinationId: transaction.destinationId,
+                })
+                .from(transaction)
+                .where(and(eq(transaction.userId, user.id), gte(transaction.date, startDate)))
+                .all(),
+        ]);
+
         const runningBalances: Record<string, number> = {};
         for (const acc of userAccounts) runningBalances[acc.id] = acc.initialBalance;
 
-        for (const tx of allTransactions) {
-            if (tx.date < startDate) {
-                applyTransactionToBalances(runningBalances, tx);
-                continue;
+        for (const row of preWindowSourceDeltas) {
+            if (row.accountId in runningBalances && row.delta != null) {
+                runningBalances[row.accountId] = round2(runningBalances[row.accountId] + row.delta);
             }
+        }
+        for (const row of preWindowTransferInDeltas) {
+            if (row.accountId in runningBalances && row.delta != null) {
+                runningBalances[row.accountId] = round2(runningBalances[row.accountId] + row.delta);
+            }
+        }
+
+        const byDate = new Map<string, typeof windowTransactions>();
+        for (const tx of windowTransactions) {
             const key = tx.date > today ? today : tx.date;
             if (!byDate.has(key)) byDate.set(key, []);
             byDate.get(key)!.push(tx);

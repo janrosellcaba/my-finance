@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, lt } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { cache } from "react";
 import { getDb } from "@/db";
@@ -6,6 +6,22 @@ import { session, users, type User } from "@/db/schema";
 
 const COOKIE_NAME = "finance_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
+const PRUNE_INTERVAL_MS = 1000 * 60 * 60; // 1 hour
+
+let lastPruneAt = 0;
+
+async function pruneExpiredSessions(): Promise<void> {
+    const now = Date.now();
+    if (now - lastPruneAt < PRUNE_INTERVAL_MS) return;
+    lastPruneAt = now;
+
+    try {
+        const db = await getDb();
+        await db.delete(session).where(lt(session.expiresAt, now));
+    } catch (err) {
+        console.error("Session pruning error:", err);
+    }
+}
 
 function generateToken(): string {
     const bytes = crypto.getRandomValues(new Uint8Array(32));
@@ -42,6 +58,8 @@ export async function createSession(userId: string): Promise<{ token: string; ex
 // Wrapped in React's cache() so the layout and the page (both server components on the
 // same request) share one lookup instead of hitting the DB twice for the same session.
 export const validateSession = cache(async (): Promise<User | null> => {
+    await pruneExpiredSessions();
+
     const cookieStore = await cookies();
     const token = cookieStore.get(COOKIE_NAME)?.value;
     if (!token) return null;

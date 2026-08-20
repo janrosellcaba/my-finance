@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
+import { round2 } from "@/lib/balances";
 import { and, eq, desc, like, gte, lte, lt, or } from "drizzle-orm";
 
 export async function POST(request: Request) {
@@ -12,6 +13,7 @@ export async function POST(request: Request) {
         }
 
         const body = (await request.json().catch(() => null)) as {
+            id?: unknown;
             date?: unknown;
             description?: unknown;
             type?: unknown;
@@ -29,6 +31,7 @@ export async function POST(request: Request) {
             typeof date !== "string" ||
             typeof description !== "string" ||
             typeof amount !== "number" ||
+            !Number.isFinite(amount) ||
             typeof accountId !== "string" ||
             typeof destinationId !== "string" ||
             typeof type !== "string" ||
@@ -38,7 +41,18 @@ export async function POST(request: Request) {
         }
 
         const db = await getDb();
-        const transactionId = crypto.randomUUID();
+        const transactionId =
+            typeof body.id === "string" && body.id.trim().length > 0 ? body.id.trim() : crypto.randomUUID();
+
+        const existing = await db
+            .select({ id: transaction.id })
+            .from(transaction)
+            .where(and(eq(transaction.id, transactionId), eq(transaction.userId, user.id)))
+            .get();
+
+        if (existing) {
+            return NextResponse.json({ success: true, transactionId, alreadyExisted: true }, { status: 200 });
+        }
 
         await db.insert(transaction).values({
             id: transactionId,
@@ -46,7 +60,7 @@ export async function POST(request: Request) {
             date,
             description: description.trim(),
             type: type as "income" | "expense" | "transfer",
-            amount,
+            amount: round2(amount),
             accountId,
             destinationId,
         });
@@ -85,6 +99,7 @@ export async function PUT(request: Request) {
             typeof date !== "string" ||
             typeof description !== "string" ||
             typeof amount !== "number" ||
+            !Number.isFinite(amount) ||
             typeof accountId !== "string" ||
             typeof destinationId !== "string" ||
             typeof type !== "string" ||
@@ -110,7 +125,7 @@ export async function PUT(request: Request) {
                 date,
                 description: description.trim(),
                 type: type as "income" | "expense" | "transfer",
-                amount,
+                amount: round2(amount),
                 accountId,
                 destinationId,
             })

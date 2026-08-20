@@ -14,9 +14,6 @@ type ImportRow = {
     destinationName: string;
 };
 
-// D1 caps bound parameters per query at ~100; transaction rows have 8 columns each,
-// so keep chunks small enough (with margin) to stay under that regardless of table.
-const TRANSACTION_CHUNK_SIZE = 10;
 
 function rowError(row: unknown): string | null {
     if (!row || typeof row !== "object") return "not an object";
@@ -172,17 +169,28 @@ export async function POST(request: Request) {
                     .where(and(eq(account.id, accountId), eq(account.userId, user.id)))
                     .run();
             }
-        });
 
-        for (let i = 0; i < newAccounts.length; i += TRANSACTION_CHUNK_SIZE) {
-            await db.insert(account).values(newAccounts.slice(i, i + TRANSACTION_CHUNK_SIZE));
-        }
-        for (let i = 0; i < newCategories.length; i += TRANSACTION_CHUNK_SIZE) {
-            await db.insert(category).values(newCategories.slice(i, i + TRANSACTION_CHUNK_SIZE));
-        }
-        for (let i = 0; i < transactionRows.length; i += TRANSACTION_CHUNK_SIZE) {
-            await db.insert(transaction).values(transactionRows.slice(i, i + TRANSACTION_CHUNK_SIZE));
-        }
+            if (newAccounts.length > 0) {
+                const BATCH = 100;
+                for (let i = 0; i < newAccounts.length; i += BATCH) {
+                    tx.insert(account).values(newAccounts.slice(i, i + BATCH)).run();
+                }
+            }
+
+            if (newCategories.length > 0) {
+                const BATCH = 100;
+                for (let i = 0; i < newCategories.length; i += BATCH) {
+                    tx.insert(category).values(newCategories.slice(i, i + BATCH)).run();
+                }
+            }
+
+            if (transactionRows.length > 0) {
+                const BATCH = 100;
+                for (let i = 0; i < transactionRows.length; i += BATCH) {
+                    tx.insert(transaction).values(transactionRows.slice(i, i + BATCH)).run();
+                }
+            }
+        });
 
         return NextResponse.json({
             success: true,

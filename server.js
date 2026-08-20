@@ -7,9 +7,35 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
-    createServer((req, res) => {
+    const server = createServer((req, res) => {
         handle(req, res);
-    }).listen(port, () => {
+    });
+
+    server.listen(port, () => {
         console.log(`> Ready on http://localhost:${port}`);
     });
+
+    let isShuttingDown = false;
+    const gracefulShutdown = (signal) => {
+        if (isShuttingDown) return;
+        isShuttingDown = true;
+        console.log(`> Received ${signal}. Shutting down gracefully...`);
+
+        server.close((err) => {
+            if (err) {
+                console.error("> Error during server close:", err);
+                process.exit(1);
+            }
+            console.log("> HTTP server closed.");
+            process.exit(0);
+        });
+
+        setTimeout(() => {
+            console.error("> Forceful shutdown after 10s timeout.");
+            process.exit(1);
+        }, 10000).unref();
+    };
+
+    process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+    process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 });

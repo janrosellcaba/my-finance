@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
     type Account,
     type Category,
     type Transaction,
     type TransactionType,
+    getTodayLocalDateISO,
     INPUT_CLS,
     PRIMARY_BTN,
 } from "../shared";
 import { IconClose } from "./icons";
+import { enqueueOutbox } from "@/lib/offlineStore";
 
 export function AddTransactionModal({
     accounts,
@@ -28,11 +30,19 @@ export function AddTransactionModal({
 }) {
     const isEditing = !!transaction;
 
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") onClose();
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose]);
+
     function defaultCategoryFor(t: "income" | "expense"): string {
         return categories.find((c) => c.type === t && c.isDefault)?.id ?? "";
     }
 
-    const [date, setDate] = useState(() => transaction?.date ?? new Date().toISOString().slice(0, 10));
+    const [date, setDate] = useState(() => transaction?.date ?? getTodayLocalDateISO());
     const [description, setDescription] = useState(transaction?.description ?? "");
     const [type, setType] = useState<TransactionType>(transaction?.type ?? "expense");
     const [accountId, setAccountId] = useState(
@@ -78,20 +88,28 @@ export function AddTransactionModal({
             return;
         }
 
-        setSaving(true);
+        const payload = {
+            ...(isEditing ? { id: transaction!.id } : { id: crypto.randomUUID() }),
+            date,
+            description: description.trim(),
+            type,
+            amount: amountNum,
+            accountId,
+            destinationId,
+        };
+
+        if (typeof navigator !== "undefined" && !navigator.onLine && !isEditing) {
+            await enqueueOutbox({ id: payload.id as string, type: "transaction", payload });
+            setSaving(false);
+            onSaved();
+            return;
+        }
+
         try {
             const res = await fetch("/api/transactions", {
                 method: isEditing ? "PUT" : "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    ...(isEditing ? { id: transaction!.id } : {}),
-                    date,
-                    description: description.trim(),
-                    type,
-                    amount: amountNum,
-                    accountId,
-                    destinationId,
-                }),
+                body: JSON.stringify(payload),
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
@@ -101,6 +119,12 @@ export function AddTransactionModal({
             }
             onSaved();
         } catch {
+            if (!isEditing) {
+                await enqueueOutbox({ id: payload.id as string, type: "transaction", payload });
+                setSaving(false);
+                onSaved();
+                return;
+            }
             setError("Network error. Please try again.");
             setSaving(false);
         }
@@ -114,6 +138,9 @@ export function AddTransactionModal({
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
             <form
+                role="dialog"
+                aria-modal="true"
+                aria-label={isEditing ? "Edit Transaction" : "Add Transaction"}
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
                 className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"

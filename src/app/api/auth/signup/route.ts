@@ -33,8 +33,9 @@ export async function POST(request: Request) {
         const username = typeof body.username === "string" ? body.username.trim() : "";
         const password = typeof body.password === "string" ? body.password : "";
         const secretCode = typeof body.secretCode === "string" ? body.secretCode : "";
+        const expectedSecret = process.env.REGISTRATION_SECRET;
 
-        if (secretCode !== process.env.REGISTRATION_SECRET) {
+        if (!expectedSecret || secretCode !== expectedSecret) {
             return NextResponse.json({ error: "Unauthorized: Invalid registration safety code." }, { status: 403 });
         }
 

@@ -13,6 +13,7 @@ import { TodoView } from "./TodoView";
 import { TransactionsView } from "./TransactionsView";
 import { UndoToastProvider } from "./UndoToastProvider";
 import { IconEye, IconEyeOff } from "./icons";
+import { getFromCache, getOutbox, saveToCache, syncOutbox } from "@/lib/offlineStore";
 
 export function AppShell({
     username,
@@ -32,6 +33,8 @@ export function AppShell({
     const [showAddModal, setShowAddModal] = useState(false);
     const [privacyMode, setPrivacyMode] = useState(initialPrivacyMode);
     const [theme, setTheme] = useState<Theme>(initialTheme);
+    const [isOnline, setIsOnline] = useState(true);
+    const [outboxCount, setOutboxCount] = useState(0);
     const mainRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
@@ -39,32 +42,82 @@ export function AppShell({
     }, [tab]);
 
     const loadDashboard = useCallback(async () => {
-        const res = await fetch("/api/dashboard");
-        if (res.status === 401) {
-            router.refresh();
-            return;
+        try {
+            const res = await fetch("/api/dashboard");
+            if (res.status === 401) {
+                router.refresh();
+                return;
+            }
+            const data = (await res.json()) as { success: boolean; summary?: DashboardSummary };
+            if (data.success && data.summary) {
+                setDashboard(data.summary);
+                await saveToCache("dashboard", data.summary);
+            }
+        } catch {
+            const cached = await getFromCache<DashboardSummary>("dashboard");
+            if (cached) setDashboard(cached);
+        } finally {
+            setLoadingDashboard(false);
         }
-        const data = (await res.json()) as { success: boolean; summary?: DashboardSummary };
-        if (data.success && data.summary) setDashboard(data.summary);
-        setLoadingDashboard(false);
     }, [router]);
 
     const loadConfig = useCallback(async () => {
-        const res = await fetch("/api/config");
-        if (res.status === 401) {
-            router.refresh();
-            return;
-        }
-        const data = (await res.json()) as { success: boolean; accounts?: Account[]; categories?: Category[] };
-        if (data.success) {
-            setAccounts(data.accounts ?? []);
-            setCategories(data.categories ?? []);
+        try {
+            const res = await fetch("/api/config");
+            if (res.status === 401) {
+                router.refresh();
+                return;
+            }
+            const data = (await res.json()) as { success: boolean; accounts?: Account[]; categories?: Category[] };
+            if (data.success) {
+                setAccounts(data.accounts ?? []);
+                setCategories(data.categories ?? []);
+                await saveToCache("config", { accounts: data.accounts, categories: data.categories });
+            }
+        } catch {
+            const cached = await getFromCache<{ accounts?: Account[]; categories?: Category[] }>("config");
+            if (cached) {
+                if (cached.accounts) setAccounts(cached.accounts);
+                if (cached.categories) setCategories(cached.categories);
+            }
         }
     }, [router]);
 
     useEffect(() => {
+        if (typeof navigator !== "undefined") {
+            setIsOnline(navigator.onLine);
+        }
+
+        async function checkOutbox() {
+            const items = await getOutbox();
+            setOutboxCount(items.length);
+        }
+
+        async function handleOnline() {
+            setIsOnline(true);
+            const { syncedCount } = await syncOutbox();
+            await checkOutbox();
+            if (syncedCount > 0) {
+                await Promise.all([loadDashboard(), loadConfig()]);
+            }
+        }
+
+        function handleOffline() {
+            setIsOnline(false);
+            checkOutbox();
+        }
+
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+        checkOutbox();
+
         loadDashboard();
         loadConfig();
+
+        return () => {
+            window.removeEventListener("online", handleOnline);
+            window.removeEventListener("offline", handleOffline);
+        };
     }, [loadDashboard, loadConfig]);
 
     async function handleLogout() {
@@ -82,6 +135,8 @@ export function AppShell({
 
     async function handleTransactionSaved() {
         setShowAddModal(false);
+        const items = await getOutbox();
+        setOutboxCount(items.length);
         await loadDashboard();
     }
 
@@ -113,7 +168,7 @@ export function AppShell({
 
     return (
         <UndoToastProvider>
-            <div className="fixed inset-0 flex flex-col bg-cream">
+            <div className="fixed inset-0 flex flex-col bg-cream h-[100dvh] max-h-[100dvh]">
                 <header className="shrink-0 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
@@ -131,6 +186,15 @@ export function AppShell({
                         </button>
                     </div>
                 </header>
+
+                {!isOnline && (
+                    <div className="shrink-0 bg-ink px-4 py-2 text-center text-xs font-semibold text-white flex items-center justify-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
+                        <span>
+                            Offline Mode{outboxCount > 0 ? ` — ${outboxCount} item(s) pending sync` : " — showing cached data"}
+                        </span>
+                    </div>
+                )}
 
                 <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
                     <div className={`mx-auto pb-6 ${tab === "analytics" ? "max-w-md lg:max-w-6xl" : "max-w-md"}`}>
@@ -161,7 +225,9 @@ export function AppShell({
                                 privacyMode={privacyMode}
                                 theme={theme}
                                 onSetTheme={handleSetTheme}
-                                onRefresh={loadConfig}
+                                onRefresh={async () => {
+                                    await Promise.all([loadConfig(), loadDashboard()]);
+                                }}
                                 onLogout={handleLogout}
                                 onPasswordChanged={handlePasswordChanged}
                                 onAccountDeleted={handleAccountDeleted}
