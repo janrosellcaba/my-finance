@@ -515,10 +515,10 @@ export function ConfigView({
             {section === "backup" && (
                 <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
                     <p className="text-sm text-muted">
-                        Downloads a full snapshot of your database — every account, category, and transaction —
-                        as a single file. Unlike Export Data (a spreadsheet-friendly transaction list), this is a
-                        complete copy you could restore from if needed. It doesn&apos;t replace the server&apos;s
-                        own nightly backups, but it&apos;s a copy you hold yourself, on demand.
+                        Downloads a complete backup of your personal account data — all your accounts,
+                        categories, transactions, and tasks — as a single JSON file. Unlike Export Data
+                        (a spreadsheet-friendly CSV list), this is a complete structured copy of your
+                        data you can hold for your own records and on-demand recovery.
                     </p>
                     <a
                         href="/api/backup"
