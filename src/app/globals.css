@@ -103,6 +103,15 @@ body {
 	background: var(--color-muted);
 }
 
+/* Invert monochrome logo in dark mode */
+.theme-logo {
+	transition: filter 0.2s ease-out;
+}
+
+:root[data-theme="dark"] .theme-logo {
+	filter: invert(1) brightness(1.15);
+}
+
 /* The cursor always stays the plain system arrow — no pointer/hand on
    buttons or links, no text caret over inputs. Hover states carry the
    affordance instead. */

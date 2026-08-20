@@ -46,7 +46,7 @@ export function AuthGate() {
         <div className="flex h-full items-center justify-center overflow-y-auto bg-cream px-5 py-10">
             <div className="w-full max-w-sm rounded-3xl border border-line bg-paper p-8 shadow-sm">
                 <div className="mb-3 flex justify-center">
-                    <Image src="/logo.png" alt="" width={52} height={52} priority className="opacity-90" />
+                    <Image src="/logo.png" alt="" width={52} height={52} priority className="theme-logo opacity-90" />
                 </div>
                 <h1 className="text-center text-3xl font-extrabold tracking-tight text-ink">MyFinance</h1>
                 <p className="mb-6 text-center text-sm text-muted">

@@ -207,7 +207,7 @@ export function AppShell({
                 <header className="shrink-0 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
-                            <Image src="/logo.png" alt="" width={20} height={20} className="opacity-80" />
+                            <Image src="/logo.png" alt="" width={20} height={20} className="theme-logo opacity-80" />
                             <p className="text-lg font-extrabold text-ink">Hi, {username}</p>
                         </div>
                         <button
