@@ -133,6 +133,41 @@ export function AppShell({
         router.refresh();
     }
 
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            const target = e.target as HTMLElement | null;
+            if (
+                target &&
+                (target.tagName === "INPUT" ||
+                    target.tagName === "TEXTAREA" ||
+                    target.tagName === "SELECT" ||
+                    target.isContentEditable)
+            ) {
+                return;
+            }
+
+            if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+            if (e.key === "t" || e.key === "T" || e.key === "n" || e.key === "N") {
+                e.preventDefault();
+                setShowAddModal(true);
+            } else if (e.key === "1") {
+                setTab("home");
+            } else if (e.key === "2") {
+                setTab("transactions");
+            } else if (e.key === "3") {
+                setTab("todo");
+            } else if (e.key === "4") {
+                setTab("analytics");
+            } else if (e.key === "5") {
+                setTab("config");
+            }
+        }
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
     async function handleTransactionSaved() {
         setShowAddModal(false);
         const items = await getOutbox();
@@ -192,7 +227,7 @@ export function AppShell({
                 </header>
 
                 {!isOnline && (
-                    <div className="shrink-0 bg-ink px-4 py-2 text-center text-xs font-semibold text-white flex items-center justify-center gap-2">
+                    <div className="shrink-0 bg-ink px-4 py-2 text-center text-xs font-semibold text-paper flex items-center justify-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                         <span>
                             Offline Mode{outboxCount > 0 ? ` — ${outboxCount} item(s) pending sync` : " — showing cached data"}

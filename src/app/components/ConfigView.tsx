@@ -537,7 +537,7 @@ export function ConfigView({
                             type="button"
                             onClick={() => onSetTheme("light")}
                             className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
-                                theme === "light" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                theme === "light" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
                             Light
@@ -546,7 +546,7 @@ export function ConfigView({
                             type="button"
                             onClick={() => onSetTheme("dark")}
                             className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
-                                theme === "dark" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                theme === "dark" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
                             Dark

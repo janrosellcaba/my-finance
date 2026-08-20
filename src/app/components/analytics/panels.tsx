@@ -98,7 +98,7 @@ export function NetWorthChart({ data, privacyMode }: { data: A; privacyMode: boo
                         type="button"
                         onClick={() => setSelectedAccountId("all")}
                         className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
-                            selectedAccountId === "all" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                            selectedAccountId === "all" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                         }`}
                     >
                         All accounts
@@ -109,7 +109,7 @@ export function NetWorthChart({ data, privacyMode }: { data: A; privacyMode: boo
                             type="button"
                             onClick={() => setSelectedAccountId(a.accountId)}
                             className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
-                                selectedAccountId === a.accountId ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                selectedAccountId === a.accountId ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
                             {a.name}
@@ -376,6 +376,7 @@ function MoverDrillDown({
                 onClick={(e) => e.stopPropagation()}
                 className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
             >
+                <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-lg font-bold text-ink">{name}</h2>
                     <button

@@ -141,7 +141,7 @@ export function TransactionsView({
                     aria-label="Toggle filters"
                     aria-pressed={showFilters}
                     className={`relative shrink-0 rounded-xl p-3 transition-colors duration-150 ${
-                        showFilters ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                        showFilters ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                     }`}
                 >
                     <IconFilter className="h-5 w-5" />
@@ -165,7 +165,7 @@ export function TransactionsView({
                                             ? "bg-brand text-white"
                                             : t === "expense"
                                               ? "bg-danger text-white"
-                                              : "bg-ink text-white"
+                                              : "bg-ink text-paper"
                                         : "bg-chip text-muted hover:bg-chip-hover"
                                 }`}
                             >
@@ -179,7 +179,7 @@ export function TransactionsView({
                             type="button"
                             onClick={() => setAccountFilter("")}
                             className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
-                                accountFilter === "" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                accountFilter === "" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
                             All accounts
@@ -190,7 +190,7 @@ export function TransactionsView({
                                 key={a.id}
                                 onClick={() => setAccountFilter(a.id)}
                                 className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
-                                    accountFilter === a.id ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                    accountFilter === a.id ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                                 }`}
                             >
                                 {a.name}
@@ -203,7 +203,7 @@ export function TransactionsView({
                             type="button"
                             onClick={() => setCategoryFilter("")}
                             className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
-                                categoryFilter === "" ? "bg-ink text-white" : "bg-chip text-muted hover:bg-chip-hover"
+                                categoryFilter === "" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
                             All categories

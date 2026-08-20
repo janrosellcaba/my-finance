@@ -101,7 +101,7 @@ export const PRIMARY_BTN =
     "rounded-2xl py-4 text-lg font-bold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 disabled:opacity-60 select-none";
 
 export const INK_BTN =
-    "rounded-xl bg-ink px-5 py-3 font-semibold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none";
+    "rounded-xl bg-ink px-5 py-3 font-semibold text-paper transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none";
 
 // Dates are stored as "YYYY-MM-DD"; displayed/parsed as "DD/MM/YYYY" everywhere in the app.
 export function getTodayLocalDateISO(d = new Date()): string {

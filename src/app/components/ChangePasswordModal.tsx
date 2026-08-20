@@ -59,6 +59,7 @@ export function ChangePasswordModal({ onClose, onChanged }: { onClose: () => voi
                 onSubmit={handleSubmit}
                 className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
             >
+                <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-ink">Change Password</h2>
                     <button

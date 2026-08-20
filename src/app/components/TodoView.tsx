@@ -102,7 +102,7 @@ export function TodoView() {
                 <button
                     type="button"
                     onClick={() => setShowAddModal(true)}
-                    className="rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none"
+                    className="rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-paper transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none"
                 >
                     + Add
                 </button>
@@ -113,7 +113,22 @@ export function TodoView() {
             ) : (
                 <>
                     {active.length === 0 ? (
-                        <p className="pt-10 text-center text-muted">No tasks yet. Add one to get started.</p>
+                        <div className="flex flex-col items-center gap-3 py-12 text-center">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand/10 text-brand">
+                                <IconCheckSquare className="h-6 w-6" />
+                            </div>
+                            <div>
+                                <p className="font-bold text-ink">All caught up!</p>
+                                <p className="mt-0.5 text-xs text-muted">No pending financial tasks or reminders.</p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowAddModal(true)}
+                                className="mt-2 rounded-xl bg-chip px-4 py-2 text-xs font-bold text-ink transition-colors hover:bg-chip-hover"
+                            >
+                                + Create a task
+                            </button>
+                        </div>
                     ) : (
                         <div className="divide-y divide-line rounded-2xl border border-line bg-paper shadow-sm">
                             {active.map((t) => (

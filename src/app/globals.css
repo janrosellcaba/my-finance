@@ -84,6 +84,25 @@ body {
 	letter-spacing: -0.01em;
 }
 
+/* Custom sleek minimalist scrollbars */
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+
+::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--color-line);
+	border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--color-muted);
+}
+
 /* The cursor always stays the plain system arrow — no pointer/hand on
    buttons or links, no text caret over inputs. Hover states carry the
    affordance instead. */

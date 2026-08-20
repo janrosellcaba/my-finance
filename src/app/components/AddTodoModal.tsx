@@ -68,6 +68,7 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
                 onSubmit={handleSubmit}
                 className="w-full max-w-md rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
             >
+                <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-ink">Add Task</h2>
                     <button

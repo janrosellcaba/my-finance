@@ -145,6 +145,7 @@ export function AddTransactionModal({
                 onSubmit={handleSubmit}
                 className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
             >
+                <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
                     <h2 className="text-xl font-bold text-ink">{isEditing ? "Edit Transaction" : "Add Transaction"}</h2>
                     <button
@@ -169,7 +170,7 @@ export function AddTransactionModal({
                                         ? "bg-brand text-white"
                                         : t === "expense"
                                           ? "bg-danger text-white"
-                                          : "bg-ink text-white"
+                                          : "bg-ink text-paper"
                                     : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >

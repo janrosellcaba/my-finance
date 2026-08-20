@@ -62,7 +62,7 @@ export function UndoToastProvider({ children }: { children: React.ReactNode }) {
                 {toasts.map((t) => (
                     <div
                         key={t.id}
-                        className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-white shadow-lg"
+                        className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-paper shadow-lg"
                     >
                         <span>{t.message}</span>
                         <button
