@@ -1,3 +1,4 @@
 # My Finance
 
-[fin.janrosell.com](https://fin.janrosell.com)
+Keep track of all your daily finance.
+Find it a [fin.janrosell.com](https://fin.janrosell.com)
