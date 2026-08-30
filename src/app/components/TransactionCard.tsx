@@ -1,6 +1,6 @@
 "use client";
 
-import { type Account, type Category, type Transaction, AMOUNT_MASK, eur, formatDate } from "../shared";
+import { type Account, type Category, type Transaction, eur, formatCurrency, formatDate } from "../shared";
 import { CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight } from "./icons";
 
 function resolveName(id: string, accounts: Account[], categories: Category[]): string {
@@ -12,6 +12,7 @@ export function TransactionCard({
     accounts,
     categories,
     privacyMode,
+    accountBalance,
     onClick,
     compact = false,
 }: {
@@ -19,6 +20,7 @@ export function TransactionCard({
     accounts: Account[];
     categories: Category[];
     privacyMode: boolean;
+    accountBalance?: number;
     onClick?: () => void;
     compact?: boolean;
 }) {
@@ -88,13 +90,25 @@ export function TransactionCard({
                     </p>
                 </div>
             </div>
-            <p
-                className={`ml-3 shrink-0 font-bold tabular-nums transition-[filter,opacity] duration-250 ${
-                    compact ? "text-base" : "text-lg"
-                } ${color} ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
-            >
-                {sign}{eur.format(Math.abs(tx.amount))}
-            </p>
+            <div className="ml-3 shrink-0 text-right">
+                <p
+                    className={`font-bold tabular-nums leading-tight transition-[filter,opacity] duration-250 ${
+                        compact ? "text-base" : "text-lg"
+                    } ${color} ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
+                >
+                    {sign}
+                    {eur.format(Math.abs(tx.amount))}
+                </p>
+                {accountBalance !== undefined && (
+                    <p
+                        className={`mt-0.5 text-xs tabular-nums leading-tight text-muted transition-[filter,opacity] duration-250 ${
+                            privacyMode ? "blur-[5px] select-none opacity-70" : ""
+                        }`}
+                    >
+                        {formatCurrency(accountBalance)}
+                    </p>
+                )}
+            </div>
         </Tag>
     );
 }
