@@ -4,7 +4,14 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { type Account, type Category, type DashboardSummary, type Tab, type Theme } from "../shared";
+import {
+    type Account,
+    type AppearancePrefs,
+    type Category,
+    type DashboardSummary,
+    type Tab,
+    setFormatPrefs,
+} from "../shared";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { BottomNav } from "./BottomNav";
 import { HomeView } from "./HomeView";
@@ -19,14 +26,21 @@ const TodoView = dynamic(() => import("./TodoView").then((m) => m.TodoView), { s
 const AnalyticsView = dynamic(() => import("./AnalyticsView").then((m) => m.AnalyticsView), { ssr: false });
 const ConfigView = dynamic(() => import("./ConfigView").then((m) => m.ConfigView), { ssr: false });
 
+function applyDomAppearance(prefs: AppearancePrefs) {
+    const root = document.documentElement;
+    root.dataset.theme = prefs.theme;
+    root.dataset.accent = prefs.accent;
+    root.dataset.density = prefs.density;
+    root.dataset.font = prefs.font;
+    setFormatPrefs({ currency: prefs.currency, dateFormat: prefs.dateFormat });
+}
+
 export function AppShell({
     username,
-    initialPrivacyMode,
-    initialTheme,
+    initialAppearance,
 }: {
     username: string;
-    initialPrivacyMode: boolean;
-    initialTheme: Theme;
+    initialAppearance: AppearancePrefs;
 }) {
     const router = useRouter();
     const [tab, setTab] = useState<Tab>("home");
@@ -35,11 +49,14 @@ export function AppShell({
     const [accounts, setAccounts] = useState<Account[]>([]);
     const [categories, setCategories] = useState<Category[]>([]);
     const [showAddModal, setShowAddModal] = useState(false);
-    const [privacyMode, setPrivacyMode] = useState(initialPrivacyMode);
-    const [theme, setTheme] = useState<Theme>(initialTheme);
+    const [appearance, setAppearance] = useState<AppearancePrefs>(initialAppearance);
     const [isOnline, setIsOnline] = useState(true);
     const [outboxCount, setOutboxCount] = useState(0);
     const mainRef = useRef<HTMLElement>(null);
+
+    useEffect(() => {
+        applyDomAppearance(initialAppearance);
+    }, [initialAppearance]);
 
     useEffect(() => {
         mainRef.current?.scrollTo(0, 0);
@@ -179,36 +196,42 @@ export function AppShell({
         await loadDashboard();
     }
 
-    async function handleSetTheme(next: Theme) {
-        const previous = theme;
-        setTheme(next);
-        document.documentElement.dataset.theme = next;
-        const res = await fetch("/api/theme", {
+    async function patchAppearance(partial: Partial<AppearancePrefs>) {
+        const previous = appearance;
+        const next = { ...appearance, ...partial };
+        setAppearance(next);
+        applyDomAppearance(next);
+
+        const body: Record<string, unknown> = {};
+        if (partial.theme !== undefined) body.theme = partial.theme;
+        if (partial.privacyMode !== undefined) body.privacyMode = partial.privacyMode;
+        if (partial.accent !== undefined) body.accent = partial.accent;
+        if (partial.density !== undefined) body.density = partial.density;
+        if (partial.font !== undefined) body.font = partial.font;
+        if (partial.currency !== undefined) body.currency = partial.currency;
+        if (partial.dateFormat !== undefined) body.dateFormat = partial.dateFormat;
+
+        const res = await fetch("/api/appearance", {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ theme: next }),
+            body: JSON.stringify(body),
         });
         if (!res.ok) {
-            setTheme(previous);
-            document.documentElement.dataset.theme = previous;
+            setAppearance(previous);
+            applyDomAppearance(previous);
         }
     }
 
     async function handleTogglePrivacy() {
-        const next = !privacyMode;
-        setPrivacyMode(next);
-        const res = await fetch("/api/privacy", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ privacyMode: next }),
-        });
-        if (!res.ok) setPrivacyMode(!next);
+        await patchAppearance({ privacyMode: !appearance.privacyMode });
     }
+
+    const { privacyMode } = appearance;
 
     return (
         <UndoToastProvider>
             <div className="fixed inset-0 flex flex-col bg-cream h-[100dvh] max-h-[100dvh]">
-                <header className="shrink-0 border-b border-line bg-paper/90 px-5 py-4 backdrop-blur">
+                <header className="surface-header shrink-0 border-b px-5 py-4">
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <Image src="/logo.png" alt="" width={20} height={20} className="theme-logo opacity-80" />
@@ -267,9 +290,8 @@ export function AppShell({
                             <ConfigView
                                 accounts={accounts}
                                 categories={categories}
-                                privacyMode={privacyMode}
-                                theme={theme}
-                                onSetTheme={handleSetTheme}
+                                appearance={appearance}
+                                onPatchAppearance={patchAppearance}
                                 onRefresh={async () => {
                                     await Promise.all([loadConfig(), loadDashboard()]);
                                 }}

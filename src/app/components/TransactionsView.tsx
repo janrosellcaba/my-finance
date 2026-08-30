@@ -153,7 +153,7 @@ export function TransactionsView({
             </div>
 
             {showFilters && (
-                <div className="space-y-3 rounded-2xl border border-line bg-paper p-3">
+                <div className="space-y-3 surface rounded-2xl p-3">
                     <div className="flex gap-2 overflow-x-auto pb-1">
                         {(["", "income", "expense", "transfer"] as const).map((t) => (
                             <button
@@ -254,7 +254,7 @@ export function TransactionsView({
             )}
 
             {loading ? (
-                <div className="animate-pulse space-y-2 rounded-2xl border border-line bg-paper p-3">
+                <div className="animate-pulse space-y-2 surface rounded-2xl p-3">
                     {Array.from({ length: 6 }).map((_, i) => (
                         <div key={i} className="flex items-center justify-between px-1 py-1.5">
                             <div className="space-y-2">
@@ -274,7 +274,7 @@ export function TransactionsView({
                     <p className="text-sm text-muted">Try a different search term or filter.</p>
                 </div>
             ) : (
-                <div className="divide-y divide-line rounded-2xl border border-line bg-paper shadow-sm">
+                <div className="divide-y divide-line surface rounded-2xl">
                     {visibleTransactions.map((tx) => (
                         <TransactionCard
                             key={tx.id}

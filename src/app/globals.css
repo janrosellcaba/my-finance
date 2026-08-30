@@ -23,6 +23,28 @@
 	--color-chip-hover: #e9e4d6;
 }
 
+/* Accent overrides (light). Green is the :root default. */
+:root[data-accent="blue"] {
+	--color-brand: #2b6cb0;
+	--color-brand-dark: #1e4e8c;
+	--color-brand-soft: #e8f0f8;
+}
+:root[data-accent="terracotta"] {
+	--color-brand: #c45c3e;
+	--color-brand-dark: #9e452c;
+	--color-brand-soft: #f6ebe6;
+}
+:root[data-accent="slate"] {
+	--color-brand: #4a5568;
+	--color-brand-dark: #2d3748;
+	--color-brand-soft: #eceef1;
+}
+:root[data-accent="rose"] {
+	--color-brand: #b54a6a;
+	--color-brand-dark: #8f3550;
+	--color-brand-soft: #f6e8ee;
+}
+
 /* Explicit choice only — set via the Appearance section in Config, never inferred from
    the OS. Defaults to light (see :root above) for anyone who hasn't chosen yet. */
 :root[data-theme="dark"] {
@@ -49,6 +71,27 @@
 	--color-chip-hover: #2f2c25;
 }
 
+:root[data-theme="dark"][data-accent="blue"] {
+	--color-brand: #5b9fd4;
+	--color-brand-dark: #3d7fb0;
+	--color-brand-soft: #1a2838;
+}
+:root[data-theme="dark"][data-accent="terracotta"] {
+	--color-brand: #e08a6e;
+	--color-brand-dark: #c46d52;
+	--color-brand-soft: #3a221c;
+}
+:root[data-theme="dark"][data-accent="slate"] {
+	--color-brand: #a0aec0;
+	--color-brand-dark: #718096;
+	--color-brand-soft: #252830;
+}
+:root[data-theme="dark"][data-accent="rose"] {
+	--color-brand: #e08aa6;
+	--color-brand-dark: #c46d8a;
+	--color-brand-soft: #3a1f28;
+}
+
 @theme inline {
 	--color-background: var(--background);
 	--color-foreground: var(--foreground);
@@ -69,6 +112,13 @@
 	--font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
+:root[data-font="dm-sans"] {
+	--font-sans: var(--font-dm-sans), system-ui, sans-serif;
+}
+:root[data-font="manrope"] {
+	--font-sans: var(--font-manrope), system-ui, sans-serif;
+}
+
 html,
 body {
 	height: 100%;
@@ -80,7 +130,7 @@ body {
 body {
 	background: var(--background);
 	color: var(--foreground);
-	font-family: var(--font-outfit), system-ui, -apple-system, sans-serif;
+	font-family: var(--font-sans);
 	letter-spacing: -0.01em;
 }
 
@@ -110,6 +160,255 @@ body {
 
 :root[data-theme="dark"] .theme-logo {
 	filter: invert(1) brightness(1.15);
+}
+
+/* ── Raised surfaces (Linear-inspired, kept quiet) ─────────────────────────
+   Cards/panels use .surface; chrome bars use .surface-nav; primary actions
+   use .btn-raised* — same language, different intensity. */
+
+.surface {
+	border: 1px solid var(--color-line);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-paper) 70%, white) 0%,
+		var(--color-paper) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.7),
+		0 1px 2px rgba(35, 34, 29, 0.045),
+		0 1px 0 rgba(35, 34, 29, 0.03);
+}
+
+:root[data-theme="dark"] .surface {
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-paper) 82%, white) 0%,
+		var(--color-paper) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.055),
+		0 1px 2px rgba(0, 0, 0, 0.32),
+		0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.surface-nav {
+	border-color: var(--color-line);
+	background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.55),
+		0 -1px 0 rgba(35, 34, 29, 0.04);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+
+:root[data-theme="dark"] .surface-nav {
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.04),
+		0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.surface-header {
+	border-color: var(--color-line);
+	background: color-mix(in srgb, var(--color-paper) 88%, transparent);
+	box-shadow:
+		inset 0 -1px 0 transparent,
+		inset 0 1px 0 rgba(255, 255, 255, 0.55),
+		0 1px 0 rgba(35, 34, 29, 0.04);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+
+:root[data-theme="dark"] .surface-header {
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.04),
+		0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Subtle Linear-style raised primary — soft top highlight, thin rim, short depth. */
+.btn-raised {
+	border: 1px solid color-mix(in srgb, var(--color-brand-dark) 70%, black);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-brand) 78%, white) 0%,
+		var(--color-brand) 48%,
+		var(--color-brand-dark) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.28),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.12),
+		0 1px 2px rgba(0, 0, 0, 0.14);
+	transition:
+		transform 150ms ease-out,
+		box-shadow 150ms ease-out,
+		filter 150ms ease-out;
+}
+
+.btn-raised:hover {
+	filter: brightness(1.04);
+}
+
+.btn-raised:active {
+	transform: translateY(1px);
+	box-shadow:
+		inset 0 1px 2px rgba(0, 0, 0, 0.18),
+		inset 0 0 0 1px rgba(0, 0, 0, 0.06),
+		0 0 0 transparent;
+	filter: brightness(0.98);
+}
+
+:root[data-theme="dark"] .btn-raised {
+	border-color: color-mix(in srgb, var(--color-brand-dark) 55%, black);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-brand) 55%, white) 0%,
+		var(--color-brand) 52%,
+		var(--color-brand-dark) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.22),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+		0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.btn-raised-ink {
+	border: 1px solid color-mix(in srgb, var(--color-ink) 82%, black);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-ink) 72%, white) 0%,
+		var(--color-ink) 55%,
+		color-mix(in srgb, var(--color-ink) 88%, black) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.14),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.22),
+		0 1px 2px rgba(0, 0, 0, 0.16);
+	transition:
+		transform 150ms ease-out,
+		box-shadow 150ms ease-out,
+		filter 150ms ease-out;
+}
+
+.btn-raised-ink:hover {
+	filter: brightness(1.06);
+}
+
+.btn-raised-ink:active {
+	transform: translateY(1px);
+	box-shadow:
+		inset 0 1px 2px rgba(0, 0, 0, 0.28),
+		0 0 0 transparent;
+	filter: brightness(0.97);
+}
+
+:root[data-theme="dark"] .btn-raised-ink {
+	border-color: color-mix(in srgb, var(--color-ink) 70%, black);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-ink) 90%, white) 0%,
+		var(--color-ink) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.12),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+		0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+.btn-raised-danger {
+	border: 1px solid color-mix(in srgb, var(--color-danger-dark) 70%, black);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-danger) 78%, white) 0%,
+		var(--color-danger) 48%,
+		var(--color-danger-dark) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.26),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.14),
+		0 1px 2px rgba(0, 0, 0, 0.14);
+	transition:
+		transform 150ms ease-out,
+		box-shadow 150ms ease-out,
+		filter 150ms ease-out;
+}
+
+.btn-raised-danger:hover {
+	filter: brightness(1.04);
+}
+
+.btn-raised-danger:active {
+	transform: translateY(1px);
+	box-shadow:
+		inset 0 1px 2px rgba(0, 0, 0, 0.2),
+		0 0 0 transparent;
+	filter: brightness(0.98);
+}
+
+:root[data-theme="dark"] .btn-raised-danger {
+	border-color: color-mix(in srgb, var(--color-danger-dark) 55%, black);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--color-danger) 55%, white) 0%,
+		var(--color-danger) 52%,
+		var(--color-danger-dark) 100%
+	);
+	box-shadow:
+		inset 0 1px 0 rgba(255, 255, 255, 0.18),
+		inset 0 -1px 0 rgba(0, 0, 0, 0.28),
+		0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* Soft recessed field — opposite of raised, keeps forms in the same family. */
+.field-recessed {
+	box-shadow:
+		inset 0 1px 2px rgba(35, 34, 29, 0.05),
+		inset 0 0 0 1px transparent;
+}
+
+:root[data-theme="dark"] .field-recessed {
+	box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+}
+
+/* Compact density — tighten common Tailwind spacing without rewriting every view. */
+:root[data-density="compact"] .space-y-4 > :not([hidden]) ~ :not([hidden]) {
+	margin-block-start: 0.625rem;
+}
+:root[data-density="compact"] .space-y-5 > :not([hidden]) ~ :not([hidden]) {
+	margin-block-start: 0.75rem;
+}
+:root[data-density="compact"] .space-y-3 > :not([hidden]) ~ :not([hidden]) {
+	margin-block-start: 0.5rem;
+}
+:root[data-density="compact"] .p-5 {
+	padding: 0.875rem;
+}
+:root[data-density="compact"] .p-4 {
+	padding: 0.75rem;
+}
+:root[data-density="compact"] .px-5 {
+	padding-inline: 1rem;
+}
+:root[data-density="compact"] .pt-6 {
+	padding-top: 1rem;
+}
+:root[data-density="compact"] .py-4 {
+	padding-block: 0.625rem;
+}
+:root[data-density="compact"] .py-2\.5 {
+	padding-block: 0.375rem;
+}
+:root[data-density="compact"] .pb-6 {
+	padding-bottom: 1rem;
+}
+:root[data-density="compact"] .gap-3 {
+	gap: 0.5rem;
+}
+:root[data-density="compact"] .text-2xl {
+	font-size: 1.25rem;
+	line-height: 1.75rem;
+}
+:root[data-density="compact"] header.surface-header {
+	padding-top: 0.75rem;
+	padding-bottom: 0.75rem;
 }
 
 /* The cursor always stays the plain system arrow — no pointer/hand on

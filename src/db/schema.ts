@@ -8,6 +8,11 @@ export const users = sqliteTable("users", {
     createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
     privacyMode: integer("privacy_mode", { mode: "boolean" }).notNull().default(false),
     themePreference: text("theme_preference").$type<"light" | "dark">().notNull().default("light"),
+    accentColor: text("accent_color").$type<"green" | "blue" | "terracotta" | "slate" | "rose">().notNull().default("green"),
+    density: text("density").$type<"comfortable" | "compact">().notNull().default("comfortable"),
+    fontPreference: text("font_preference").$type<"outfit" | "dm-sans" | "manrope">().notNull().default("outfit"),
+    currency: text("currency").$type<"EUR" | "USD" | "GBP">().notNull().default("EUR"),
+    dateFormat: text("date_format").$type<"DMY" | "MDY" | "YMD">().notNull().default("DMY"),
 });
 
 export const account = sqliteTable("account", {

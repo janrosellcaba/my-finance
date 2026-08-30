@@ -188,8 +188,10 @@ export function IconGrip({ className }: { className?: string }) {
 export function IconUtensils({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 2v7a2 2 0 0 0 4 0V2M8 9v13" />
-            <path d="M17 2c-1.7 0-3 2-3 5s1.3 5 3 5M17 2v18" />
+            <path d="M7 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3" />
+            <path d="M9 12v9" />
+            <path d="M16 3v9h0a3 3 0 0 0 3-3V3" />
+            <path d="M16 12v9" />
         </svg>
     );
 }
@@ -197,10 +199,11 @@ export function IconUtensils({ className }: { className?: string }) {
 export function IconCar({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 16 5.5 10.5A2 2 0 0 1 7.4 9h9.2a2 2 0 0 1 1.9 1.5L20 16" />
-            <rect x="2.5" y="16" width="19" height="4" rx="1.5" />
-            <circle cx="7" cy="20.3" r="1.3" fill="currentColor" stroke="none" />
-            <circle cx="17" cy="20.3" r="1.3" fill="currentColor" stroke="none" />
+            <path d="M4 15.5 5.8 10a2 2 0 0 1 1.9-1.4h8.6A2 2 0 0 1 18.2 10L20 15.5" />
+            <path d="M3.5 15.5h17v2.2a1.3 1.3 0 0 1-1.3 1.3H4.8a1.3 1.3 0 0 1-1.3-1.3Z" />
+            <circle cx="7.2" cy="19.5" r="1.2" />
+            <circle cx="16.8" cy="19.5" r="1.2" />
+            <path d="M8 12.5h8" />
         </svg>
     );
 }
@@ -208,8 +211,16 @@ export function IconCar({ className }: { className?: string }) {
 export function IconShoppingBag({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M6 8h12l-1 12a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L6 8Z" />
-            <path d="M9 8V6a3 3 0 0 1 6 0v2" />
+            <path d="M6.5 8.5h11l-.9 11a2 2 0 0 1-2 1.8H9.4a2 2 0 0 1-2-1.8Z" />
+            <path d="M9 8.5V7a3 3 0 0 1 6 0v1.5" />
+        </svg>
+    );
+}
+
+export function IconWrench({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14.7 6.3a4.2 4.2 0 0 0-5.9 5.9L3.5 17.5 6.5 20.5 11.8 15.2a4.2 4.2 0 0 0 5.9-5.9l-2.5 2.5-2.5-2.5Z" />
         </svg>
     );
 }
@@ -217,7 +228,7 @@ export function IconShoppingBag({ className }: { className?: string }) {
 export function IconBolt({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M13 2 5 13h5l-1 9 8-11h-5l1-9Z" />
+            <path d="M13 2 6 13h5l-1 9 7-11h-5l1-9Z" />
         </svg>
     );
 }
@@ -225,7 +236,7 @@ export function IconBolt({ className }: { className?: string }) {
 export function IconBriefcase({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="7.5" width="18" height="12" rx="2" />
+            <rect x="3" y="7.5" width="18" height="12.5" rx="2" />
             <path d="M9 7.5V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v1.5" />
             <path d="M3 12.5h18" />
         </svg>
@@ -244,9 +255,9 @@ export function IconTrendingUp({ className }: { className?: string }) {
 export function IconGift({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3.5" y="9" width="17" height="4" rx="1" />
-            <path d="M5 13v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7M12 9v12" />
-            <path d="M12 9C10.5 9 8 8.2 8 6a2 2 0 1 1 4 0 2 2 0 1 1 4 0c0 2.2-2.5 3-4 3Z" />
+            <rect x="4" y="9" width="16" height="3.5" rx="1" />
+            <path d="M5.5 12.5V19a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5v-6.5M12 9v11.5" />
+            <path d="M12 9c-1.4 0-3.5-.8-3.5-2.5a1.75 1.75 0 1 1 3.5 0 1.75 1.75 0 1 1 3.5 0C15.5 8.2 13.4 9 12 9Z" />
         </svg>
     );
 }
@@ -254,16 +265,16 @@ export function IconGift({ className }: { className?: string }) {
 export function IconHeart({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M12 20.5s-8-5-8-11.2A4.3 4.3 0 0 1 12 6a4.3 4.3 0 0 1 8 3.3c0 6.2-8 11.2-8 11.2Z" />
+            <path d="M12 20S4.5 15.2 4.5 9.6A3.9 3.9 0 0 1 12 7.2a3.9 3.9 0 0 1 7.5 2.4C19.5 15.2 12 20 12 20Z" />
         </svg>
     );
 }
 
-export function IconFilm({ className }: { className?: string }) {
+export function IconTicket({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="3" y="4" width="18" height="16" rx="2" />
-            <path d="M3 9h18M3 15h18M8 4v16M16 4v16" />
+            <path d="M3.5 9.5A2 2 0 0 0 5.5 11.5 2 2 0 0 0 3.5 13.5v3a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2 2 2 0 0 0 2-2v-2a2 2 0 0 0-2-2h-13a2 2 0 0 0-2 2Z" />
+            <path d="M9.5 7.5v11" strokeDasharray="2 2.5" />
         </svg>
     );
 }
@@ -271,7 +282,7 @@ export function IconFilm({ className }: { className?: string }) {
 export function IconPlane({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 3 3 10.5l7 2.5M21 3 13.5 21l-2.5-8M21 3 10 13.5" />
+            <path d="M10.5 20.5 14 13l7-2.2L14 8.5 10.5 1l-1.2 7.8L3 11.2l6.3 1.8Z" />
         </svg>
     );
 }
@@ -279,8 +290,84 @@ export function IconPlane({ className }: { className?: string }) {
 export function IconBook({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 4.5A2 2 0 0 1 6 3h5v18H6a2 2 0 0 1-2-2Z" />
-            <path d="M20 4.5A2 2 0 0 0 18 3h-5v18h5a2 2 0 0 0 2-2Z" />
+            <path d="M5 4.5A2 2 0 0 1 7 3h11v16.5H7a2 2 0 0 0-2 2Z" />
+            <path d="M5 4.5v15" />
+            <path d="M9 7.5h6M9 11h6" />
+        </svg>
+    );
+}
+
+export function IconPeople({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="9" cy="8" r="3" />
+            <path d="M3.5 19.5c.6-3.2 2.8-5 5.5-5s4.9 1.8 5.5 5" />
+            <circle cx="16.5" cy="9" r="2.4" />
+            <path d="M14.2 14.6c1.7-.5 3.6.1 4.8 2.1.4.7.6 1.5.7 2.3" />
+        </svg>
+    );
+}
+
+export function IconFuel({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="3.5" y="4" width="11" height="16.5" rx="1.5" />
+            <path d="M7 8h4" />
+            <path d="M14.5 8.5h2.2a2 2 0 0 1 2 2V16a2 2 0 0 0 2 2h.8" />
+            <path d="M14.5 20.5V4" />
+        </svg>
+    );
+}
+
+export function IconMoto({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6.5" cy="16.5" r="3" />
+            <circle cx="17.5" cy="16.5" r="3" />
+            <path d="M9.5 16.5h4.2L16 11.5h3" />
+            <path d="M12.2 11.5 10 16.5M12.2 11.5 9.2 8.2H6.5" />
+            <path d="M15.8 11.5h2.4l1.3-2.2" />
+        </svg>
+    );
+}
+
+export function IconSport({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="8.5" />
+            <path d="M12 3.5c2.2 2.4 3.4 5.3 3.4 8.5S14.2 18.1 12 20.5" />
+            <path d="M12 3.5C9.8 5.9 8.6 8.8 8.6 12s1.2 6.1 3.4 8.5" />
+            <path d="M4.2 10.2h15.6M4.2 13.8h15.6" />
+        </svg>
+    );
+}
+
+export function IconCoffee({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M5.5 8.5h10.5v7a3.5 3.5 0 0 1-3.5 3.5h-3.5A3.5 3.5 0 0 1 5.5 15.5Z" />
+            <path d="M16 10.5h1.8a2.7 2.7 0 1 1 0 5.4H16" />
+            <path d="M8 4.5c.4.6.4 1.2 0 1.8M11 4.5c.4.6.4 1.2 0 1.8" />
+            <path d="M5 21h11.5" />
+        </svg>
+    );
+}
+
+export function IconPhone({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="7" y="2.5" width="10" height="19" rx="2.2" />
+            <path d="M11 18.5h2" />
+        </svg>
+    );
+}
+
+export function IconDots({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="6.5" cy="12" r="1.4" fill="currentColor" stroke="none" />
+            <circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none" />
+            <circle cx="17.5" cy="12" r="1.4" fill="currentColor" stroke="none" />
         </svg>
     );
 }
@@ -289,15 +376,23 @@ export const CATEGORY_ICON_COMPONENTS: Record<CategoryIconKey, (props: { classNa
     food: IconUtensils,
     transport: IconCar,
     shopping: IconShoppingBag,
-    services: IconBolt,
+    services: IconWrench,
     salary: IconBriefcase,
     investments: IconTrendingUp,
     gift: IconGift,
     home: IconHome,
     health: IconHeart,
-    entertainment: IconFilm,
+    entertainment: IconTicket,
     travel: IconPlane,
     education: IconBook,
+    people: IconPeople,
+    fuel: IconFuel,
+    moto: IconMoto,
+    sport: IconSport,
+    bolt: IconBolt,
+    coffee: IconCoffee,
+    phone: IconPhone,
+    other: IconDots,
 };
 
 export function CategoryIcon({ iconKey, className }: { iconKey: string | null; className?: string }) {

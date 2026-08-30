@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { type Todo, formatDate } from "../shared";
+import { type Todo, formatDate, INK_BTN } from "../shared";
 import { AddTodoModal } from "./AddTodoModal";
 import { useUndoToast } from "./UndoToastProvider";
 import { IconCheckSquare, IconTrash } from "./icons";
@@ -117,7 +117,7 @@ export function TodoView() {
                 <button
                     type="button"
                     onClick={() => setShowAddModal(true)}
-                    className="rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-paper transition-all duration-150 ease-out hover:-translate-y-0.5 hover:bg-ink/90 hover:shadow-md active:translate-y-0 select-none"
+                    className={`${INK_BTN} px-4 py-2 text-sm`}
                 >
                     + Add
                 </button>
@@ -145,7 +145,7 @@ export function TodoView() {
                             </button>
                         </div>
                     ) : (
-                        <div className="divide-y divide-line rounded-2xl border border-line bg-paper shadow-sm">
+                        <div className="divide-y divide-line surface rounded-2xl">
                             {active.map((t) => (
                                 <TodoRow
                                     key={t.id}
@@ -163,7 +163,7 @@ export function TodoView() {
                             <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
                                 Completed · {completed.length}
                             </h2>
-                            <div className="divide-y divide-line rounded-2xl border border-line bg-paper shadow-sm">
+                            <div className="divide-y divide-line surface rounded-2xl">
                                 {completed.map((t) => (
                                     <TodoRow
                                         key={t.id}

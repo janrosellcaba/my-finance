@@ -1,6 +1,6 @@
 "use client";
 
-import { type Account, type Category, type Transaction, eur, formatCurrency, formatDate } from "../shared";
+import { type Account, type Category, type Transaction, formatCurrency, formatDate } from "../shared";
 import { CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight } from "./icons";
 
 function resolveName(id: string, accounts: Account[], categories: Category[]): string {
@@ -46,8 +46,8 @@ export function TransactionCard({
                     ? `flex w-full items-center justify-between px-4 py-2.5 text-left transition-colors duration-150 ${
                           onClick ? "hover:bg-chip/70" : ""
                       }`
-                    : `group flex w-full items-center justify-between rounded-2xl border border-line bg-paper p-4 text-left shadow-sm transition-all duration-150 ${
-                          onClick ? "hover:border-line hover:bg-chip/50 hover:shadow-md" : ""
+                    : `group surface flex w-full items-center justify-between rounded-2xl p-4 text-left transition-all duration-150 ${
+                          onClick ? "hover:brightness-[1.01]" : ""
                       }`
             }
         >
@@ -97,7 +97,7 @@ export function TransactionCard({
                     } ${color} ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
                 >
                     {sign}
-                    {eur.format(Math.abs(tx.amount))}
+                    {formatCurrency(Math.abs(tx.amount))}
                 </p>
                 {accountBalance !== undefined && (
                     <p

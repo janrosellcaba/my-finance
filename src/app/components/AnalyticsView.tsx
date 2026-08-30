@@ -59,13 +59,13 @@ export function AnalyticsView({
                 <div className="h-11 w-full rounded-xl bg-chip" />
                 <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
                     {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="space-y-2 rounded-2xl border border-line bg-paper p-4 shadow-sm">
+                        <div key={i} className="space-y-2 surface rounded-2xl p-4">
                             <div className="h-3 w-16 rounded-full bg-chip" />
                             <div className="h-6 w-20 rounded-full bg-chip" />
                         </div>
                     ))}
                 </div>
-                <div className="h-48 w-full rounded-2xl border border-line bg-paper p-4 shadow-sm" />
+                <div className="h-48 w-full surface rounded-2xl p-4" />
             </div>
         );
     }

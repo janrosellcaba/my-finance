@@ -57,7 +57,7 @@ export function ChangePasswordModal({ onClose, onChanged }: { onClose: () => voi
                 aria-label="Change Password"
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
-                className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
+                className="max-h-[90vh] w-full max-w-md overflow-y-auto surface rounded-t-3xl p-6 shadow-xl sm:rounded-3xl"
             >
                 <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
@@ -111,7 +111,7 @@ export function ChangePasswordModal({ onClose, onChanged }: { onClose: () => voi
 
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
-                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full`}>
                     {saving ? "Saving…" : "Change Password"}
                 </button>
             </form>

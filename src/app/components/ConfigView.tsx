@@ -1,7 +1,21 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
-import { type Account, type Category, type Theme, INK_BTN, INPUT_CLS, parseAmountEs, PRIMARY_BTN } from "../shared";
+import { useState, type FormEvent, type ReactNode } from "react";
+import {
+    type Account,
+    type AppearancePrefs,
+    type Category,
+    ACCENT_COLORS,
+    CURRENCY_OPTIONS,
+    DANGER_BTN,
+    DATE_FORMAT_OPTIONS,
+    DENSITY_OPTIONS,
+    FONT_OPTIONS,
+    INK_BTN,
+    INPUT_CLS,
+    parseAmountEs,
+    PRIMARY_BTN,
+} from "../shared";
 import { AccountList } from "./AccountList";
 import { CategoryList } from "./CategoryList";
 import { ChangePasswordModal } from "./ChangePasswordModal";
@@ -23,12 +37,35 @@ const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
     danger: "Delete Data",
 };
 
+function SegmentedButton({
+    active,
+    onClick,
+    children,
+    className = "",
+}: {
+    active: boolean;
+    onClick: () => void;
+    children: ReactNode;
+    className?: string;
+}) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
+                active ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
+            } ${className}`}
+        >
+            {children}
+        </button>
+    );
+}
+
 export function ConfigView({
     accounts,
     categories,
-    privacyMode,
-    theme,
-    onSetTheme,
+    appearance,
+    onPatchAppearance,
     onRefresh,
     onLogout,
     onPasswordChanged,
@@ -37,9 +74,8 @@ export function ConfigView({
 }: {
     accounts: Account[];
     categories: Category[];
-    privacyMode: boolean;
-    theme: Theme;
-    onSetTheme: (theme: Theme) => void;
+    appearance: AppearancePrefs;
+    onPatchAppearance: (partial: Partial<AppearancePrefs>) => void;
     onRefresh: () => void;
     onLogout: () => void;
     onPasswordChanged: () => void;
@@ -355,7 +391,7 @@ export function ConfigView({
 
                 {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
-                <div className="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm">
+                <div className="overflow-hidden surface rounded-2xl">
                     <MenuRow label="Bank Accounts" onClick={() => setSection("accounts")} />
                     <MenuRow label="Categories" onClick={() => setSection("categories")} />
                     <MenuRow label="Export Data" onClick={() => setSection("export")} />
@@ -398,7 +434,7 @@ export function ConfigView({
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
             {section === "accounts" && (
-                <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                <section className="space-y-4 surface rounded-2xl p-5">
                     <p className="text-sm text-muted">
                         Tap <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default
                         account — it&apos;ll be pre-selected when you add a new transaction. Tap the icon next to
@@ -411,7 +447,7 @@ export function ConfigView({
                     </p>
                     <AccountList
                         items={accounts}
-                        privacyMode={privacyMode}
+                        privacyMode={appearance.privacyMode}
                         onRename={handleRenameAccount}
                         onSetInitialBalance={handleSetInitialBalance}
                         onSetDefault={handleSetDefaultAccount}
@@ -432,7 +468,7 @@ export function ConfigView({
                             placeholder="Initial balance (optional, defaults to 0)"
                             className={INPUT_CLS}
                         />
-                        <button type="submit" disabled={savingAccount} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                        <button type="submit" disabled={savingAccount} className={`${PRIMARY_BTN} w-full`}>
                             Add
                         </button>
                     </form>
@@ -440,7 +476,7 @@ export function ConfigView({
             )}
 
             {section === "categories" && (
-                <section className="space-y-5 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                <section className="space-y-5 surface rounded-2xl p-5">
                     <p className="text-sm text-muted">
                         Drag <IconGrip className="inline h-3.5 w-3.5 -translate-y-0.5" /> to reorder categories. Tap{" "}
                         <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> to set the default category
@@ -513,7 +549,7 @@ export function ConfigView({
             )}
 
             {section === "backup" && (
-                <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                <section className="space-y-4 surface rounded-2xl p-5">
                     <p className="text-sm text-muted">
                         Downloads a complete backup of your personal account data — all your accounts,
                         categories, transactions, and tasks — as a single JSON file. Unlike Export Data
@@ -522,7 +558,7 @@ export function ConfigView({
                     </p>
                     <a
                         href="/api/backup"
-                        className={`${PRIMARY_BTN} block w-full text-center bg-brand hover:bg-brand-dark`}
+                        className={`${PRIMARY_BTN} block w-full text-center`}
                     >
                         Download Backup Now
                     </a>
@@ -530,45 +566,176 @@ export function ConfigView({
             )}
 
             {section === "appearance" && (
-                <section className="space-y-4 rounded-2xl border border-line bg-paper p-5 shadow-sm">
-                    <p className="text-sm text-muted">Choose how MyFinance looks. Defaults to Light.</p>
-                    <div className="flex gap-2">
+                <section className="space-y-6 surface rounded-2xl p-5">
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Theme</p>
+                        <div className="flex gap-2">
+                            <SegmentedButton
+                                active={appearance.theme === "light"}
+                                onClick={() => onPatchAppearance({ theme: "light" })}
+                            >
+                                Light
+                            </SegmentedButton>
+                            <SegmentedButton
+                                active={appearance.theme === "dark"}
+                                onClick={() => onPatchAppearance({ theme: "dark" })}
+                            >
+                                Dark
+                            </SegmentedButton>
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Accent colour</p>
+                        <div className="flex flex-wrap gap-2.5">
+                            {ACCENT_COLORS.map((c) => {
+                                const selected = appearance.accent === c.key;
+                                return (
+                                    <button
+                                        key={c.key}
+                                        type="button"
+                                        aria-label={c.label}
+                                        aria-pressed={selected}
+                                        title={c.label}
+                                        onClick={() => onPatchAppearance({ accent: c.key })}
+                                        className={`flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-150 active:scale-95 ${
+                                            selected ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""
+                                        }`}
+                                        style={{ backgroundColor: c.swatch }}
+                                    />
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Font</p>
+                        <div className="flex flex-col gap-2">
+                            {FONT_OPTIONS.map((f) => {
+                                const selected = appearance.font === f.key;
+                                return (
+                                    <button
+                                        key={f.key}
+                                        type="button"
+                                        onClick={() => onPatchAppearance({ font: f.key })}
+                                        className={`rounded-xl px-4 py-3 text-left transition-colors duration-150 select-none ${
+                                            selected
+                                                ? "bg-ink text-paper"
+                                                : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
+                                        }`}
+                                        style={{
+                                            fontFamily:
+                                                f.key === "outfit"
+                                                    ? "var(--font-outfit), system-ui, sans-serif"
+                                                    : f.key === "dm-sans"
+                                                      ? "var(--font-dm-sans), system-ui, sans-serif"
+                                                      : "var(--font-manrope), system-ui, sans-serif",
+                                        }}
+                                    >
+                                        <span className="font-bold">{f.label}</span>
+                                        <span className="mt-0.5 block text-xs opacity-70">
+                                            The quick brown fox — €1,234.56
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Density</p>
+                        <div className="flex gap-2">
+                            {DENSITY_OPTIONS.map((d) => (
+                                <SegmentedButton
+                                    key={d.key}
+                                    active={appearance.density === d.key}
+                                    onClick={() => onPatchAppearance({ density: d.key })}
+                                >
+                                    {d.label}
+                                </SegmentedButton>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Currency</p>
+                        <div className="flex flex-col gap-2">
+                            {CURRENCY_OPTIONS.map((c) => (
+                                <button
+                                    key={c.key}
+                                    type="button"
+                                    onClick={() => onPatchAppearance({ currency: c.key })}
+                                    className={`rounded-xl px-4 py-3 text-left font-bold transition-colors duration-150 select-none ${
+                                        appearance.currency === c.key
+                                            ? "bg-ink text-paper"
+                                            : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
+                                    }`}
+                                >
+                                    {c.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Date format</p>
+                        <div className="flex flex-col gap-2">
+                            {DATE_FORMAT_OPTIONS.map((d) => (
+                                <button
+                                    key={d.key}
+                                    type="button"
+                                    onClick={() => onPatchAppearance({ dateFormat: d.key })}
+                                    className={`rounded-xl px-4 py-3 text-left font-bold transition-colors duration-150 select-none ${
+                                        appearance.dateFormat === d.key
+                                            ? "bg-ink text-paper"
+                                            : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
+                                    }`}
+                                >
+                                    {d.label}
+                                    <span className="mt-0.5 block text-xs font-semibold opacity-70">{d.example}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Privacy</p>
                         <button
                             type="button"
-                            onClick={() => onSetTheme("light")}
-                            className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
-                                theme === "light" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
+                            onClick={() => onPatchAppearance({ privacyMode: !appearance.privacyMode })}
+                            aria-pressed={appearance.privacyMode}
+                            className={`flex w-full items-center justify-between rounded-xl px-4 py-3 font-bold transition-colors duration-150 select-none ${
+                                appearance.privacyMode
+                                    ? "bg-brand/10 text-brand"
+                                    : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
                             }`}
                         >
-                            Light
+                            <span>Hide amounts</span>
+                            <span className="text-xs font-semibold opacity-80">
+                                {appearance.privacyMode ? "On" : "Off"}
+                            </span>
                         </button>
-                        <button
-                            type="button"
-                            onClick={() => onSetTheme("dark")}
-                            className={`flex-1 rounded-xl py-3 font-bold transition-colors duration-150 select-none ${
-                                theme === "dark" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
-                            }`}
-                        >
-                            Dark
-                        </button>
+                        <p className="text-xs text-muted">
+                            Same as the eye icon in the header. Blurs balances and amounts across the app.
+                        </p>
                     </div>
                 </section>
             )}
 
             {section === "danger" && (
-                <section className="space-y-3 rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                <section className="space-y-3 surface rounded-2xl p-5">
                     <p className="text-sm text-muted">These actions are permanent and cannot be undone.</p>
                     <button
                         type="button"
                         onClick={handleDeleteAllTransactions}
-                        className={`${PRIMARY_BTN} w-full bg-danger hover:bg-danger-dark`}
+                        className={`${DANGER_BTN} w-full`}
                     >
                         Delete All Transactions
                     </button>
                     <button
                         type="button"
                         onClick={handleDeleteMyAccount}
-                        className={`${PRIMARY_BTN} w-full bg-danger hover:bg-danger-dark`}
+                        className={`${DANGER_BTN} w-full`}
                     >
                         Delete My Account
                     </button>

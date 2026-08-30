@@ -12,6 +12,7 @@ import {
     INK_BTN,
     MAX_IMPORT_TRANSACTIONS,
     PRIMARY_BTN,
+    DANGER_BTN,
 } from "../shared";
 
 type TransactionType = "income" | "expense" | "transfer";
@@ -287,7 +288,7 @@ export function ImportView({
 
     return (
         <div className="space-y-4">
-            <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+            <section className="surface rounded-2xl p-5">
                 <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">How it works</h2>
                 <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
                     <li>Copy your transaction rows from Excel — data rows only, no header row.</li>
@@ -309,7 +310,7 @@ export function ImportView({
                 </ul>
             </section>
 
-            <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+            <section className="surface rounded-2xl p-5">
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Paste your data</h2>
                 <textarea
                     value={text}
@@ -345,7 +346,7 @@ export function ImportView({
             )}
 
             {parsed && (
-                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                <section className="surface rounded-2xl p-5">
                     <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Preview</h2>
 
                     {parsed.errors.length > 0 && (
@@ -421,9 +422,7 @@ export function ImportView({
                         type="button"
                         onClick={handleImport}
                         disabled={!canImport}
-                        className={`${PRIMARY_BTN} mt-3 w-full ${
-                            mode === "replace" ? "bg-danger hover:bg-danger-dark" : "bg-brand hover:bg-brand-dark"
-                        }`}
+                        className={`${mode === "replace" ? DANGER_BTN : PRIMARY_BTN} mt-3 w-full`}
                     >
                         {importing ? "Importing…" : mode === "replace" ? "Replace and Import" : "Import"}
                     </button>

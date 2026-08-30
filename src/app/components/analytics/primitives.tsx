@@ -102,9 +102,7 @@ export function Section({
 }
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-    return (
-        <div className={`rounded-2xl border border-line bg-paper p-4 shadow-sm ${className}`}>{children}</div>
-    );
+    return <div className={`surface rounded-2xl p-4 ${className}`}>{children}</div>;
 }
 
 export function DeltaPill({
@@ -157,7 +155,7 @@ export function StatTile({
 }) {
     const toneClass = tone === "brand" ? "text-brand" : tone === "danger" ? "text-danger" : "text-ink";
     return (
-        <div className={`flex h-full flex-col rounded-2xl border border-line bg-paper p-4 shadow-sm ${className}`}>
+        <div className={`surface flex h-full flex-col rounded-2xl p-4 ${className}`}>
             <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
             <p
                 className={`mt-1 text-xl font-bold tabular-nums transition-[filter,opacity] duration-250 lg:text-2xl ${toneClass} ${

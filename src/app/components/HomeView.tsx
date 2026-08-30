@@ -8,7 +8,7 @@ import { TransactionCard } from "./TransactionCard";
 function HomeSkeleton() {
     return (
         <div className="animate-pulse space-y-6 px-5 pt-6">
-            <div className="rounded-3xl border border-line bg-paper p-6 text-center shadow-sm">
+            <div className="surface rounded-3xl p-6 text-center">
                 <div className="mx-auto h-3.5 w-24 rounded-full bg-chip" />
                 <div className="mx-auto mt-3 h-9 w-40 rounded-full bg-chip" />
             </div>
@@ -17,7 +17,7 @@ function HomeSkeleton() {
                 <div className="mb-3 h-3 w-28 rounded-full bg-chip" />
                 <div className="grid grid-cols-2 gap-3">
                     {Array.from({ length: 2 }).map((_, i) => (
-                        <div key={i} className="space-y-2 rounded-2xl border border-line bg-paper p-4 shadow-sm">
+                        <div key={i} className="space-y-2 surface rounded-2xl p-4">
                             <div className="h-3 w-16 rounded-full bg-chip" />
                             <div className="h-5 w-20 rounded-full bg-chip" />
                         </div>
@@ -26,7 +26,7 @@ function HomeSkeleton() {
             </div>
             <div>
                 <div className="mb-3 h-3 w-32 rounded-full bg-chip" />
-                <div className="space-y-2 rounded-2xl border border-line bg-paper p-3">
+                <div className="space-y-2 surface rounded-2xl p-3">
                     {Array.from({ length: 4 }).map((_, i) => (
                         <div key={i} className="flex items-center justify-between px-1 py-1.5">
                             <div className="space-y-2">
@@ -71,7 +71,7 @@ export function HomeView({
 
     return (
         <div className="space-y-6 px-5 pt-6">
-            <div className="relative overflow-hidden rounded-3xl border border-line bg-paper p-6 text-center shadow-sm">
+            <div className="relative overflow-hidden surface rounded-3xl p-6 text-center">
                 <div className="absolute inset-0 bg-gradient-to-b from-brand/5 via-transparent to-transparent pointer-events-none" />
                 <p className="relative text-xs font-bold uppercase tracking-wider text-muted">Total Net Worth</p>
                 <p
@@ -96,7 +96,7 @@ export function HomeView({
             <button
                 type="button"
                 onClick={onAddClick}
-                className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark shadow-sm`}
+                className={`${PRIMARY_BTN} w-full`}
             >
                 + Add Transaction
             </button>
@@ -105,7 +105,7 @@ export function HomeView({
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Your Accounts</h2>
                 <div className="grid grid-cols-2 gap-3">
                     {dashboard.accounts.map((acc) => (
-                        <div key={acc.id} className="group rounded-2xl border border-line bg-paper p-4 shadow-sm transition-all duration-150 hover:shadow-md">
+                        <div key={acc.id} className="group surface rounded-2xl p-4 transition-all duration-150 hover:brightness-[1.01]">
                             <div className="flex items-center gap-2">
                                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted transition-colors group-hover:text-ink">
                                     <AccountIcon iconKey={acc.icon ?? "wallet"} className="h-3.5 w-3.5" />

@@ -2,6 +2,7 @@
 // and all-time net worth. Dates are "YYYY-MM-DD" and compared lexicographically.
 
 import { applyTransactionToBalances, round2 } from "./balances";
+import { formatCurrency } from "@/app/shared";
 
 export type TxType = "income" | "expense" | "transfer";
 
@@ -259,7 +260,7 @@ export type Health = {
 };
 
 function money0(n: number): string {
-    return `€${Math.round(Math.abs(n)).toLocaleString("es-ES")}`;
+    return formatCurrency(Math.round(Math.abs(n)));
 }
 
 export type NetWorthPoint = { date: string; netWorth: number };

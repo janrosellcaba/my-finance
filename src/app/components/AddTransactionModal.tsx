@@ -6,6 +6,7 @@ import {
     type Category,
     type Transaction,
     type TransactionType,
+    currencySymbol,
     getTodayLocalDateISO,
     INPUT_CLS,
     PRIMARY_BTN,
@@ -152,7 +153,7 @@ export function AddTransactionModal({
                 aria-label={isEditing ? "Edit Transaction" : "Add Transaction"}
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
-                className="max-h-[90vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
+                className="max-h-[90vh] w-full max-w-md overflow-y-auto surface rounded-t-3xl p-6 shadow-xl sm:rounded-3xl"
             >
                 <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
@@ -205,7 +206,9 @@ export function AddTransactionModal({
                 </label>
 
                 <label className="mb-3 block">
-                    <span className="mb-1 block text-sm font-semibold text-ink">Amount (€)</span>
+                    <span className="mb-1 block text-sm font-semibold text-ink">
+                        Amount ({currencySymbol()})
+                    </span>
                     <input
                         type="text"
                         inputMode="decimal"
@@ -242,7 +245,7 @@ export function AddTransactionModal({
 
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
-                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full`}>
                     {saving ? "Saving…" : isEditing ? "Save Changes" : "Save Transaction"}
                 </button>
 

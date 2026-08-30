@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { type Account, type Category, eur, formatDate, INK_BTN, INPUT_CLS } from "../shared";
+import { type Account, type Category, formatCurrency, formatDate, INK_BTN, INPUT_CLS } from "../shared";
 
 type TransactionType = "income" | "expense" | "transfer";
 type Transaction = {
@@ -80,7 +80,7 @@ function buildExportRows(transactions: Transaction[], accounts: Account[], categ
     rows.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
 
     return rows
-        .map((r) => [r.date && formatDate(r.date), r.description, r.category, r.account, eur.format(r.amount), r.type].join("\t"))
+        .map((r) => [r.date && formatDate(r.date), r.description, r.category, r.account, formatCurrency(r.amount), r.type].join("\t"))
         .join("\n");
 }
 
@@ -130,7 +130,7 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
 
     return (
         <div className="space-y-4">
-            <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+            <section className="surface rounded-2xl p-5">
                 <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">How it works</h2>
                 <p className="text-sm text-muted">
                     Copy the text below and paste it straight into a spreadsheet — each column lands in its own
@@ -140,7 +140,7 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
                 </p>
             </section>
 
-            <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+            <section className="surface rounded-2xl p-5">
                 <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Date range</h2>
                 <div className="flex gap-2">
                     <label className="flex-1 block">
@@ -170,7 +170,7 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
             {!loading && !error && (
-                <section className="rounded-2xl border border-line bg-paper p-5 shadow-sm">
+                <section className="surface rounded-2xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="text-sm font-bold uppercase tracking-wide text-muted">
                             {filtered.length} transactions

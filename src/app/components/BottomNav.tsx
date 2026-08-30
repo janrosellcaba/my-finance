@@ -14,7 +14,7 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: T
     ];
 
     return (
-        <nav className="shrink-0 border-t border-line bg-paper/95 backdrop-blur [padding-bottom:env(safe-area-inset-bottom)]">
+        <nav className="surface-nav shrink-0 border-t [padding-bottom:env(safe-area-inset-bottom)]">
             <div className="mx-auto flex max-w-md px-1">
                 {items.map(({ key, label, Icon }) => {
                     const isActive = active === key;
@@ -30,7 +30,7 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: T
                             <span
                                 className={`flex h-7 w-12 items-center justify-center rounded-full transition-all duration-200 ${
                                     isActive
-                                        ? "bg-brand/12 scale-105 shadow-xs"
+                                        ? "bg-brand/12 scale-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(31,122,84,0.12)]"
                                         : "group-hover:bg-chip/60"
                                 }`}
                             >

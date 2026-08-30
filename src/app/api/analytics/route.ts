@@ -3,6 +3,7 @@ import { getDb } from "@/db";
 import { transaction, account, category } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { buildAnalytics, type PeriodMode } from "@/lib/analytics";
+import { setFormatPrefs, type CurrencyCode } from "@/app/shared";
 import { asc, eq } from "drizzle-orm";
 
 const MODES: PeriodMode[] = ["month", "3m", "year", "all"];
@@ -26,6 +27,8 @@ export async function GET(request: Request) {
         const accountId = rawAccount && rawAccount.length > 0 && rawAccount !== "all" ? rawAccount : null;
 
         const db = await getDb();
+
+        setFormatPrefs({ currency: (user.currency ?? "EUR") as CurrencyCode });
 
         const [allTx, userAccounts, userCategories] = await Promise.all([
             db

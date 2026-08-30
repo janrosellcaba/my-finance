@@ -20,6 +20,11 @@ export async function GET() {
                 createdAt: users.createdAt,
                 privacyMode: users.privacyMode,
                 themePreference: users.themePreference,
+                accentColor: users.accentColor,
+                density: users.density,
+                fontPreference: users.fontPreference,
+                currency: users.currency,
+                dateFormat: users.dateFormat,
             })
             .from(users)
             .where(eq(users.id, user.id))

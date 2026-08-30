@@ -44,7 +44,7 @@ export function AuthGate() {
 
     return (
         <div className="flex h-full items-center justify-center overflow-y-auto bg-cream px-5 py-10">
-            <div className="w-full max-w-sm rounded-3xl border border-line bg-paper p-8 shadow-sm">
+            <div className="w-full max-w-sm surface rounded-3xl p-8">
                 <div className="mb-3 flex justify-center">
                     <Image src="/logo.png" alt="" width={52} height={52} priority className="theme-logo opacity-90" />
                 </div>
@@ -86,7 +86,7 @@ export function AuthGate() {
 
                     {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
-                    <button type="submit" disabled={loading} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                    <button type="submit" disabled={loading} className={`${PRIMARY_BTN} w-full`}>
                         {loading ? "Please wait…" : mode === "login" ? "Log In" : "Create Account"}
                     </button>
                 </form>

@@ -46,15 +46,17 @@ export function PeriodSelector({
 
     return (
         <div className="space-y-2">
-            <div className="grid grid-cols-4 gap-1 rounded-xl bg-chip p-1">
+            <div className="grid grid-cols-4 gap-1 rounded-xl bg-chip/80 p-1 shadow-[inset_0_1px_2px_rgba(35,34,29,0.06)]">
                 {MODES.map((m) => (
                     <button
                         key={m.key}
                         type="button"
                         title={m.title}
                         onClick={() => switchMode(m.key)}
-                        className={`rounded-lg py-2 text-xs font-bold transition-colors duration-150 select-none ${
-                            mode === m.key ? "bg-paper text-ink shadow-sm" : "text-muted hover:text-ink"
+                        className={`rounded-lg py-2 text-xs font-bold transition-all duration-150 select-none ${
+                            mode === m.key
+                                ? "surface text-ink"
+                                : "text-muted hover:text-ink"
                         }`}
                     >
                         {m.label}
@@ -78,7 +80,7 @@ export function PeriodSelector({
                     <select
                         value={anchor ?? ""}
                         onChange={(e) => onChange(mode, e.target.value)}
-                        className="min-w-0 flex-1 rounded-xl border border-line bg-paper px-4 py-2.5 text-center text-base font-bold text-ink transition-colors duration-150 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10"
+                        className="field-recessed min-w-0 flex-1 rounded-xl border border-line bg-paper px-4 py-2.5 text-center text-base font-bold text-ink transition-colors duration-150 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10"
                     >
                         {mode === "month"
                             ? monthOptions.map((m) => (
@@ -103,7 +105,7 @@ export function PeriodSelector({
                     </button>
                 </div>
             ) : (
-                <p className="rounded-xl border border-line bg-paper px-4 py-2.5 text-center text-base font-bold text-ink">
+                <p className="surface rounded-xl px-4 py-2.5 text-center text-base font-bold text-ink">
                     {label}
                 </p>
             )}

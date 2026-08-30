@@ -72,7 +72,7 @@ export function AnalyticsDashboard({
                         setScoreOpen(true);
                     }}
                     aria-haspopup="dialog"
-                    className="col-span-2 flex flex-col rounded-2xl border border-line bg-paper p-4 text-left shadow-sm transition-colors duration-150 hover:bg-chip/50 lg:col-span-1"
+                    className="col-span-2 surface flex flex-col rounded-2xl p-4 text-left transition-colors duration-150 hover:brightness-[1.01] lg:col-span-1"
                 >
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">Score</p>
                     <p
@@ -937,8 +937,8 @@ function AccountCards({
                         key={r.accountId}
                         type="button"
                         onClick={() => onSelect(active ? "all" : r.accountId)}
-                        className={`rounded-2xl border p-4 text-left shadow-sm transition-colors duration-150 ${
-                            active ? "border-ink bg-chip/80" : "border-line bg-paper hover:bg-chip/50"
+                        className={`surface rounded-2xl p-4 text-left transition-colors duration-150 ${
+                            active ? "ring-1 ring-ink/20 brightness-[0.99]" : "hover:brightness-[1.01]"
                         }`}
                     >
                         <div className="flex items-center gap-2">
@@ -992,7 +992,7 @@ function Sheet({
                 aria-modal="true"
                 aria-label={title}
                 onClick={(e) => e.stopPropagation()}
-                className="max-h-[80vh] w-full max-w-md overflow-y-auto rounded-t-3xl bg-paper p-5 shadow-xl sm:rounded-3xl"
+                className="max-h-[80vh] w-full max-w-md overflow-y-auto surface rounded-t-3xl p-5 shadow-xl sm:rounded-3xl"
             >
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <div className="min-w-0">

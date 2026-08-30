@@ -83,7 +83,7 @@ export function AddTodoModal({
                 aria-label={isEditing ? "Edit Task" : "Add Task"}
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
-                className="w-full max-w-md rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
+                className="w-full max-w-md surface rounded-t-3xl p-6 shadow-xl sm:rounded-3xl"
             >
                 <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
@@ -137,7 +137,7 @@ export function AddTodoModal({
 
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
-                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
+                <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full`}>
                     {saving ? "Saving…" : isEditing ? "Save Changes" : "Add Task"}
                 </button>
             </form>
