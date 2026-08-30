@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import {
+    IconArrowLeft,
     IconBank,
     IconChart,
     IconCheckSquare,
@@ -222,34 +223,46 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
     if (kind === "welcome") {
         return (
             <PhoneFrame title="Hi, Alex" nav={nav}>
-                <div className="flex h-full flex-col items-center justify-center gap-3 px-5 text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-xl font-extrabold text-white shadow-sm">
-                        €
+                <div className="space-y-2.5 px-3 pt-3">
+                    <Surface className="p-3 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted">Total Net Worth</p>
+                        <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand">€352,78</p>
+                        <div className="mx-auto mt-2 flex h-6 w-28 items-end gap-0.5 px-1">
+                            {[35, 48, 40, 62, 55, 70, 58].map((h, i) => (
+                                <div
+                                    key={i}
+                                    className="flex-1 rounded-t-sm bg-brand/50"
+                                    style={{ height: `${h}%` }}
+                                />
+                            ))}
+                        </div>
+                        <p className="mt-1 text-[8px] font-medium text-muted">Past 30 Days</p>
+                    </Surface>
+                    <div className="rounded-xl bg-brand py-2.5 text-center text-[11px] font-bold text-white shadow-sm">
+                        + Add Transaction
                     </div>
-                    <div>
-                        <p className="text-base font-extrabold text-ink">MyFinance</p>
-                        <p className="mt-1 text-[11px] leading-snug text-muted">
-                            Track income, expenses &amp; transfers — privately.
-                        </p>
-                    </div>
-                    <div className="mt-1 w-full space-y-1.5 text-left">
-                        <Surface className="flex items-center gap-2 px-3 py-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-[10px] font-bold text-brand">
-                                1
-                            </span>
-                            <span className="text-[11px] font-semibold text-ink">Add bank accounts</span>
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-muted">Your Accounts</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                        <Surface className="p-2.5">
+                            <div className="flex items-center gap-1">
+                                <IconBank className="h-3 w-3 text-muted" />
+                                <p className="truncate text-[9px] font-semibold text-muted">Checking</p>
+                            </div>
+                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€280,50</p>
                         </Surface>
-                        <Surface className="flex items-center gap-2 px-3 py-2">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-[10px] font-bold text-brand">
-                                2
-                            </span>
-                            <span className="text-[11px] font-semibold text-ink">Set up categories</span>
+                        <Surface className="p-2.5">
+                            <div className="flex items-center gap-1">
+                                <IconWallet className="h-3 w-3 text-muted" />
+                                <p className="truncate text-[9px] font-semibold text-muted">Cash</p>
+                            </div>
+                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€42,28</p>
                         </Surface>
-                        <Surface className="flex items-center gap-2 px-3 py-2 opacity-50">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-chip text-[10px] font-bold text-muted">
-                                3
-                            </span>
-                            <span className="text-[11px] font-semibold text-muted">Log transactions</span>
+                        <Surface className="p-2.5">
+                            <div className="flex items-center gap-1">
+                                <IconBank className="h-3 w-3 text-muted" />
+                                <p className="truncate text-[9px] font-semibold text-muted">Savings</p>
+                            </div>
+                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€30,00</p>
                         </Surface>
                     </div>
                 </div>
@@ -625,15 +638,27 @@ export function GuidedTour({
                     ))}
                 </div>
 
-                <div className="flex items-center justify-between px-4 py-2.5">
-                    <div>
-                        {slide.step ? (
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{slide.step}</p>
-                        ) : (
-                            <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
-                                {index + 1} / {TOUR_SLIDES.length}
-                            </p>
+                <div className="flex items-center justify-between gap-2 px-4 py-2.5">
+                    <div className="flex min-w-0 items-center gap-1">
+                        {index > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => goTo(index - 1)}
+                                aria-label="Previous story"
+                                className="rounded-full p-2 text-muted transition-colors hover:bg-chip hover:text-ink"
+                            >
+                                <IconArrowLeft className="h-5 w-5" />
+                            </button>
                         )}
+                        <div className={index > 0 ? "" : "pl-1"}>
+                            {slide.step ? (
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{slide.step}</p>
+                            ) : (
+                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                                    {index + 1} / {TOUR_SLIDES.length}
+                                </p>
+                            )}
+                        </div>
                     </div>
                     <button
                         type="button"
@@ -666,13 +691,25 @@ export function GuidedTour({
                 <div className="space-y-2 border-t border-line bg-paper px-5 pb-5 pt-4">
                     <h2 className="text-xl font-extrabold tracking-tight text-ink">{slide.title}</h2>
                     <p className="text-sm leading-relaxed text-muted">{slide.body}</p>
-                    <button
-                        type="button"
-                        onClick={() => goTo(index + 1)}
-                        className="btn-raised mt-1 w-full rounded-2xl py-3.5 text-base font-bold text-white select-none"
-                    >
-                        {index === TOUR_SLIDES.length - 1 ? "Set up my accounts" : "Next"}
-                    </button>
+                    <div className="mt-1 flex gap-2">
+                        {index > 0 && (
+                            <button
+                                type="button"
+                                onClick={() => goTo(index - 1)}
+                                className="flex items-center justify-center gap-1.5 rounded-2xl bg-chip px-4 py-3.5 text-base font-bold text-ink select-none hover:bg-chip-hover"
+                            >
+                                <IconArrowLeft className="h-5 w-5" />
+                                Back
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => goTo(index + 1)}
+                            className="btn-raised min-w-0 flex-1 rounded-2xl py-3.5 text-base font-bold text-white select-none"
+                        >
+                            {index === TOUR_SLIDES.length - 1 ? "Set up my accounts" : "Next"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
