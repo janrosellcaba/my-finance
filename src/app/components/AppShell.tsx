@@ -260,7 +260,9 @@ export function AppShell({
                             />
                         )}
                         {tab === "todo" && <TodoView />}
-                        {tab === "analytics" && <AnalyticsView privacyMode={privacyMode} />}
+                        {tab === "analytics" && (
+                            <AnalyticsView privacyMode={privacyMode} accounts={accounts} categories={categories} />
+                        )}
                         {tab === "config" && (
                             <ConfigView
                                 accounts={accounts}

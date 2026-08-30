@@ -17,7 +17,13 @@ export type AnalyticsTx = {
 };
 
 export type AnalyticsAccount = { id: string; name: string; initialBalance: number };
-export type AnalyticsCategory = { id: string; name: string; type: "income" | "expense"; color: string | null };
+export type AnalyticsCategory = {
+    id: string;
+    name: string;
+    type: "income" | "expense";
+    color: string | null;
+    icon: string | null;
+};
 
 export type PeriodMode = "month" | "3m" | "year" | "all";
 
@@ -219,6 +225,7 @@ export type CategoryRow = {
     categoryId: string;
     name: string;
     color: string | null;
+    icon: string | null;
     amount: number;
     share: number | null;
     txCount: number;
@@ -234,6 +241,24 @@ export type MonthlyPoint = {
     netSavings: number;
 };
 
+export type HealthPart = {
+    key: string;
+    label: string;
+    score: number;
+    weight: number;
+    note: string;
+};
+
+export type Health = {
+    score: number | null;
+    label: string;
+    parts: HealthPart[];
+};
+
+function money0(n: number): string {
+    return `€${Math.round(Math.abs(n)).toLocaleString("es-ES")}`;
+}
+
 export type NetWorthPoint = { date: string; netWorth: number };
 
 export type AnalyticsResult = ReturnType<typeof buildAnalytics>;
@@ -245,6 +270,7 @@ export function buildAnalytics(input: {
     mode: PeriodMode;
     anchor: string | null;
     today: string;
+    accountId?: string | null;
 }) {
     const { accounts, categories, mode, anchor, today } = input;
     const txs = [...input.txs].sort((a, b) => {
@@ -266,10 +292,23 @@ export function buildAnalytics(input: {
     if (!availableYears.includes(today.slice(0, 4))) availableYears.unshift(today.slice(0, 4));
 
     const period = resolvePeriod(mode, anchor, today, earliest);
-    const periodTx = inRange(txs, period.start, period.end);
+    const focusAccountId =
+        input.accountId && accountById.has(input.accountId) ? input.accountId : null;
+
+    function scopedToFocus(list: AnalyticsTx[]): AnalyticsTx[] {
+        if (!focusAccountId) return list;
+        return list.filter(
+            (tx) => (tx.type === "income" || tx.type === "expense") && tx.accountId === focusAccountId
+        );
+    }
+
+    const allPeriodTx = inRange(txs, period.start, period.end);
+    const periodTx = scopedToFocus(allPeriodTx);
     const summary = totalsFor(periodTx);
+    const fullSummary = focusAccountId ? totalsFor(allPeriodTx) : summary;
 
     let prevTotals: PeriodTotals | null = null;
+    let fullPrevTotals: PeriodTotals | null = null;
     let prevIsTruncated = false;
     if (period.prevStart && period.prevEnd) {
         let pEnd = period.prevEnd;
@@ -280,7 +319,9 @@ export function buildAnalytics(input: {
                 prevIsTruncated = true;
             }
         }
-        prevTotals = totalsFor(inRange(txs, period.prevStart, pEnd));
+        const prevRange = inRange(txs, period.prevStart, pEnd);
+        prevTotals = totalsFor(scopedToFocus(prevRange));
+        fullPrevTotals = totalsFor(prevRange);
     }
 
     function delta(current: number, previous: number | undefined): Delta | null {
@@ -308,6 +349,7 @@ export function buildAnalytics(input: {
             if (prevIsTruncated) pEnd = addDays(period.prevStart, period.elapsedDays - 1);
             for (const tx of inRange(txs, period.prevStart, pEnd)) {
                 if (tx.type !== type) continue;
+                if (focusAccountId && tx.accountId !== focusAccountId) continue;
                 prevMap.set(tx.destinationId, (prevMap.get(tx.destinationId) ?? 0) + tx.amount);
             }
         }
@@ -320,6 +362,7 @@ export function buildAnalytics(input: {
                     categoryId: id,
                     name: cat?.name ?? "Unknown",
                     color: cat?.color ?? null,
+                    icon: cat?.icon ?? null,
                     amount: round2(slot.amount),
                     share: total === 0 ? null : round2((slot.amount / total) * 100),
                     txCount: slot.count,
@@ -343,6 +386,7 @@ export function buildAnalytics(input: {
                 id: tx.id,
                 date: tx.date,
                 description: tx.description.trim() || catName,
+                categoryId: tx.destinationId,
                 categoryName: catName,
                 accountName: accountById.get(tx.accountId)?.name ?? "Unknown",
                 amount: round2(tx.amount),
@@ -352,12 +396,24 @@ export function buildAnalytics(input: {
     // Monthly bars: months that overlap the selected period, padded so a single
     // month still shows the previous 5 for context.
     const monthlyMap = new Map<string, { income: number; expenses: number }>();
+    const chartMonthlyMap = new Map<string, { income: number; expenses: number }>();
     for (const tx of txs) {
         const key = monthKey(tx.date);
         const slot = monthlyMap.get(key) ?? { income: 0, expenses: 0 };
         if (tx.type === "income") slot.income += tx.amount;
         else if (tx.type === "expense") slot.expenses += tx.amount;
         monthlyMap.set(key, slot);
+
+        if (
+            tx.type === "income" || tx.type === "expense"
+        ) {
+            if (!focusAccountId || tx.accountId === focusAccountId) {
+                const chartSlot = chartMonthlyMap.get(key) ?? { income: 0, expenses: 0 };
+                if (tx.type === "income") chartSlot.income += tx.amount;
+                else chartSlot.expenses += tx.amount;
+                chartMonthlyMap.set(key, chartSlot);
+            }
+        }
     }
 
     const periodFirstMonth = monthKey(period.start);
@@ -368,7 +424,7 @@ export function buildAnalytics(input: {
     if (chartFirst < earliestMonth) chartFirst = earliestMonth;
     const monthlySeries: MonthlyPoint[] = [];
     for (let k = chartFirst; k <= periodLastMonth; k = shiftMonth(k, 1)) {
-        const slot = monthlyMap.get(k) ?? { income: 0, expenses: 0 };
+        const slot = chartMonthlyMap.get(k) ?? { income: 0, expenses: 0 };
         monthlySeries.push({
             month: k,
             label: shortMonthLabel(k),
@@ -455,7 +511,7 @@ export function buildAnalytics(input: {
         let expenses = 0;
         let transfersIn = 0;
         let transfersOut = 0;
-        for (const tx of periodTx) {
+        for (const tx of allPeriodTx) {
             if (tx.type === "income" && tx.accountId === acc.id) income += tx.amount;
             else if (tx.type === "expense" && tx.accountId === acc.id) expenses += tx.amount;
             else if (tx.type === "transfer") {
@@ -476,6 +532,102 @@ export function buildAnalytics(input: {
     });
 
     const dailySpend = period.elapsedDays > 0 ? round2(summary.expenses / period.elapsedDays) : 0;
+    const fullDailySpend =
+        period.elapsedDays > 0 ? round2(fullSummary.expenses / period.elapsedDays) : 0;
+
+    const currentMonthKey = monthKey(today);
+    const completeMonths: { month: string; expenses: number; netWorthEnd: number }[] = [];
+    {
+        let nw = initialTotal;
+        const firstMonth = monthKey(earliest);
+        const lastMonth = currentMonthKey;
+        for (let k = firstMonth; k <= lastMonth; k = shiftMonth(k, 1)) {
+            const slot = monthlyMap.get(k) ?? { income: 0, expenses: 0 };
+            nw += slot.income - slot.expenses;
+            if (k < currentMonthKey) {
+                completeMonths.push({ month: k, expenses: round2(slot.expenses), netWorthEnd: round2(nw) });
+            }
+        }
+    }
+    const recentComplete = completeMonths.slice(-6);
+
+    const healthParts: HealthPart[] = [];
+    {
+        const rate = fullSummary.savingsRate;
+        if (rate !== null) {
+            const s = Math.max(0, Math.min(100, ((rate + 10) / 50) * 100));
+            healthParts.push({
+                key: "savings",
+                label: "Savings rate",
+                score: Math.round(s),
+                weight: 3,
+                note: `${rate.toFixed(0)}% of income kept`,
+            });
+        }
+        if (fullPrevTotals && fullPrevTotals.expenses > 0) {
+            const change = fullSummary.expenses - fullPrevTotals.expenses;
+            const pct = (change / fullPrevTotals.expenses) * 100;
+            const s = Math.max(0, Math.min(100, 55 - pct));
+            healthParts.push({
+                key: "spending",
+                label: "Spending",
+                score: Math.round(s),
+                weight: 2,
+                note:
+                    change <= 0
+                        ? `${money0(-change)} less than last period`
+                        : `${money0(change)} more than last period`,
+            });
+        }
+        if (recentComplete.length >= 2) {
+            const first = recentComplete[0].netWorthEnd;
+            const last = recentComplete[recentComplete.length - 1].netWorthEnd;
+            const grew = last - first;
+            const s =
+                grew >= 0
+                    ? Math.min(100, 55 + (grew / Math.max(1, Math.abs(first))) * 200)
+                    : Math.max(0, 55 + (grew / Math.max(1, Math.abs(first))) * 200);
+            healthParts.push({
+                key: "trend",
+                label: "Net worth",
+                score: Math.round(Math.max(0, Math.min(100, s))),
+                weight: 3,
+                note:
+                    grew >= 0
+                        ? `up ${money0(grew)} over ${recentComplete.length} months`
+                        : `down ${money0(grew)} over ${recentComplete.length} months`,
+            });
+        }
+        const burnMonths = recentComplete.slice(-3);
+        const monthlyBurn = burnMonths.length
+            ? sum(burnMonths.map((m) => m.expenses)) / burnMonths.length
+            : fullDailySpend > 0
+              ? fullDailySpend * 30
+              : 0;
+        if (monthlyBurn > 0 && currentNetWorth > 0) {
+            const cover = currentNetWorth / monthlyBurn;
+            healthParts.push({
+                key: "cushion",
+                label: "Cushion",
+                score: Math.round(Math.max(0, Math.min(100, (cover / 3) * 100))),
+                weight: 2,
+                note: `${cover.toFixed(1)} months of spending covered`,
+            });
+        }
+    }
+    const healthWeight = sum(healthParts.map((p) => p.weight));
+    const healthScore =
+        healthWeight > 0 ? Math.round(sum(healthParts.map((p) => p.score * p.weight)) / healthWeight) : null;
+    const healthLabel =
+        healthScore === null
+            ? "Not enough yet"
+            : healthScore >= 75
+              ? "Looking strong"
+              : healthScore >= 55
+                ? "Tracking well"
+                : healthScore >= 35
+                  ? "Worth a look"
+                  : "Needs a look";
 
     return {
         period: {
@@ -510,5 +662,6 @@ export function buildAnalytics(input: {
         },
         netWorthByAccount,
         accountActivity,
+        health: { score: healthScore, label: healthLabel, parts: healthParts },
     };
 }

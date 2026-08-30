@@ -22,6 +22,8 @@ export async function GET(request: Request) {
         const mode = resolveMode(searchParams.get("mode"));
         const rawAnchor = searchParams.get("anchor");
         const anchor = rawAnchor && /^\d{4}(-\d{2})?$/.test(rawAnchor) ? rawAnchor : null;
+        const rawAccount = searchParams.get("account");
+        const accountId = rawAccount && rawAccount.length > 0 && rawAccount !== "all" ? rawAccount : null;
 
         const db = await getDb();
 
@@ -51,6 +53,7 @@ export async function GET(request: Request) {
             categories: userCategories,
             mode,
             anchor,
+            accountId,
             today: new Date().toISOString().slice(0, 10),
         });
 
