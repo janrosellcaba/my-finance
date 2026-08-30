@@ -250,6 +250,7 @@ export function AppShell({
                         {tab === "transactions" && (
                             <TransactionsView
                                 accounts={accounts}
+                                accountBalances={dashboard?.accounts ?? []}
                                 categories={categories}
                                 privacyMode={privacyMode}
                                 onTransactionChanged={loadDashboard}

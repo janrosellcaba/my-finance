@@ -30,6 +30,9 @@ export function TransactionCard({
     const category = tx.type !== "transfer" ? categories.find((c) => c.id === tx.destinationId) : undefined;
     const categoryColor = category?.color ?? null;
     const categoryIcon = category?.icon ?? null;
+    const title =
+        tx.description.trim() ||
+        (tx.type === "transfer" ? "Transfer" : (category?.name ?? toName));
     const Tag = onClick ? "button" : "div";
 
     return (
@@ -78,7 +81,7 @@ export function TransactionCard({
                 </span>
                 <div className="min-w-0">
                     <p className="truncate font-semibold text-ink leading-tight">
-                        {tx.description}
+                        {title}
                     </p>
                     <p className="truncate text-xs text-muted mt-0.5">
                         {subtitle} · {formatDate(tx.date)}

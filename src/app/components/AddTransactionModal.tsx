@@ -9,6 +9,7 @@ import {
     getTodayLocalDateISO,
     INPUT_CLS,
     PRIMARY_BTN,
+    parseAmountInput,
 } from "../shared";
 import { IconClose } from "./icons";
 import { enqueueOutbox } from "@/lib/offlineStore";
@@ -65,7 +66,7 @@ export function AddTransactionModal({
         e.preventDefault();
         setError("");
 
-        const amountNum = parseFloat(amount);
+        const amountNum = parseAmountInput(amount);
 
         if (!date) {
             setError("Please fill in the date.");
@@ -83,15 +84,23 @@ export function AddTransactionModal({
             setError("Source and destination accounts must be different.");
             return;
         }
-        if (!amountNum || amountNum <= 0) {
+        if (amountNum === null || amountNum <= 0) {
             setError("Please enter an amount greater than zero.");
             return;
+        }
+
+        let desc = description.trim();
+        if (!desc) {
+            desc =
+                type === "transfer"
+                    ? "Transfer"
+                    : (categories.find((c) => c.id === destinationId)?.name ?? "");
         }
 
         const payload = {
             ...(isEditing ? { id: transaction!.id } : { id: crypto.randomUUID() }),
             date,
-            description: description.trim(),
+            description: desc,
             type,
             amount: amountNum,
             accountId,
@@ -198,10 +207,8 @@ export function AddTransactionModal({
                 <label className="mb-3 block">
                     <span className="mb-1 block text-sm font-semibold text-ink">Amount (€)</span>
                     <input
-                        type="number"
+                        type="text"
                         inputMode="decimal"
-                        step="0.01"
-                        min="0"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         placeholder="0.00"

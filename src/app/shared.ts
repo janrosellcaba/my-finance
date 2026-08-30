@@ -140,6 +140,30 @@ export function parseAmountEs(raw: string): number | null {
     return negative ? -value : value;
 }
 
+// Parses a manually typed amount. Both "," and "." are treated as a decimal separator
+// (e.g. "17,11" and "17.11" → 17.11). If both appear, the last one is the decimal.
+export function parseAmountInput(raw: string): number | null {
+    const cleaned = raw.replace(/[€\s]/g, "").trim();
+    if (!cleaned) return null;
+    const negative = cleaned.startsWith("-");
+    let digits = cleaned.replace(/^-/, "");
+    const lastComma = digits.lastIndexOf(",");
+    const lastDot = digits.lastIndexOf(".");
+    if (lastComma >= 0 && lastDot >= 0) {
+        if (lastComma > lastDot) {
+            digits = digits.replace(/\./g, "").replace(",", ".");
+        } else {
+            digits = digits.replace(/,/g, "");
+        }
+    } else if (lastComma >= 0) {
+        digits = digits.replace(",", ".");
+    }
+    if (!/^\d+(\.\d+)?$/.test(digits)) return null;
+    const value = parseFloat(digits);
+    if (Number.isNaN(value)) return null;
+    return negative ? -value : value;
+}
+
 // A CSV import row with this exact category name (as Income) adds to the account's initial
 // balance instead of becoming a normal transaction/category. Shared by ImportView.tsx (client
 // preview) and api/import/route.ts (server) so the two can't drift out of sync.

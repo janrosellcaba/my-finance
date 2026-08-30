@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { type Account, type Category, type Transaction, INPUT_CLS } from "../shared";
+import { type Account, type Category, type Transaction, formatCurrency, INPUT_CLS } from "../shared";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { TransactionCard } from "./TransactionCard";
 import { useUndoToast } from "./UndoToastProvider";
@@ -9,11 +9,13 @@ import { IconClose, IconFilter, IconSearch } from "./icons";
 
 export function TransactionsView({
     accounts,
+    accountBalances,
     categories,
     privacyMode,
     onTransactionChanged,
 }: {
     accounts: Account[];
+    accountBalances: { id: string; name: string; balance: number }[];
     categories: Category[];
     privacyMode: boolean;
     onTransactionChanged: () => void;
@@ -110,10 +112,31 @@ export function TransactionsView({
     }, [searchInput]);
 
     const visibleTransactions = transactions.filter((tx) => !pendingDeleteIds.has(tx.id));
+    const balancesToShow = accountFilter
+        ? accountBalances.filter((a) => a.id === accountFilter)
+        : accountBalances;
 
     return (
         <div className="space-y-4 px-5 pt-6">
-            <h1 className="text-2xl font-extrabold text-ink">Transactions</h1>
+            <div>
+                <h1 className="text-2xl font-extrabold text-ink">Transactions</h1>
+                {balancesToShow.length > 0 && (
+                    <div className="-mx-5 mt-2 flex gap-3 overflow-x-auto px-5 pb-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                        {balancesToShow.map((acc) => (
+                            <div key={acc.id} className="shrink-0 text-xs">
+                                <span className="text-muted">{acc.name}</span>{" "}
+                                <span
+                                    className={`font-semibold tabular-nums transition-[filter,opacity] duration-250 ${
+                                        acc.balance >= 0 ? "text-ink" : "text-danger"
+                                    } ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}
+                                >
+                                    {formatCurrency(acc.balance)}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
 
             <div className="flex gap-2">
                 <div className="relative flex-1">

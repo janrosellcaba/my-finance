@@ -50,3 +50,6 @@ next-env.d.ts
 
 # database snapshots (production server)
 /backups/
+
+# local wrangler secrets
+.dev.vars
