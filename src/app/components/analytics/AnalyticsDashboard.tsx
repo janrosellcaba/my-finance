@@ -340,10 +340,8 @@ function CategoryPie({
                         isAnimationActive={false}
                         rootTabIndex={-1}
                         style={{ cursor: "pointer", outline: "none" }}
-                        onClick={(d) => {
-                            const fromPayload = (d.payload as PieSlice | undefined)?.row;
-                            const fromSpread = (d as PieSlice).row;
-                            const row = fromPayload ?? fromSpread;
+                        onClick={(_d, index) => {
+                            const row = slices[index]?.row;
                             if (row) onSelect(row);
                         }}
                     >
@@ -355,7 +353,8 @@ function CategoryPie({
                         isAnimationActive={false}
                         content={({ active, payload }) => {
                             if (!active || !payload?.length) return null;
-                            const d = payload[0].payload as PieSlice;
+                            const d = payload[0].payload as unknown as PieSlice | undefined;
+                            if (!d) return null;
                             return (
                                 <div className="rounded-xl border border-line bg-paper px-3 py-2 text-xs shadow-sm">
                                     <p className="font-semibold text-ink">{d.name}</p>
