@@ -19,10 +19,8 @@ import {
 } from "./icons";
 
 const TOUR_STORAGE_KEY = "myfinance-tour-seen";
-const SETUP_STORAGE_KEY = "myfinance-setup-guide";
+const SETUP_STORAGE_KEY = "myfinance-setup-pending";
 const STORY_MS = 8000;
-
-export type SetupGuideStep = "accounts" | "categories";
 
 export function hasSeenTour(): boolean {
     if (typeof window === "undefined") return true;
@@ -41,35 +39,39 @@ export function markTourSeen(): void {
     }
 }
 
-export function getSetupGuideStep(): SetupGuideStep | null {
-    if (typeof window === "undefined") return null;
+export function isSetupPending(): boolean {
+    if (typeof window === "undefined") return false;
     try {
         const v = localStorage.getItem(SETUP_STORAGE_KEY);
-        if (v === "accounts" || v === "categories") return v;
-        return null;
+        if (v === "1") return true;
+        // Migrate older step-based key from the Settings handoff flow.
+        const legacy = localStorage.getItem("myfinance-setup-guide");
+        if (legacy === "accounts" || legacy === "categories" || legacy === "1") {
+            localStorage.setItem(SETUP_STORAGE_KEY, "1");
+            localStorage.removeItem("myfinance-setup-guide");
+            return true;
+        }
+        return false;
     } catch {
-        return null;
+        return false;
     }
 }
 
-export function setSetupGuideStep(step: SetupGuideStep | "done" | null): void {
+export function markSetupPending(): void {
     try {
-        if (!step || step === "done") {
-            localStorage.setItem(SETUP_STORAGE_KEY, "done");
-        } else {
-            localStorage.setItem(SETUP_STORAGE_KEY, step);
-        }
+        localStorage.setItem(SETUP_STORAGE_KEY, "1");
+        localStorage.removeItem("myfinance-setup-guide");
     } catch {
         /* ignore */
     }
 }
 
-export function isSetupGuideDone(): boolean {
-    if (typeof window === "undefined") return true;
+export function markSetupDone(): void {
     try {
-        return localStorage.getItem(SETUP_STORAGE_KEY) === "done";
+        localStorage.setItem(SETUP_STORAGE_KEY, "0");
+        localStorage.removeItem("myfinance-setup-guide");
     } catch {
-        return false;
+        /* ignore */
     }
 }
 

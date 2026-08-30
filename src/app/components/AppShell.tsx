@@ -19,14 +19,14 @@ import { UndoToastProvider } from "./UndoToastProvider";
 import { IconClose, IconEye, IconEyeOff } from "./icons";
 import {
     GuidedTour,
-    getSetupGuideStep,
     hasSeenTour,
     isAccountFirstDay,
-    isSetupGuideDone,
+    isSetupPending,
+    markSetupDone,
+    markSetupPending,
     markTourSeen,
-    setSetupGuideStep,
-    type SetupGuideStep,
 } from "./GuidedTour";
+import { SetupWizard } from "./SetupWizard";
 import { getFromCache, getOutbox, saveToCache, syncOutbox } from "@/lib/offlineStore";
 
 const TransactionsView = dynamic(() => import("./TransactionsView").then((m) => m.TransactionsView), {
@@ -66,7 +66,8 @@ export function AppShell({
     const [outboxCount, setOutboxCount] = useState(0);
     const [showTour, setShowTour] = useState(false);
     const [showTourBanner, setShowTourBanner] = useState(false);
-    const [setupGuide, setSetupGuide] = useState<SetupGuideStep | null>(null);
+    const [showSetup, setShowSetup] = useState(false);
+    const [setupIncomplete, setSetupIncomplete] = useState(false);
     const mainRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
@@ -77,34 +78,24 @@ export function AppShell({
         if (isAccountFirstDay(accountCreatedAt) && !hasSeenTour()) {
             setShowTourBanner(true);
         }
-        const step = getSetupGuideStep();
-        if (step) {
-            setSetupGuide(step);
-            setTab("config");
+        if (isSetupPending()) {
+            setSetupIncomplete(true);
+            setShowSetup(true);
         }
     }, [accountCreatedAt]);
 
-    function beginSetupGuide() {
-        if (isSetupGuideDone()) return;
-        setSetupGuideStep("accounts");
-        setSetupGuide("accounts");
-        setTab("config");
+    function openSetup() {
+        markSetupPending();
+        setSetupIncomplete(true);
+        setShowSetup(true);
     }
 
-    function handleSetupContinue() {
-        if (setupGuide === "accounts") {
-            setSetupGuideStep("categories");
-            setSetupGuide("categories");
-            return;
-        }
-        setSetupGuideStep("done");
-        setSetupGuide(null);
+    function finishSetup() {
+        markSetupDone();
+        setSetupIncomplete(false);
+        setShowSetup(false);
         setTab("home");
-    }
-
-    function handleSetupSkip() {
-        setSetupGuideStep("done");
-        setSetupGuide(null);
+        void Promise.all([loadConfig(), loadDashboard()]);
     }
 
     useEffect(() => {
@@ -374,9 +365,8 @@ export function AppShell({
                                 appearance={appearance}
                                 onPatchAppearance={patchAppearance}
                                 onOpenTour={() => setShowTour(true)}
-                                setupGuide={setupGuide}
-                                onSetupContinue={handleSetupContinue}
-                                onSetupSkip={handleSetupSkip}
+                                showFinishSetup={setupIncomplete}
+                                onOpenSetup={openSetup}
                                 onRefresh={async () => {
                                     await Promise.all([loadConfig(), loadDashboard()]);
                                 }}
@@ -408,10 +398,22 @@ export function AppShell({
                         setShowTour(false);
                         setShowTourBanner(false);
                         if (reason === "complete") {
-                            beginSetupGuide();
+                            openSetup();
                         }
                     }}
                 />
+
+                {showSetup && (
+                    <SetupWizard
+                        accounts={accounts}
+                        categories={categories}
+                        privacyMode={privacyMode}
+                        onRefresh={async () => {
+                            await Promise.all([loadConfig(), loadDashboard()]);
+                        }}
+                        onFinished={finishSetup}
+                    />
+                )}
             </div>
         </UndoToastProvider>
     );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import {
     type Account,
     type AppearancePrefs,
@@ -18,11 +18,10 @@ import { AccountList } from "./AccountList";
 import { CategoryList } from "./CategoryList";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { ExportView } from "./ExportView";
-import { type SetupGuideStep } from "./GuidedTour";
 import { ImportView } from "./ImportView";
 import { MenuRow } from "./MenuRow";
 import { useUndoToast } from "./UndoToastProvider";
-import { IconArrowLeft, IconClose, IconGrip, IconPencil, IconRadioDot } from "./icons";
+import { IconArrowLeft, IconGrip, IconPencil, IconRadioDot } from "./icons";
 
 type ConfigSection =
     | "menu"
@@ -83,9 +82,8 @@ export function ConfigView({
     onImported,
     onAccountDeleted,
     onOpenTour,
-    setupGuide,
-    onSetupContinue,
-    onSetupSkip,
+    showFinishSetup,
+    onOpenSetup,
 }: {
     accounts: Account[];
     categories: Category[];
@@ -97,9 +95,8 @@ export function ConfigView({
     onImported: () => void;
     onAccountDeleted: () => void;
     onOpenTour: () => void;
-    setupGuide: SetupGuideStep | null;
-    onSetupContinue: () => void;
-    onSetupSkip: () => void;
+    showFinishSetup: boolean;
+    onOpenSetup: () => void;
 }) {
     const [section, setSection] = useState<ConfigSection>("menu");
     const [accountName, setAccountName] = useState("");
@@ -112,11 +109,6 @@ export function ConfigView({
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [pendingDeleteCategoryIds, setPendingDeleteCategoryIds] = useState<Set<string>>(new Set());
     const { requestDelete } = useUndoToast();
-
-    useEffect(() => {
-        if (setupGuide === "accounts") setSection("accounts");
-        if (setupGuide === "categories") setSection("categories");
-    }, [setupGuide]);
 
     async function handleAddAccount(e: FormEvent) {
         e.preventDefault();
@@ -428,6 +420,9 @@ export function ConfigView({
                 </div>
 
                 <div className="overflow-hidden surface rounded-2xl">
+                    {showFinishSetup && (
+                        <MenuRow label="Finish setup" onClick={onOpenSetup} />
+                    )}
                     <MenuRow label="App tour" onClick={onOpenTour} />
                     <MenuRow label="Contact support" onClick={() => setSection("support")} />
                     <MenuRow label="Change password" chevron={false} last onClick={() => setShowChangePassword(true)} />
@@ -453,17 +448,7 @@ export function ConfigView({
             <div className="flex items-center gap-3">
                 <button
                     type="button"
-                    onClick={() => {
-                        if (setupGuide === "accounts") {
-                            setSection("accounts");
-                            return;
-                        }
-                        if (setupGuide === "categories") {
-                            setSection("categories");
-                            return;
-                        }
-                        setSection("menu");
-                    }}
+                    onClick={() => setSection("menu")}
                     aria-label="Back to settings"
                     className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
                 >
@@ -473,84 +458,6 @@ export function ConfigView({
             </div>
 
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
-
-            {setupGuide === "accounts" && section === "accounts" && (
-                <div className="rounded-2xl border border-brand/25 bg-brand-soft p-4">
-                    <div className="flex items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold uppercase tracking-wide text-brand">Setup · 1 of 2</p>
-                            <p className="mt-1 text-sm font-bold text-ink">Review your bank accounts</p>
-                            <p className="mt-1 text-xs leading-relaxed text-muted">
-                                You already have starter accounts. Rename them, set real initial balances, pick a
-                                default, or add more — then continue.
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    onClick={onSetupContinue}
-                                    className="rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white select-none"
-                                >
-                                    Continue to categories
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onSetupSkip}
-                                    className="rounded-xl bg-paper px-4 py-2.5 text-sm font-bold text-muted select-none"
-                                >
-                                    Skip for now
-                                </button>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            aria-label="Skip setup"
-                            onClick={onSetupSkip}
-                            className="rounded-full p-1.5 text-muted hover:bg-chip hover:text-ink"
-                        >
-                            <IconClose className="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {setupGuide === "categories" && section === "categories" && (
-                <div className="rounded-2xl border border-brand/25 bg-brand-soft p-4">
-                    <div className="flex items-start gap-3">
-                        <div className="min-w-0 flex-1">
-                            <p className="text-xs font-bold uppercase tracking-wide text-brand">Setup · 2 of 2</p>
-                            <p className="mt-1 text-sm font-bold text-ink">Tune your categories</p>
-                            <p className="mt-1 text-xs leading-relaxed text-muted">
-                                Add the labels you actually spend on, set colours and icons, drag to reorder, and
-                                choose defaults. You can always edit these later.
-                            </p>
-                            <div className="mt-3 flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    onClick={onSetupContinue}
-                                    className="rounded-xl bg-brand px-4 py-2.5 text-sm font-bold text-white select-none"
-                                >
-                                    Done — go to Home
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={onSetupSkip}
-                                    className="rounded-xl bg-paper px-4 py-2.5 text-sm font-bold text-muted select-none"
-                                >
-                                    Skip for now
-                                </button>
-                            </div>
-                        </div>
-                        <button
-                            type="button"
-                            aria-label="Skip setup"
-                            onClick={onSetupSkip}
-                            className="rounded-full p-1.5 text-muted hover:bg-chip hover:text-ink"
-                        >
-                            <IconClose className="h-4 w-4" />
-                        </button>
-                    </div>
-                </div>
-            )}
 
             {section === "accounts" && (
                 <section className="space-y-4 surface rounded-2xl p-5">
