@@ -22,6 +22,8 @@ export type Transaction = {
     amount: number;
     accountId: string;
     destinationId: string;
+    /** Account balance after this transaction (source account). */
+    balanceAfter?: number;
 };
 export type Delta = { current: number; previous: number; change: number; changePct: number | null };
 export type DashboardSummary = {

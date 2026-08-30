@@ -9,13 +9,11 @@ import { IconClose, IconFilter, IconSearch } from "./icons";
 
 export function TransactionsView({
     accounts,
-    accountBalances,
     categories,
     privacyMode,
     onTransactionChanged,
 }: {
     accounts: Account[];
-    accountBalances: { id: string; name: string; balance: number }[];
     categories: Category[];
     privacyMode: boolean;
     onTransactionChanged: () => void;
@@ -89,13 +87,13 @@ export function TransactionsView({
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ id: tx.id }),
                 });
-                setTransactions((prev) => prev.filter((t) => t.id !== tx.id));
                 setPendingDeleteIds((prev) => {
                     const next = new Set(prev);
                     next.delete(tx.id);
                     return next;
                 });
                 onTransactionChanged();
+                await fetchPage(null, true);
             },
         });
     }
@@ -112,7 +110,6 @@ export function TransactionsView({
     }, [searchInput]);
 
     const visibleTransactions = transactions.filter((tx) => !pendingDeleteIds.has(tx.id));
-    const balanceByAccount = Object.fromEntries(accountBalances.map((a) => [a.id, a.balance]));
 
     return (
         <div className="space-y-4 px-5 pt-6">
@@ -284,7 +281,7 @@ export function TransactionsView({
                             accounts={accounts}
                             categories={categories}
                             privacyMode={privacyMode}
-                            accountBalance={balanceByAccount[tx.accountId]}
+                            accountBalance={tx.balanceAfter}
                             onClick={() => setEditingTransaction(tx)}
                             compact
                         />

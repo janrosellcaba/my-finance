@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { transaction } from "@/db/schema";
+import { account, transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
-import { round2 } from "@/lib/balances";
-import { and, eq, desc, like, gte, lte, lt, or } from "drizzle-orm";
+import { applyTransactionToBalances, round2 } from "@/lib/balances";
+import { and, asc, eq, desc, like, gte, lte, lt, or } from "drizzle-orm";
 
 export async function POST(request: Request) {
     try {
@@ -242,10 +242,52 @@ export async function GET(request: Request) {
         const nextCursor =
             transactionsList.length === LIMIT && last ? { date: last.date, id: last.id } : null;
 
+        // Running balance after each tx (source account), computed from full history so
+        // filters/pagination don't skew the number under each amount.
+        const pageIds = new Set(transactionsList.map((tx) => tx.id));
+        const balanceAfterById: Record<string, number> = {};
+
+        if (pageIds.size > 0) {
+            const [userAccounts, allTxs] = await Promise.all([
+                db.select().from(account).where(eq(account.userId, user.id)).all(),
+                db
+                    .select({
+                        id: transaction.id,
+                        type: transaction.type,
+                        amount: transaction.amount,
+                        accountId: transaction.accountId,
+                        destinationId: transaction.destinationId,
+                    })
+                    .from(transaction)
+                    .where(eq(transaction.userId, user.id))
+                    .orderBy(asc(transaction.date), asc(transaction.id))
+                    .all(),
+            ]);
+
+            const balances: Record<string, number> = {};
+            for (const a of userAccounts) balances[a.id] = a.initialBalance;
+
+            for (const tx of allTxs) {
+                applyTransactionToBalances(balances, tx);
+                if (pageIds.has(tx.id)) {
+                    const balanceAccountId =
+                        accountFilter &&
+                        tx.type === "transfer" &&
+                        tx.destinationId === accountFilter
+                            ? tx.destinationId
+                            : tx.accountId;
+                    balanceAfterById[tx.id] = balances[balanceAccountId] ?? 0;
+                }
+            }
+        }
+
         return NextResponse.json({
             success: true,
             limit: LIMIT,
-            transactions: transactionsList,
+            transactions: transactionsList.map((tx) => ({
+                ...tx,
+                balanceAfter: balanceAfterById[tx.id] ?? 0,
+            })),
             nextCursor,
         });
     } catch (error) {
