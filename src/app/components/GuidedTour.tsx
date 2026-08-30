@@ -18,7 +18,59 @@ import {
 } from "./icons";
 
 const TOUR_STORAGE_KEY = "myfinance-tour-seen";
+const SETUP_STORAGE_KEY = "myfinance-setup-guide";
 const STORY_MS = 8000;
+
+export type SetupGuideStep = "accounts" | "categories";
+
+export function hasSeenTour(): boolean {
+    if (typeof window === "undefined") return true;
+    try {
+        return localStorage.getItem(TOUR_STORAGE_KEY) === "1";
+    } catch {
+        return false;
+    }
+}
+
+export function markTourSeen(): void {
+    try {
+        localStorage.setItem(TOUR_STORAGE_KEY, "1");
+    } catch {
+        /* ignore */
+    }
+}
+
+export function getSetupGuideStep(): SetupGuideStep | null {
+    if (typeof window === "undefined") return null;
+    try {
+        const v = localStorage.getItem(SETUP_STORAGE_KEY);
+        if (v === "accounts" || v === "categories") return v;
+        return null;
+    } catch {
+        return null;
+    }
+}
+
+export function setSetupGuideStep(step: SetupGuideStep | "done" | null): void {
+    try {
+        if (!step || step === "done") {
+            localStorage.setItem(SETUP_STORAGE_KEY, "done");
+        } else {
+            localStorage.setItem(SETUP_STORAGE_KEY, step);
+        }
+    } catch {
+        /* ignore */
+    }
+}
+
+export function isSetupGuideDone(): boolean {
+    if (typeof window === "undefined") return true;
+    try {
+        return localStorage.getItem(SETUP_STORAGE_KEY) === "done";
+    } catch {
+        return false;
+    }
+}
 
 type VisualKind =
     | "welcome"
@@ -99,23 +151,6 @@ export const TOUR_SLIDES: TourSlide[] = [
         nav: "home",
     },
 ];
-
-export function hasSeenTour(): boolean {
-    if (typeof window === "undefined") return true;
-    try {
-        return localStorage.getItem(TOUR_STORAGE_KEY) === "1";
-    } catch {
-        return false;
-    }
-}
-
-export function markTourSeen(): void {
-    try {
-        localStorage.setItem(TOUR_STORAGE_KEY, "1");
-    } catch {
-        /* ignore */
-    }
-}
 
 export function isAccountFirstDay(createdAt: string | null | undefined): boolean {
     if (!createdAt) return false;
@@ -506,21 +541,32 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
     );
 }
 
-export function GuidedTour({ open, onClose }: { open: boolean; onClose: () => void }) {
+export function GuidedTour({
+    open,
+    onClose,
+}: {
+    open: boolean;
+    onClose: (reason: "complete" | "dismiss") => void;
+}) {
     const [index, setIndex] = useState(0);
     const [progress, setProgress] = useState(0);
     const timerRef = useRef<number | null>(null);
     const startedAt = useRef(0);
 
-    const finish = useCallback(() => {
+    const complete = useCallback(() => {
         markTourSeen();
-        onClose();
+        onClose("complete");
+    }, [onClose]);
+
+    const dismiss = useCallback(() => {
+        markTourSeen();
+        onClose("dismiss");
     }, [onClose]);
 
     const goTo = useCallback(
         (next: number) => {
             if (next >= TOUR_SLIDES.length) {
-                finish();
+                complete();
                 return;
             }
             if (next < 0) return;
@@ -528,7 +574,7 @@ export function GuidedTour({ open, onClose }: { open: boolean; onClose: () => vo
             setProgress(0);
             startedAt.current = performance.now();
         },
-        [finish]
+        [complete]
     );
 
     useEffect(() => {
@@ -591,7 +637,7 @@ export function GuidedTour({ open, onClose }: { open: boolean; onClose: () => vo
                     </div>
                     <button
                         type="button"
-                        onClick={finish}
+                        onClick={dismiss}
                         aria-label="Close tour"
                         className="rounded-full p-2 text-muted transition-colors hover:bg-chip hover:text-ink"
                     >
@@ -625,7 +671,7 @@ export function GuidedTour({ open, onClose }: { open: boolean; onClose: () => vo
                         onClick={() => goTo(index + 1)}
                         className="btn-raised mt-1 w-full rounded-2xl py-3.5 text-base font-bold text-white select-none"
                     >
-                        {index === TOUR_SLIDES.length - 1 ? "Start using MyFinance" : "Next"}
+                        {index === TOUR_SLIDES.length - 1 ? "Set up my accounts" : "Next"}
                     </button>
                 </div>
             </div>

@@ -17,7 +17,16 @@ import { BottomNav } from "./BottomNav";
 import { HomeView } from "./HomeView";
 import { UndoToastProvider } from "./UndoToastProvider";
 import { IconClose, IconEye, IconEyeOff } from "./icons";
-import { GuidedTour, hasSeenTour, isAccountFirstDay, markTourSeen } from "./GuidedTour";
+import {
+    GuidedTour,
+    getSetupGuideStep,
+    hasSeenTour,
+    isAccountFirstDay,
+    isSetupGuideDone,
+    markTourSeen,
+    setSetupGuideStep,
+    type SetupGuideStep,
+} from "./GuidedTour";
 import { getFromCache, getOutbox, saveToCache, syncOutbox } from "@/lib/offlineStore";
 
 const TransactionsView = dynamic(() => import("./TransactionsView").then((m) => m.TransactionsView), {
@@ -57,6 +66,7 @@ export function AppShell({
     const [outboxCount, setOutboxCount] = useState(0);
     const [showTour, setShowTour] = useState(false);
     const [showTourBanner, setShowTourBanner] = useState(false);
+    const [setupGuide, setSetupGuide] = useState<SetupGuideStep | null>(null);
     const mainRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
@@ -67,7 +77,35 @@ export function AppShell({
         if (isAccountFirstDay(accountCreatedAt) && !hasSeenTour()) {
             setShowTourBanner(true);
         }
+        const step = getSetupGuideStep();
+        if (step) {
+            setSetupGuide(step);
+            setTab("config");
+        }
     }, [accountCreatedAt]);
+
+    function beginSetupGuide() {
+        if (isSetupGuideDone()) return;
+        setSetupGuideStep("accounts");
+        setSetupGuide("accounts");
+        setTab("config");
+    }
+
+    function handleSetupContinue() {
+        if (setupGuide === "accounts") {
+            setSetupGuideStep("categories");
+            setSetupGuide("categories");
+            return;
+        }
+        setSetupGuideStep("done");
+        setSetupGuide(null);
+        setTab("home");
+    }
+
+    function handleSetupSkip() {
+        setSetupGuideStep("done");
+        setSetupGuide(null);
+    }
 
     useEffect(() => {
         mainRef.current?.scrollTo(0, 0);
@@ -268,7 +306,7 @@ export function AppShell({
                             <div className="min-w-0 flex-1">
                                 <p className="text-sm font-bold text-ink">New here?</p>
                                 <p className="mt-0.5 text-xs text-muted">
-                                    A one-minute tour of Home, transactions, analytics, and settings.
+                                    Take a quick tour, then we&apos;ll help you set up accounts and categories.
                                 </p>
                                 <button
                                     type="button"
@@ -336,6 +374,9 @@ export function AppShell({
                                 appearance={appearance}
                                 onPatchAppearance={patchAppearance}
                                 onOpenTour={() => setShowTour(true)}
+                                setupGuide={setupGuide}
+                                onSetupContinue={handleSetupContinue}
+                                onSetupSkip={handleSetupSkip}
                                 onRefresh={async () => {
                                     await Promise.all([loadConfig(), loadDashboard()]);
                                 }}
@@ -363,9 +404,12 @@ export function AppShell({
 
                 <GuidedTour
                     open={showTour}
-                    onClose={() => {
+                    onClose={(reason) => {
                         setShowTour(false);
                         setShowTourBanner(false);
+                        if (reason === "complete") {
+                            beginSetupGuide();
+                        }
                     }}
                 />
             </div>
