@@ -1,13 +1,22 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
-import { INPUT_CLS, PRIMARY_BTN } from "../shared";
+import { type Todo, INPUT_CLS, PRIMARY_BTN } from "../shared";
 import { IconClose } from "./icons";
 import { enqueueOutbox } from "@/lib/offlineStore";
 
-export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
-    const [text, setText] = useState("");
-    const [dueDate, setDueDate] = useState("");
+export function AddTodoModal({
+    todo,
+    onClose,
+    onSaved,
+}: {
+    todo?: Todo;
+    onClose: () => void;
+    onSaved: () => void;
+}) {
+    const isEditing = !!todo;
+    const [text, setText] = useState(todo?.text ?? "");
+    const [dueDate, setDueDate] = useState(todo?.dueDate ?? "");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
 
@@ -28,11 +37,14 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
             return;
         }
 
-        const id = crypto.randomUUID();
-        const payload = { id, text: text.trim(), dueDate: dueDate || null };
+        const payload = {
+            id: todo?.id ?? crypto.randomUUID(),
+            text: text.trim(),
+            dueDate: dueDate || null,
+        };
 
-        if (typeof navigator !== "undefined" && !navigator.onLine) {
-            await enqueueOutbox({ id, type: "todo", payload });
+        if (typeof navigator !== "undefined" && !navigator.onLine && !isEditing) {
+            await enqueueOutbox({ id: payload.id, type: "todo", payload });
             onSaved();
             return;
         }
@@ -40,7 +52,7 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
         setSaving(true);
         try {
             const res = await fetch("/api/todos", {
-                method: "POST",
+                method: isEditing ? "PATCH" : "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
             });
@@ -52,9 +64,14 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
             }
             onSaved();
         } catch {
-            await enqueueOutbox({ id, type: "todo", payload });
+            if (!isEditing) {
+                await enqueueOutbox({ id: payload.id, type: "todo", payload });
+                setSaving(false);
+                onSaved();
+                return;
+            }
+            setError("Network error. Please try again.");
             setSaving(false);
-            onSaved();
         }
     }
 
@@ -63,14 +80,14 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
             <form
                 role="dialog"
                 aria-modal="true"
-                aria-label="Add Task"
+                aria-label={isEditing ? "Edit Task" : "Add Task"}
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
                 className="w-full max-w-md rounded-t-3xl bg-paper p-6 shadow-xl sm:rounded-3xl"
             >
                 <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-ink">Add Task</h2>
+                    <h2 className="text-xl font-bold text-ink">{isEditing ? "Edit Task" : "Add Task"}</h2>
                     <button
                         type="button"
                         onClick={onClose}
@@ -92,15 +109,36 @@ export function AddTodoModal({ onClose, onSaved }: { onClose: () => void; onSave
                     />
                 </label>
 
-                <label className="mb-4 block">
-                    <span className="mb-1 block text-sm font-semibold text-ink">Date (optional)</span>
-                    <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} className={INPUT_CLS} />
-                </label>
+                <div className="mb-4">
+                    <div className="mb-1 flex items-center justify-between">
+                        <label htmlFor="todo-due-date" className="text-sm font-semibold text-ink">
+                            Due date
+                        </label>
+                        {dueDate ? (
+                            <button
+                                type="button"
+                                onClick={() => setDueDate("")}
+                                className="text-xs font-semibold text-muted transition-colors hover:text-ink"
+                            >
+                                Clear
+                            </button>
+                        ) : (
+                            <span className="text-xs text-muted">optional</span>
+                        )}
+                    </div>
+                    <input
+                        id="todo-due-date"
+                        type="date"
+                        value={dueDate}
+                        onChange={(e) => setDueDate(e.target.value)}
+                        className={INPUT_CLS}
+                    />
+                </div>
 
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
                 <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full bg-brand hover:bg-brand-dark`}>
-                    {saving ? "Saving…" : "Add Task"}
+                    {saving ? "Saving…" : isEditing ? "Save Changes" : "Add Task"}
                 </button>
             </form>
         </div>

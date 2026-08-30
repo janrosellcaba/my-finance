@@ -6,7 +6,17 @@ import { AddTodoModal } from "./AddTodoModal";
 import { useUndoToast } from "./UndoToastProvider";
 import { IconCheckSquare, IconTrash } from "./icons";
 
-function TodoRow({ todo, onToggle, onDelete }: { todo: Todo; onToggle: () => void; onDelete: () => void }) {
+function TodoRow({
+    todo,
+    onToggle,
+    onDelete,
+    onEdit,
+}: {
+    todo: Todo;
+    onToggle: () => void;
+    onDelete: () => void;
+    onEdit: () => void;
+}) {
     return (
         <div className="flex items-center gap-3 px-4 py-3">
             <button
@@ -19,12 +29,16 @@ function TodoRow({ todo, onToggle, onDelete }: { todo: Todo; onToggle: () => voi
             >
                 <IconCheckSquare className="h-6 w-6" checked={todo.completed} />
             </button>
-            <div className="min-w-0 flex-1">
-                <p className={`truncate font-medium ${todo.completed ? "text-muted line-through" : "text-ink"}`}>
+            <button type="button" onClick={onEdit} aria-label="Edit task" className="min-w-0 flex-1 text-left">
+                <p
+                    className={`truncate font-medium ${
+                        todo.completed ? "text-muted line-through" : "text-ink hover:text-brand"
+                    }`}
+                >
                     {todo.text}
                 </p>
-                {todo.dueDate && <p className="text-xs text-muted">{formatDate(todo.dueDate)}</p>}
-            </div>
+                {todo.dueDate && <p className="text-xs text-muted">Due {formatDate(todo.dueDate)}</p>}
+            </button>
             <button
                 type="button"
                 onClick={onDelete}
@@ -41,6 +55,7 @@ export function TodoView() {
     const [todos, setTodos] = useState<Todo[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [editingTodo, setEditingTodo] = useState<Todo | null>(null);
     const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
     const { requestDelete } = useUndoToast();
 
@@ -137,6 +152,7 @@ export function TodoView() {
                                     todo={t}
                                     onToggle={() => handleToggle(t)}
                                     onDelete={() => handleDelete(t.id)}
+                                    onEdit={() => setEditingTodo(t)}
                                 />
                             ))}
                         </div>
@@ -154,6 +170,7 @@ export function TodoView() {
                                         todo={t}
                                         onToggle={() => handleToggle(t)}
                                         onDelete={() => handleDelete(t.id)}
+                                        onEdit={() => setEditingTodo(t)}
                                     />
                                 ))}
                             </div>
@@ -167,6 +184,17 @@ export function TodoView() {
                     onClose={() => setShowAddModal(false)}
                     onSaved={() => {
                         setShowAddModal(false);
+                        loadTodos();
+                    }}
+                />
+            )}
+
+            {editingTodo && (
+                <AddTodoModal
+                    todo={editingTodo}
+                    onClose={() => setEditingTodo(null)}
+                    onSaved={() => {
+                        setEditingTodo(null);
                         loadTodos();
                     }}
                 />

@@ -75,9 +75,34 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const body = (await request.json().catch(() => null)) as { id?: unknown; completed?: unknown } | null;
-        if (!body || typeof body.id !== "string" || typeof body.completed !== "boolean") {
-            return NextResponse.json({ error: "id and completed are required." }, { status: 400 });
+        const body = (await request.json().catch(() => null)) as {
+            id?: unknown;
+            completed?: unknown;
+            text?: unknown;
+            dueDate?: unknown;
+        } | null;
+        if (!body || typeof body.id !== "string") {
+            return NextResponse.json({ error: "id is required." }, { status: 400 });
+        }
+
+        const updates: { completed?: boolean; text?: string; dueDate?: string | null } = {};
+        if (typeof body.completed === "boolean") {
+            updates.completed = body.completed;
+        }
+        if (body.text !== undefined) {
+            if (typeof body.text !== "string" || !body.text.trim()) {
+                return NextResponse.json({ error: "Text is required." }, { status: 400 });
+            }
+            updates.text = body.text.trim();
+        }
+        if (body.dueDate !== undefined) {
+            if (body.dueDate !== null && typeof body.dueDate !== "string") {
+                return NextResponse.json({ error: "Invalid due date." }, { status: 400 });
+            }
+            updates.dueDate = (body.dueDate as string | null) || null;
+        }
+        if (Object.keys(updates).length === 0) {
+            return NextResponse.json({ error: "No fields to update." }, { status: 400 });
         }
 
         const db = await getDb();
@@ -93,7 +118,7 @@ export async function PATCH(request: Request) {
 
         await db
             .update(todo)
-            .set({ completed: body.completed })
+            .set(updates)
             .where(and(eq(todo.id, body.id), eq(todo.userId, user.id)));
 
         return NextResponse.json({ success: true });
