@@ -16,7 +16,8 @@ import { AddTransactionModal } from "./AddTransactionModal";
 import { BottomNav } from "./BottomNav";
 import { HomeView } from "./HomeView";
 import { UndoToastProvider } from "./UndoToastProvider";
-import { IconEye, IconEyeOff } from "./icons";
+import { IconClose, IconEye, IconEyeOff } from "./icons";
+import { GuidedTour, hasSeenTour, isAccountFirstDay, markTourSeen } from "./GuidedTour";
 import { getFromCache, getOutbox, saveToCache, syncOutbox } from "@/lib/offlineStore";
 
 const TransactionsView = dynamic(() => import("./TransactionsView").then((m) => m.TransactionsView), {
@@ -38,9 +39,11 @@ function applyDomAppearance(prefs: AppearancePrefs) {
 export function AppShell({
     username,
     initialAppearance,
+    accountCreatedAt,
 }: {
     username: string;
     initialAppearance: AppearancePrefs;
+    accountCreatedAt: string;
 }) {
     const router = useRouter();
     const [tab, setTab] = useState<Tab>("home");
@@ -52,11 +55,19 @@ export function AppShell({
     const [appearance, setAppearance] = useState<AppearancePrefs>(initialAppearance);
     const [isOnline, setIsOnline] = useState(true);
     const [outboxCount, setOutboxCount] = useState(0);
+    const [showTour, setShowTour] = useState(false);
+    const [showTourBanner, setShowTourBanner] = useState(false);
     const mainRef = useRef<HTMLElement>(null);
 
     useEffect(() => {
         applyDomAppearance(initialAppearance);
     }, [initialAppearance]);
+
+    useEffect(() => {
+        if (isAccountFirstDay(accountCreatedAt) && !hasSeenTour()) {
+            setShowTourBanner(true);
+        }
+    }, [accountCreatedAt]);
 
     useEffect(() => {
         mainRef.current?.scrollTo(0, 0);
@@ -251,6 +262,40 @@ export function AppShell({
                     </div>
                 </header>
 
+                {showTourBanner && (
+                    <div className="shrink-0 border-b border-brand/20 bg-brand-soft px-4 py-3">
+                        <div className="mx-auto flex max-w-md items-start gap-3">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-sm font-bold text-ink">New here?</p>
+                                <p className="mt-0.5 text-xs text-muted">
+                                    A one-minute tour of Home, transactions, analytics, and settings.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setShowTour(true);
+                                        setShowTourBanner(false);
+                                    }}
+                                    className="mt-2 text-sm font-bold text-brand"
+                                >
+                                    Take the tour
+                                </button>
+                            </div>
+                            <button
+                                type="button"
+                                aria-label="Dismiss"
+                                onClick={() => {
+                                    markTourSeen();
+                                    setShowTourBanner(false);
+                                }}
+                                className="rounded-full p-1.5 text-muted transition-colors hover:bg-chip hover:text-ink"
+                            >
+                                <IconClose className="h-4 w-4" />
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {!isOnline && (
                     <div className="shrink-0 bg-ink px-4 py-2 text-center text-xs font-semibold text-paper flex items-center justify-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
@@ -290,6 +335,7 @@ export function AppShell({
                                 categories={categories}
                                 appearance={appearance}
                                 onPatchAppearance={patchAppearance}
+                                onOpenTour={() => setShowTour(true)}
                                 onRefresh={async () => {
                                     await Promise.all([loadConfig(), loadDashboard()]);
                                 }}
@@ -314,6 +360,14 @@ export function AppShell({
                         onSaved={handleTransactionSaved}
                     />
                 )}
+
+                <GuidedTour
+                    open={showTour}
+                    onClose={() => {
+                        setShowTour(false);
+                        setShowTourBanner(false);
+                    }}
+                />
             </div>
         </UndoToastProvider>
     );

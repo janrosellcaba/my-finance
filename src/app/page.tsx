@@ -18,5 +18,11 @@ export default async function Home() {
         dateFormat: user.dateFormat ?? DEFAULT_APPEARANCE.dateFormat,
     };
 
-    return <AppShell username={user.username} initialAppearance={initialAppearance} />;
+    return (
+        <AppShell
+            username={user.username}
+            initialAppearance={initialAppearance}
+            accountCreatedAt={user.createdAt}
+        />
+    );
 }

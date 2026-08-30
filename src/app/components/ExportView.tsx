@@ -132,12 +132,18 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
         <div className="space-y-4">
             <section className="surface rounded-2xl p-5">
                 <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">How it works</h2>
-                <p className="text-sm text-muted">
-                    Copy the text below and paste it straight into a spreadsheet — each column lands in its own
-                    cell. Columns are Date, Description, Category, Account, Amount, Type, newest first. Transfers
-                    are split into two rows, just like your original sheet. By default everything is included —
-                    narrow it down with a date range below if you only want part of your history.
-                </p>
+                <div className="space-y-2 text-sm text-muted">
+                    <p>
+                        Builds a tab-separated table you can paste into Excel or Google Sheets. Each column lands in
+                        its own cell.
+                    </p>
+                    <p>
+                        Columns: <span className="font-semibold text-ink">Date, Description, Category, Account, Amount, Type</span>
+                        , newest first. Transfers are exported as two rows (out of one account, into the other), matching
+                        how Import expects them.
+                    </p>
+                    <p>Leave the date range empty to export everything, or narrow it to part of your history.</p>
+                </div>
             </section>
 
             <section className="surface rounded-2xl p-5">

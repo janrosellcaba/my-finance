@@ -290,23 +290,34 @@ export function ImportView({
         <div className="space-y-4">
             <section className="surface rounded-2xl p-5">
                 <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">How it works</h2>
-                <ul className="list-disc space-y-1 pl-5 text-sm text-muted">
-                    <li>Copy your transaction rows from Excel — data rows only, no header row.</li>
+                <ul className="list-disc space-y-1.5 pl-5 text-sm text-muted">
+                    <li>Paste data rows only — no header row.</li>
                     <li>
-                        Columns must be in this exact order:{" "}
-                        <span className="font-semibold text-ink">Date, Description, Category, Account, Amount, Type</span>.
+                        Exact column order:{" "}
+                        <span className="font-semibold text-ink">Date, Description, Category, Account, Amount, Type</span>
+                        (tab-separated, as from Excel).
                     </li>
                     <li>
-                        Dates as <span className="font-semibold text-ink">DD/MM/YYYY</span> and amounts like{" "}
-                        <span className="font-semibold text-ink">-68,99 €</span>.
+                        Dates as <span className="font-semibold text-ink">DD/MM/YYYY</span>. Amounts like{" "}
+                        <span className="font-semibold text-ink">-68,99 €</span> (European style).
                     </li>
-                    <li>Type must be Income, Expense, or Transfer.</li>
-                    <li>Each Transfer needs two rows: one negative on the source account, one positive on the destination account.</li>
                     <li>
-                        Use category <span className="font-semibold text-ink">Initial Balance</span> (as Income) to
-                        add to an account&apos;s starting balance instead of creating a transaction — importing the
-                        same row twice adds twice, it doesn&apos;t just set the value once.
+                        Type must be <span className="font-semibold text-ink">Income</span>,{" "}
+                        <span className="font-semibold text-ink">Expense</span>, or{" "}
+                        <span className="font-semibold text-ink">Transfer</span>.
                     </li>
+                    <li>
+                        Each transfer needs two rows: negative on the source account, positive on the destination.
+                    </li>
+                    <li>
+                        Unknown account or category names are created automatically.
+                    </li>
+                    <li>
+                        Category <span className="font-semibold text-ink">Initial Balance</span> (as Income) adds to an
+                        account&apos;s starting balance instead of creating a normal transaction. Importing the same
+                        row twice adds twice.
+                    </li>
+                    <li>Always tap Preview first — Import only runs after a clean preview.</li>
                 </ul>
             </section>
 
