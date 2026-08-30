@@ -137,7 +137,7 @@ export function AnalyticsDashboard({
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                 <div className="lg:col-span-7">
-                    <Section title="Where it went" subtitle={focusNote}>
+                    <Section title="Spending by category" subtitle={focusNote}>
                         <CategoryBars
                             rows={data.spendingByCategory}
                             privacyMode={privacyMode}
@@ -183,7 +183,7 @@ export function AnalyticsDashboard({
 
                 {data.incomeBySource.length > 1 && (
                     <div className="lg:col-span-12">
-                        <Section title="Where it came from" subtitle={focusNote}>
+                        <Section title="Income by category" subtitle={focusNote}>
                             <CategoryBars
                                 rows={data.incomeBySource}
                                 privacyMode={privacyMode}
