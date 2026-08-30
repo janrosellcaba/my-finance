@@ -167,7 +167,7 @@ export function AnalyticsDashboard({
                     </Section>
                 </div>
 
-                <div className="lg:col-span-6">
+                <div className="lg:col-span-12">
                     <Section
                         title="Month by month"
                         subtitle={period.mode === "month" ? "Tap a month to open it" : "Tap a month to zoom in"}
@@ -175,6 +175,7 @@ export function AnalyticsDashboard({
                         <MonthlyChart data={data} privacyMode={privacyMode} onSelectMonth={onSelectMonth} />
                     </Section>
                 </div>
+
                 {data.netWorthByAccount.length > 1 && (
                     <div className="lg:col-span-6">
                         <Section title="Account balances" subtitle="Today">
@@ -186,9 +187,8 @@ export function AnalyticsDashboard({
                         </Section>
                     </div>
                 )}
-
                 {data.incomeBySource.length > 1 && (
-                    <div className="lg:col-span-12">
+                    <div className="lg:col-span-6">
                         <Section title="Income by category" subtitle={focusNote}>
                             <CategoryBars
                                 rows={data.incomeBySource}
@@ -598,6 +598,7 @@ function MonthlyChart({
                         name="income"
                         fill={BRAND}
                         radius={[3, 3, 0, 0]}
+                        maxBarSize={28}
                         isAnimationActive={false}
                         onClick={pickMonth}
                     >
@@ -614,6 +615,7 @@ function MonthlyChart({
                         name="expenses"
                         fill={DANGER}
                         radius={[3, 3, 0, 0]}
+                        maxBarSize={28}
                         isAnimationActive={false}
                         onClick={pickMonth}
                     >

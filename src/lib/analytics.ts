@@ -394,7 +394,8 @@ export function buildAnalytics(input: {
         });
 
     // Monthly bars: months that overlap the selected period, padded so a single
-    // month still shows the previous 5 for context.
+    // month still shows context. The chart is full width (~2× the old slot), so
+    // we prepend another full window of months to keep each bar the same width.
     const monthlyMap = new Map<string, { income: number; expenses: number }>();
     const chartMonthlyMap = new Map<string, { income: number; expenses: number }>();
     for (const tx of txs) {
@@ -420,6 +421,9 @@ export function buildAnalytics(input: {
     const periodLastMonth = monthKey(period.end > today ? today : period.end);
     let chartFirst = periodFirstMonth;
     if (mode === "month") chartFirst = shiftMonth(periodFirstMonth, -5);
+    let monthsShown = 0;
+    for (let k = chartFirst; k <= periodLastMonth; k = shiftMonth(k, 1)) monthsShown++;
+    chartFirst = shiftMonth(chartFirst, -monthsShown);
     const earliestMonth = monthKey(earliest);
     if (chartFirst < earliestMonth) chartFirst = earliestMonth;
     const monthlySeries: MonthlyPoint[] = [];
