@@ -52,8 +52,8 @@ if ! npx drizzle-kit migrate; then
     echo "⚠️ drizzle-kit migrate failed; will still try to add transaction.created_at if missing"
 fi
 
-# drizzle-kit can exit without applying 0012 (that's what broke /api/dashboard).
-# Apply the column directly when the live DB still doesn't have it.
+# drizzle-kit can exit without applying migrations (that's what broke /api/dashboard
+# for created_at, and the homepage for appearance columns). Apply missing columns directly.
 created_at_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('transaction') WHERE name='created_at';")"
 if [ "$created_at_cols" = "0" ]; then
     echo "==> Adding missing transaction.created_at..."
@@ -62,6 +62,24 @@ fi
 created_at_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('transaction') WHERE name='created_at';")"
 if [ "$created_at_cols" = "0" ]; then
     echo "❌ transaction.created_at is still missing"
+    exit 1
+fi
+
+accent_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('users') WHERE name='accent_color';")"
+if [ "$accent_cols" = "0" ]; then
+    echo "==> Adding missing users appearance columns..."
+    # Apply one ALTER at a time — SQLite errors if a column already exists mid-script.
+    for col_sql in \
+        "ALTER TABLE users ADD COLUMN accent_color text NOT NULL DEFAULT 'green';" \
+        "ALTER TABLE users ADD COLUMN currency text NOT NULL DEFAULT 'EUR';" \
+        "ALTER TABLE users ADD COLUMN date_format text NOT NULL DEFAULT 'DMY';"
+    do
+        sqlite3 "$DATABASE_URL" "$col_sql" 2>/dev/null || true
+    done
+fi
+accent_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('users') WHERE name='accent_color';")"
+if [ "$accent_cols" = "0" ]; then
+    echo "❌ users.accent_color is still missing"
     exit 1
 fi
 

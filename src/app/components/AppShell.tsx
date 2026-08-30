@@ -30,8 +30,8 @@ function applyDomAppearance(prefs: AppearancePrefs) {
     const root = document.documentElement;
     root.dataset.theme = prefs.theme;
     root.dataset.accent = prefs.accent;
-    root.dataset.density = prefs.density;
-    root.dataset.font = prefs.font;
+    delete root.dataset.density;
+    delete root.dataset.font;
     setFormatPrefs({ currency: prefs.currency, dateFormat: prefs.dateFormat });
 }
 
@@ -206,8 +206,6 @@ export function AppShell({
         if (partial.theme !== undefined) body.theme = partial.theme;
         if (partial.privacyMode !== undefined) body.privacyMode = partial.privacyMode;
         if (partial.accent !== undefined) body.accent = partial.accent;
-        if (partial.density !== undefined) body.density = partial.density;
-        if (partial.font !== undefined) body.font = partial.font;
         if (partial.currency !== undefined) body.currency = partial.currency;
         if (partial.dateFormat !== undefined) body.dateFormat = partial.dateFormat;
 

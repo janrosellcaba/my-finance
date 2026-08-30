@@ -21,8 +21,6 @@ export async function GET() {
                 privacyMode: users.privacyMode,
                 themePreference: users.themePreference,
                 accentColor: users.accentColor,
-                density: users.density,
-                fontPreference: users.fontPreference,
                 currency: users.currency,
                 dateFormat: users.dateFormat,
             })

@@ -43,8 +43,6 @@ export type Todo = {
 export type Tab = "home" | "transactions" | "todo" | "analytics" | "config";
 export type Theme = "light" | "dark";
 export type AccentColor = "green" | "blue" | "terracotta" | "slate" | "rose";
-export type Density = "comfortable" | "compact";
-export type FontPreference = "outfit" | "dm-sans" | "manrope";
 export type CurrencyCode = "EUR" | "USD" | "GBP";
 export type DateFormat = "DMY" | "MDY" | "YMD";
 
@@ -54,17 +52,6 @@ export const ACCENT_COLORS: { key: AccentColor; label: string; swatch: string }[
     { key: "terracotta", label: "Terracotta", swatch: "#c45c3e" },
     { key: "slate", label: "Slate", swatch: "#4a5568" },
     { key: "rose", label: "Rose", swatch: "#b54a6a" },
-];
-
-export const DENSITY_OPTIONS: { key: Density; label: string }[] = [
-    { key: "comfortable", label: "Comfortable" },
-    { key: "compact", label: "Compact" },
-];
-
-export const FONT_OPTIONS: { key: FontPreference; label: string }[] = [
-    { key: "outfit", label: "Outfit" },
-    { key: "dm-sans", label: "DM Sans" },
-    { key: "manrope", label: "Manrope" },
 ];
 
 export const CURRENCY_OPTIONS: { key: CurrencyCode; label: string; symbol: string }[] = [
@@ -83,8 +70,6 @@ export type AppearancePrefs = {
     theme: Theme;
     privacyMode: boolean;
     accent: AccentColor;
-    density: Density;
-    font: FontPreference;
     currency: CurrencyCode;
     dateFormat: DateFormat;
 };
@@ -93,8 +78,6 @@ export const DEFAULT_APPEARANCE: AppearancePrefs = {
     theme: "light",
     privacyMode: false,
     accent: "green",
-    density: "comfortable",
-    font: "outfit",
     currency: "EUR",
     dateFormat: "DMY",
 };

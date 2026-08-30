@@ -9,8 +9,6 @@ import {
     CURRENCY_OPTIONS,
     DANGER_BTN,
     DATE_FORMAT_OPTIONS,
-    DENSITY_OPTIONS,
-    FONT_OPTIONS,
     INK_BTN,
     INPUT_CLS,
     parseAmountEs,
@@ -605,55 +603,6 @@ export function ConfigView({
                                     />
                                 );
                             })}
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Font</p>
-                        <div className="flex flex-col gap-2">
-                            {FONT_OPTIONS.map((f) => {
-                                const selected = appearance.font === f.key;
-                                return (
-                                    <button
-                                        key={f.key}
-                                        type="button"
-                                        onClick={() => onPatchAppearance({ font: f.key })}
-                                        className={`rounded-xl px-4 py-3 text-left transition-colors duration-150 select-none ${
-                                            selected
-                                                ? "bg-ink text-paper"
-                                                : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
-                                        }`}
-                                        style={{
-                                            fontFamily:
-                                                f.key === "outfit"
-                                                    ? "var(--font-outfit), system-ui, sans-serif"
-                                                    : f.key === "dm-sans"
-                                                      ? "var(--font-dm-sans), system-ui, sans-serif"
-                                                      : "var(--font-manrope), system-ui, sans-serif",
-                                        }}
-                                    >
-                                        <span className="font-bold">{f.label}</span>
-                                        <span className="mt-0.5 block text-xs opacity-70">
-                                            The quick brown fox — €1,234.56
-                                        </span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Density</p>
-                        <div className="flex gap-2">
-                            {DENSITY_OPTIONS.map((d) => (
-                                <SegmentedButton
-                                    key={d.key}
-                                    active={appearance.density === d.key}
-                                    onClick={() => onPatchAppearance({ density: d.key })}
-                                >
-                                    {d.label}
-                                </SegmentedButton>
-                            ))}
                         </div>
                     </div>
 

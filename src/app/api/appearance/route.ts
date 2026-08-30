@@ -7,19 +7,13 @@ import {
     ACCENT_COLORS,
     CURRENCY_OPTIONS,
     DATE_FORMAT_OPTIONS,
-    DENSITY_OPTIONS,
-    FONT_OPTIONS,
     type AccentColor,
     type CurrencyCode,
     type DateFormat,
-    type Density,
-    type FontPreference,
     type Theme,
 } from "@/app/shared";
 
 const ACCENTS = new Set(ACCENT_COLORS.map((c) => c.key));
-const DENSITIES = new Set(DENSITY_OPTIONS.map((d) => d.key));
-const FONTS = new Set(FONT_OPTIONS.map((f) => f.key));
 const CURRENCIES = new Set(CURRENCY_OPTIONS.map((c) => c.key));
 const DATE_FORMATS = new Set(DATE_FORMAT_OPTIONS.map((d) => d.key));
 
@@ -27,8 +21,6 @@ type AppearanceBody = {
     theme?: unknown;
     privacyMode?: unknown;
     accent?: unknown;
-    density?: unknown;
-    font?: unknown;
     currency?: unknown;
     dateFormat?: unknown;
 };
@@ -49,8 +41,6 @@ export async function PATCH(request: Request) {
             themePreference?: Theme;
             privacyMode?: boolean;
             accentColor?: AccentColor;
-            density?: Density;
-            fontPreference?: FontPreference;
             currency?: CurrencyCode;
             dateFormat?: DateFormat;
         } = {};
@@ -72,18 +62,6 @@ export async function PATCH(request: Request) {
                 return NextResponse.json({ error: "Invalid accent." }, { status: 400 });
             }
             patch.accentColor = body.accent as AccentColor;
-        }
-        if ("density" in body) {
-            if (typeof body.density !== "string" || !DENSITIES.has(body.density as Density)) {
-                return NextResponse.json({ error: "Invalid density." }, { status: 400 });
-            }
-            patch.density = body.density as Density;
-        }
-        if ("font" in body) {
-            if (typeof body.font !== "string" || !FONTS.has(body.font as FontPreference)) {
-                return NextResponse.json({ error: "Invalid font." }, { status: 400 });
-            }
-            patch.fontPreference = body.font as FontPreference;
         }
         if ("currency" in body) {
             if (typeof body.currency !== "string" || !CURRENCIES.has(body.currency as CurrencyCode)) {
