@@ -102,7 +102,7 @@ export const TOUR_SLIDES: TourSlide[] = [
     },
     {
         id: "accounts",
-        step: "Step 1 of 2",
+        step: "Setup 1 of 2",
         title: "Add your bank accounts",
         body: "Open Settings → Bank accounts. Add each wallet or bank you use. Set the initial balance to what it already holds, and tap the radio to pick a default account for new transactions.",
         visual: "accounts",
@@ -110,7 +110,7 @@ export const TOUR_SLIDES: TourSlide[] = [
     },
     {
         id: "categories",
-        step: "Step 2 of 2",
+        step: "Setup 2 of 2",
         title: "Set up categories",
         body: "Settings → Categories. Create income and expense labels (Food, Salary, Rent…). Pick a colour and icon, drag to reorder, and set a default for each type.",
         visual: "categories",
@@ -638,27 +638,18 @@ export function GuidedTour({
                     ))}
                 </div>
 
-                <div className="flex items-center justify-between gap-2 px-4 py-2.5">
-                    <div className="flex min-w-0 items-center gap-1">
-                        {index > 0 && (
-                            <button
-                                type="button"
-                                onClick={() => goTo(index - 1)}
-                                aria-label="Previous story"
-                                className="rounded-full p-2 text-muted transition-colors hover:bg-chip hover:text-ink"
-                            >
-                                <IconArrowLeft className="h-5 w-5" />
-                            </button>
+                <div className="flex items-center justify-between gap-3 px-5 py-3">
+                    <div className="min-w-0">
+                        <p className="text-[11px] font-bold tabular-nums tracking-wide text-muted">
+                            {index + 1}
+                            <span className="font-semibold text-line"> / </span>
+                            {TOUR_SLIDES.length}
+                        </p>
+                        {slide.step && (
+                            <p className="mt-0.5 inline-flex items-center rounded-full bg-brand/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand">
+                                {slide.step}
+                            </p>
                         )}
-                        <div className={index > 0 ? "" : "pl-1"}>
-                            {slide.step ? (
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{slide.step}</p>
-                            ) : (
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
-                                    {index + 1} / {TOUR_SLIDES.length}
-                                </p>
-                            )}
-                        </div>
                     </div>
                     <button
                         type="button"
@@ -688,10 +679,12 @@ export function GuidedTour({
                     />
                 </div>
 
-                <div className="space-y-2 border-t border-line bg-paper px-5 pb-5 pt-4">
-                    <h2 className="text-xl font-extrabold tracking-tight text-ink">{slide.title}</h2>
-                    <p className="text-sm leading-relaxed text-muted">{slide.body}</p>
-                    <div className="mt-1 flex gap-2">
+                <div className="space-y-3 border-t border-line bg-paper px-5 pb-5 pt-4">
+                    <div>
+                        <h2 className="text-xl font-extrabold tracking-tight text-ink">{slide.title}</h2>
+                        <p className="mt-1.5 text-sm leading-relaxed text-muted">{slide.body}</p>
+                    </div>
+                    <div className="flex gap-2">
                         {index > 0 && (
                             <button
                                 type="button"
