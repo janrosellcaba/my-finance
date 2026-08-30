@@ -207,7 +207,7 @@ export function AnalyticsDashboard({
                 )}
             </div>
 
-            <Section title="Net worth" subtitle="All time">
+            <Section title="Net worth">
                 <LifetimeNetWorth data={data} accounts={accounts} privacyMode={privacyMode} />
             </Section>
 
