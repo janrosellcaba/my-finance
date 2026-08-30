@@ -5,7 +5,7 @@ import { validateSession } from "@/lib/session";
 import { buildAnalytics, type PeriodMode } from "@/lib/analytics";
 import { eq } from "drizzle-orm";
 
-const MODES: PeriodMode[] = ["month", "year", "3m", "12m", "all"];
+const MODES: PeriodMode[] = ["month", "3m", "year", "all"];
 
 function resolveMode(raw: string | null): PeriodMode {
     return MODES.includes(raw as PeriodMode) ? (raw as PeriodMode) : "month";

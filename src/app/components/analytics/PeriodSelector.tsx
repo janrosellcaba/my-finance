@@ -4,9 +4,8 @@ import { type PeriodMode } from "@/lib/analytics";
 
 const MODES: { key: PeriodMode; label: string; title: string }[] = [
     { key: "month", label: "Month", title: "A single calendar month" },
+    { key: "3m", label: "3 mo", title: "The last 3 months" },
     { key: "year", label: "Year", title: "A single calendar year" },
-    { key: "3m", label: "3M", title: "The last 3 months" },
-    { key: "12m", label: "12M", title: "The last 12 months" },
     { key: "all", label: "All", title: "Everything on record" },
 ];
 
@@ -47,7 +46,7 @@ export function PeriodSelector({
 
     return (
         <div className="space-y-2">
-            <div className="grid grid-cols-5 gap-1 rounded-xl bg-chip p-1">
+            <div className="grid grid-cols-4 gap-1 rounded-xl bg-chip p-1">
                 {MODES.map((m) => (
                     <button
                         key={m.key}
