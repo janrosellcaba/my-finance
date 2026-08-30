@@ -167,7 +167,7 @@ export function AnalyticsDashboard({
                     </Section>
                 </div>
 
-                <div className="lg:col-span-12">
+                <div className="lg:col-span-6">
                     <Section
                         title="Month by month"
                         subtitle={period.mode === "month" ? "Tap a month to open it" : "Tap a month to zoom in"}
@@ -175,6 +175,17 @@ export function AnalyticsDashboard({
                         <MonthlyChart data={data} privacyMode={privacyMode} onSelectMonth={onSelectMonth} />
                     </Section>
                 </div>
+                {data.netWorthByAccount.length > 1 && (
+                    <div className="lg:col-span-6">
+                        <Section title="Account balances" subtitle="Today">
+                            <AccountBalances
+                                rows={data.netWorthByAccount}
+                                accounts={accounts}
+                                privacyMode={privacyMode}
+                            />
+                        </Section>
+                    </div>
+                )}
 
                 {data.incomeBySource.length > 1 && (
                     <div className="lg:col-span-12">
@@ -623,6 +634,137 @@ function MonthlyChart({
                 <span className="flex items-center gap-1.5">
                     <span className="h-2 w-2 rounded-sm bg-danger" /> Spent
                 </span>
+            </div>
+        </Card>
+    );
+}
+
+type BalanceSlice = {
+    accountId: string;
+    name: string;
+    amount: number;
+    color: string;
+    share: number | null;
+    icon: string | null;
+};
+
+function AccountBalances({
+    rows,
+    accounts,
+    privacyMode,
+}: {
+    rows: AnalyticsResult["netWorthByAccount"];
+    accounts: Account[];
+    privacyMode: boolean;
+}) {
+    const total = rows.reduce((s, r) => s + r.current, 0);
+    const items: BalanceSlice[] = [...rows]
+        .sort((a, b) => b.current - a.current)
+        .map((r, i) => ({
+            accountId: r.accountId,
+            name: r.name,
+            amount: r.current,
+            color: PIE_FALLBACK[i % PIE_FALLBACK.length],
+            share: total === 0 ? null : Math.round((r.current / total) * 100),
+            icon: accounts.find((a) => a.id === r.accountId)?.icon ?? null,
+        }));
+    const pieData = items.filter((r) => r.amount > 0);
+
+    if (items.length === 0) {
+        return <EmptyNote>No accounts to show.</EmptyNote>;
+    }
+
+    return (
+        <Card className="!p-2">
+            {pieData.length >= 1 && (
+                <div className="relative mx-auto w-full max-w-[260px]">
+                    <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                            <Pie
+                                data={pieData}
+                                dataKey="amount"
+                                nameKey="name"
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={60}
+                                outerRadius={84}
+                                paddingAngle={pieData.length > 1 ? 2 : 0}
+                                cornerRadius={3}
+                                startAngle={90}
+                                endAngle={-270}
+                                stroke="var(--color-paper)"
+                                strokeWidth={2}
+                                label={false}
+                                labelLine={false}
+                                isAnimationActive={false}
+                                rootTabIndex={-1}
+                            >
+                                {pieData.map((s) => (
+                                    <Cell key={s.accountId} fill={s.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip
+                                isAnimationActive={false}
+                                content={({ active, payload }) => {
+                                    if (!active || !payload?.length) return null;
+                                    const d = payload[0].payload as unknown as BalanceSlice | undefined;
+                                    if (!d) return null;
+                                    return (
+                                        <div className="rounded-xl border border-line bg-paper px-3 py-2 text-xs shadow-sm">
+                                            <p className="font-semibold text-ink">{d.name}</p>
+                                            <p
+                                                className={`mt-0.5 tabular-nums text-muted ${
+                                                    privacyMode ? "blur-[5px] select-none opacity-70" : ""
+                                                }`}
+                                            >
+                                                {formatCurrency(d.amount, privacyMode)}
+                                                {d.share !== null && !privacyMode ? ` · ${d.share.toFixed(0)}%` : ""}
+                                            </p>
+                                        </div>
+                                    );
+                                }}
+                            />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    <div className="pointer-events-none absolute left-1/2 top-1/2 flex w-[7.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Total</p>
+                        <p
+                            className={`text-center text-base font-extrabold leading-tight tabular-nums ${
+                                total >= 0 ? "text-ink" : "text-danger"
+                            } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
+                        >
+                            {formatCurrency(total, privacyMode)}
+                        </p>
+                    </div>
+                </div>
+            )}
+            <div className="space-y-0.5">
+                {items.map((r) => (
+                    <div key={r.accountId} className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5">
+                        <span className="flex min-w-0 items-center gap-2">
+                            <span
+                                className="h-2 w-2 shrink-0 rounded-full"
+                                style={{ backgroundColor: r.color }}
+                            />
+                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted">
+                                <AccountIcon iconKey={r.icon ?? "wallet"} className="h-3.5 w-3.5" />
+                            </span>
+                            <span className="min-w-0 truncate font-semibold text-ink">{r.name}</span>
+                        </span>
+                        <span className="flex shrink-0 items-baseline gap-2">
+                            {r.share !== null && !privacyMode && (
+                                <span className="text-[11px] text-muted">{r.share.toFixed(0)}%</span>
+                            )}
+                            <span
+                                className={`font-bold tabular-nums ${
+                                    r.amount >= 0 ? "text-ink" : "text-danger"
+                                } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
+                            >
+                                {formatCurrency(r.amount, privacyMode)}
+                            </span>
+                        </span>
+                    </div>
+                ))}
             </div>
         </Card>
     );
