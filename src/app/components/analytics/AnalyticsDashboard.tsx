@@ -122,7 +122,7 @@ export function AnalyticsDashboard({
             </div>
 
             {data.accountActivity.length > 1 && (
-                <Section title="By account" subtitle="Tap an account to focus the page on it">
+                <Section title="By account">
                     <AccountCards
                         rows={data.accountActivity}
                         accounts={accounts}
@@ -913,8 +913,7 @@ function AccountCards({
                             {formatCurrency(r.net, privacyMode)}
                         </p>
                         <p className={`mt-1 text-xs text-muted ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}>
-                            in {formatCurrency(r.income + r.transfersIn, privacyMode)} · out{" "}
-                            {formatCurrency(r.expenses + r.transfersOut, privacyMode)}
+                            in {formatCurrency(r.income, privacyMode)} · out {formatCurrency(r.expenses, privacyMode)}
                         </p>
                     </button>
                 );

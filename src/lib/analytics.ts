@@ -90,7 +90,10 @@ function sum(values: number[]): number {
 
 function pctChange(current: number, previous: number): number | null {
     if (previous === 0) return null;
-    return round2(((current - previous) / Math.abs(previous)) * 100);
+    const pct = ((current - previous) / Math.abs(previous)) * 100;
+    // Tiny previous bases make % look broken (e.g. €20 → €800 = +3900%).
+    if (Math.abs(previous) < 50 && Math.abs(pct) > 100) return null;
+    return round2(pct);
 }
 
 export type ResolvedPeriod = {
@@ -505,24 +508,16 @@ export function buildAnalytics(input: {
     const accountActivity = accounts.map((acc) => {
         let income = 0;
         let expenses = 0;
-        let transfersIn = 0;
-        let transfersOut = 0;
         for (const tx of allPeriodTx) {
             if (tx.type === "income" && tx.accountId === acc.id) income += tx.amount;
             else if (tx.type === "expense" && tx.accountId === acc.id) expenses += tx.amount;
-            else if (tx.type === "transfer") {
-                if (tx.accountId === acc.id) transfersOut += tx.amount;
-                if (tx.destinationId === acc.id) transfersIn += tx.amount;
-            }
         }
         return {
             accountId: acc.id,
             name: acc.name,
             income: round2(income),
             expenses: round2(expenses),
-            transfersIn: round2(transfersIn),
-            transfersOut: round2(transfersOut),
-            net: round2(income - expenses + transfersIn - transfersOut),
+            net: round2(income - expenses),
             balance: round2(perAccountRun[acc.id] ?? acc.initialBalance),
         };
     });
