@@ -2,18 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import Image from "next/image";
 import { type Account, type Category, type DashboardSummary, type Tab, type Theme } from "../shared";
 import { AddTransactionModal } from "./AddTransactionModal";
-import { AnalyticsView } from "./AnalyticsView";
 import { BottomNav } from "./BottomNav";
-import { ConfigView } from "./ConfigView";
 import { HomeView } from "./HomeView";
-import { TodoView } from "./TodoView";
-import { TransactionsView } from "./TransactionsView";
 import { UndoToastProvider } from "./UndoToastProvider";
 import { IconEye, IconEyeOff } from "./icons";
 import { getFromCache, getOutbox, saveToCache, syncOutbox } from "@/lib/offlineStore";
+
+const TransactionsView = dynamic(() => import("./TransactionsView").then((m) => m.TransactionsView), {
+    ssr: false,
+});
+const TodoView = dynamic(() => import("./TodoView").then((m) => m.TodoView), { ssr: false });
+const AnalyticsView = dynamic(() => import("./AnalyticsView").then((m) => m.AnalyticsView), { ssr: false });
+const ConfigView = dynamic(() => import("./ConfigView").then((m) => m.ConfigView), { ssr: false });
 
 export function AppShell({
     username,

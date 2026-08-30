@@ -29,6 +29,8 @@ if [ -z "${DEPLOY_REEXECED:-}" ]; then
 fi
 
 echo "==> 📦 Installing dependencies..."
+export NEXT_TELEMETRY_DISABLED=1
+export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=384}"
 npm ci
 
 echo "==> 💾 Backing up database before migration..."
@@ -50,6 +52,15 @@ npx drizzle-kit migrate
 
 echo "==> 🏗️ Building Next.js application..."
 npm run build
+
+echo "==> 🧠 Capping Node heap for the running service..."
+sudo mkdir -p /etc/systemd/system/my-finance.service.d
+sudo tee /etc/systemd/system/my-finance.service.d/memory.conf >/dev/null <<'EOF'
+[Service]
+Environment=NODE_OPTIONS=--max-old-space-size=256
+Environment=NEXT_TELEMETRY_DISABLED=1
+EOF
+sudo systemctl daemon-reload
 
 echo "==> 🔄 Restarting systemd service..."
 sudo systemctl restart my-finance

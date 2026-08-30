@@ -3,7 +3,7 @@ import { getDb } from "@/db";
 import { transaction, account, category } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { buildAnalytics, type PeriodMode } from "@/lib/analytics";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 
 const MODES: PeriodMode[] = ["month", "3m", "year", "all"];
 
@@ -39,6 +39,7 @@ export async function GET(request: Request) {
                 })
                 .from(transaction)
                 .where(eq(transaction.userId, user.id))
+                .orderBy(asc(transaction.date), asc(transaction.createdAt), asc(transaction.id))
                 .all(),
             db.select().from(account).where(eq(account.userId, user.id)).all(),
             db.select().from(category).where(eq(category.userId, user.id)).all(),

@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/db";
-import { account, transaction } from "@/db/schema";
+import { getDb, getSqlite } from "@/db";
+import { transaction } from "@/db/schema";
 import { validateSession } from "@/lib/session";
-import { applyTransactionToBalances, round2 } from "@/lib/balances";
-import { and, asc, eq, desc, like, gte, lte, lt, or } from "drizzle-orm";
+import { round2 } from "@/lib/balances";
+import { balanceAfterForPage } from "@/lib/runningBalances";
+import { and, eq, desc, like, gte, lte, lt, or } from "drizzle-orm";
 
 export async function POST(request: Request) {
     try {
@@ -238,7 +239,16 @@ export async function GET(request: Request) {
         }
 
         const transactionsList = await db
-            .select()
+            .select({
+                id: transaction.id,
+                date: transaction.date,
+                description: transaction.description,
+                type: transaction.type,
+                amount: transaction.amount,
+                accountId: transaction.accountId,
+                destinationId: transaction.destinationId,
+                createdAt: transaction.createdAt,
+            })
             .from(transaction)
             .where(and(...conditions))
             .orderBy(desc(transaction.date), desc(transaction.createdAt), desc(transaction.id))
@@ -251,44 +261,10 @@ export async function GET(request: Request) {
                 ? { date: last.date, createdAt: last.createdAt, id: last.id }
                 : null;
 
-        // Running balance after each tx (source account), computed from full history so
-        // filters/pagination don't skew the number under each amount.
-        const pageIds = new Set(transactionsList.map((tx) => tx.id));
-        const balanceAfterById: Record<string, number> = {};
-
-        if (pageIds.size > 0) {
-            const [userAccounts, allTxs] = await Promise.all([
-                db.select().from(account).where(eq(account.userId, user.id)).all(),
-                db
-                    .select({
-                        id: transaction.id,
-                        type: transaction.type,
-                        amount: transaction.amount,
-                        accountId: transaction.accountId,
-                        destinationId: transaction.destinationId,
-                    })
-                    .from(transaction)
-                    .where(eq(transaction.userId, user.id))
-                    .orderBy(asc(transaction.date), asc(transaction.createdAt), asc(transaction.id))
-                    .all(),
-            ]);
-
-            const balances: Record<string, number> = {};
-            for (const a of userAccounts) balances[a.id] = a.initialBalance;
-
-            for (const tx of allTxs) {
-                applyTransactionToBalances(balances, tx);
-                if (pageIds.has(tx.id)) {
-                    const balanceAccountId =
-                        accountFilter &&
-                        tx.type === "transfer" &&
-                        tx.destinationId === accountFilter
-                            ? tx.destinationId
-                            : tx.accountId;
-                    balanceAfterById[tx.id] = balances[balanceAccountId] ?? 0;
-                }
-            }
-        }
+        const balanceAfterById =
+            transactionsList.length > 0
+                ? balanceAfterForPage(getSqlite(), user.id, transactionsList, accountFilter)
+                : {};
 
         return NextResponse.json({
             success: true,

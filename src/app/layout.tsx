@@ -1,23 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Outfit } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
 import { validateSession } from "@/lib/session";
-
-const geistSans = Geist({
-	variable: "--font-geist-sans",
-	subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-	variable: "--font-geist-mono",
-	subsets: ["latin"],
-});
 
 const outfit = Outfit({
 	variable: "--font-outfit",
 	subsets: ["latin"],
 	weight: ["500", "600", "700", "800"],
+	display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -50,7 +41,7 @@ export default async function RootLayout({
 
 	return (
 		<html lang="en-GB" data-theme={theme}>
-			<body className={`${geistSans.variable} ${geistMono.variable} ${outfit.variable} antialiased`}>
+			<body className={`${outfit.variable} antialiased`}>
 				{children}
 				<ServiceWorkerRegister />
 			</body>

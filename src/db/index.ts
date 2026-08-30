@@ -14,9 +14,17 @@ if (!path.isAbsolute(databaseUrl)) {
 
 const sqlite = new Database(databaseUrl, { timeout: 5000 });
 sqlite.pragma("journal_mode = WAL");
+sqlite.pragma("synchronous = NORMAL");
 sqlite.pragma("foreign_keys = ON");
+sqlite.pragma("temp_store = MEMORY");
+// 4 MB page cache — enough for this dataset, keeps RSS small on a 1 GB VPS.
+sqlite.pragma("cache_size = -4000");
 
 const db = drizzle(sqlite, { schema });
+
+export function getSqlite() {
+    return sqlite;
+}
 
 export async function getDb() {
     return db;

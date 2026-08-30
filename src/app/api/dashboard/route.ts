@@ -117,7 +117,15 @@ export async function GET() {
         const totalNetWorth = netWorthHistory[netWorthHistory.length - 1] ?? 0;
 
         const recentTransactions = await db
-            .select()
+            .select({
+                id: transaction.id,
+                date: transaction.date,
+                description: transaction.description,
+                type: transaction.type,
+                amount: transaction.amount,
+                accountId: transaction.accountId,
+                destinationId: transaction.destinationId,
+            })
             .from(transaction)
             .where(eq(transaction.userId, user.id))
             .orderBy(desc(transaction.date), desc(transaction.createdAt), desc(transaction.id))

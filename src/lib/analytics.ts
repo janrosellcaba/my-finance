@@ -379,50 +379,74 @@ export function buildAnalytics(input: {
     }
 
     const dailyDelta = new Map<string, number>();
-    for (const tx of txs) {
-        if (tx.type === "transfer") continue;
-        const d = tx.type === "income" ? tx.amount : -tx.amount;
-        dailyDelta.set(tx.date, (dailyDelta.get(tx.date) ?? 0) + d);
-    }
-    const nwStart = earliest;
-    const nwEnd = today > earliest ? today : earliest;
-    const nwPointsRaw: NetWorthPoint[] = [];
-    let nwRun = initialTotal;
-    for (let d = nwStart; d <= nwEnd; d = addDays(d, 1)) {
-        nwRun += dailyDelta.get(d) ?? 0;
-        nwPointsRaw.push({ date: d, netWorth: round2(nwRun) });
-    }
-    const currentNetWorth = nwPointsRaw.length > 0 ? nwPointsRaw[nwPointsRaw.length - 1].netWorth : round2(initialTotal);
-    const chartStart = period.start < nwStart ? nwStart : period.start;
-    const chartEnd = (period.end > today ? today : period.end) < nwEnd ? (period.end > today ? today : period.end) : nwEnd;
-    const periodNw = nwPointsRaw.filter((p) => p.date >= chartStart && p.date <= chartEnd);
-    const step = Math.max(1, Math.ceil(periodNw.length / 200));
-    const netWorthSeries = periodNw.filter((_, i) => i % step === 0 || i === periodNw.length - 1);
-
     const txsByDate = new Map<string, AnalyticsTx[]>();
     for (const tx of txs) {
+        if (tx.type !== "transfer") {
+            dailyDelta.set(tx.date, (dailyDelta.get(tx.date) ?? 0) + (tx.type === "income" ? tx.amount : -tx.amount));
+        }
         const list = txsByDate.get(tx.date);
         if (list) list.push(tx);
         else txsByDate.set(tx.date, [tx]);
     }
+
+    const nwStart = earliest;
+    const nwEnd = today > earliest ? today : earliest;
+    const chartStart = period.start < nwStart ? nwStart : period.start;
+    const chartEndRaw = period.end > today ? today : period.end;
+    const chartEnd = chartEndRaw < nwEnd ? chartEndRaw : nwEnd;
+
     const perAccountRun: Record<string, number> = {};
     for (const acc of accounts) perAccountRun[acc.id] = acc.initialBalance;
-    const perAccountRaw = new Map<string, NetWorthPoint[]>();
-    for (const acc of accounts) perAccountRaw.set(acc.id, []);
-    for (let d = nwStart; d <= nwEnd; d = addDays(d, 1)) {
+
+    let nwRun = initialTotal;
+    let t = toUTC(nwStart);
+    const chartStartMs = toUTC(chartStart);
+    const chartEndMs = toUTC(chartEnd);
+    const nwEndMs = toUTC(nwEnd);
+    const chartDays = Math.round((chartEndMs - chartStartMs) / DAY_MS) + 1;
+    const step = Math.max(1, Math.ceil(Math.max(1, chartDays) / 200));
+
+    while (t < chartStartMs) {
+        const d = fromUTC(t);
+        nwRun += dailyDelta.get(d) ?? 0;
         for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
-        if (d < chartStart || d > chartEnd) continue;
-        for (const acc of accounts) {
-            perAccountRaw.get(acc.id)!.push({ date: d, netWorth: round2(perAccountRun[acc.id]) });
-        }
+        t += DAY_MS;
     }
+
+    const netWorthSeries: NetWorthPoint[] = [];
+    const perAccountSeries = new Map<string, NetWorthPoint[]>();
+    for (const acc of accounts) perAccountSeries.set(acc.id, []);
+
+    let chartIndex = 0;
+    while (t <= chartEndMs) {
+        const d = fromUTC(t);
+        nwRun += dailyDelta.get(d) ?? 0;
+        for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
+        if (chartIndex % step === 0 || t === chartEndMs) {
+            netWorthSeries.push({ date: d, netWorth: round2(nwRun) });
+            for (const acc of accounts) {
+                perAccountSeries.get(acc.id)!.push({ date: d, netWorth: round2(perAccountRun[acc.id]) });
+            }
+        }
+        chartIndex++;
+        t += DAY_MS;
+    }
+
+    while (t <= nwEndMs) {
+        const d = fromUTC(t);
+        nwRun += dailyDelta.get(d) ?? 0;
+        for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
+        t += DAY_MS;
+    }
+
+    const currentNetWorth = round2(nwRun);
     const netWorthByAccount = accounts.map((acc) => {
-        const raw = perAccountRaw.get(acc.id)!;
+        const series = perAccountSeries.get(acc.id)!;
         return {
             accountId: acc.id,
             name: acc.name,
-            current: raw.length > 0 ? raw[raw.length - 1].netWorth : round2(acc.initialBalance),
-            series: raw.filter((_, i) => i % step === 0 || i === raw.length - 1),
+            current: series.length > 0 ? series[series.length - 1].netWorth : round2(acc.initialBalance),
+            series,
         };
     });
 
