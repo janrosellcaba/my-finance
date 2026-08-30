@@ -220,7 +220,9 @@ export function IconShoppingBag({ className }: { className?: string }) {
 export function IconWrench({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M14.7 6.3a4.2 4.2 0 0 0-5.9 5.9L3.5 17.5 6.5 20.5 11.8 15.2a4.2 4.2 0 0 0 5.9-5.9l-2.5 2.5-2.5-2.5Z" />
+            <circle cx="12" cy="12" r="3" />
+            <path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7" />
+            <circle cx="12" cy="12" r="7.2" />
         </svg>
     );
 }
@@ -282,7 +284,7 @@ export function IconTicket({ className }: { className?: string }) {
 export function IconPlane({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M10.5 20.5 14 13l7-2.2L14 8.5 10.5 1l-1.2 7.8L3 11.2l6.3 1.8Z" />
+            <path d="M21 16.2 14.2 13.5V9.8A1.8 1.8 0 0 0 12.4 8H12a1.8 1.8 0 0 0-1.8 1.8v3.7L3 16.2v1.6l7.2-1.7V19l-1.8 1.2V21l2.8-.8L14 21v-.8L12.2 19v-3l7.2 1.7Z" />
         </svg>
     );
 }
@@ -334,10 +336,25 @@ export function IconMoto({ className }: { className?: string }) {
 export function IconSport({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="12" cy="12" r="8.5" />
-            <path d="M12 3.5c2.2 2.4 3.4 5.3 3.4 8.5S14.2 18.1 12 20.5" />
-            <path d="M12 3.5C9.8 5.9 8.6 8.8 8.6 12s1.2 6.1 3.4 8.5" />
-            <path d="M4.2 10.2h15.6M4.2 13.8h15.6" />
+            <rect x="2.5" y="9" width="2.5" height="6" rx="1" />
+            <rect x="5" y="7.5" width="3" height="9" rx="1" />
+            <path d="M8 12h8" />
+            <rect x="16" y="7.5" width="3" height="9" rx="1" />
+            <rect x="19" y="9" width="2.5" height="6" rx="1" />
+        </svg>
+    );
+}
+
+/** Bizum-style mark: slanted rounded bars forming a lightning bolt + two dots. */
+export function IconBizum({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
+            <rect x="12.2" y="2.2" width="7.2" height="2.6" rx="1.3" transform="rotate(36 15.8 3.5)" />
+            <rect x="9.4" y="6.4" width="7.2" height="2.6" rx="1.3" transform="rotate(36 13 7.7)" />
+            <rect x="6.6" y="10.6" width="7.2" height="2.6" rx="1.3" transform="rotate(36 10.2 11.9)" />
+            <rect x="3.8" y="14.8" width="7.2" height="2.6" rx="1.3" transform="rotate(36 7.4 16.1)" />
+            <circle cx="16.8" cy="14.2" r="1.55" />
+            <circle cx="19.6" cy="17.6" r="1.55" />
         </svg>
     );
 }
@@ -389,6 +406,7 @@ export const CATEGORY_ICON_COMPONENTS: Record<CategoryIconKey, (props: { classNa
     fuel: IconFuel,
     moto: IconMoto,
     sport: IconSport,
+    bizum: IconBizum,
     bolt: IconBolt,
     coffee: IconCoffee,
     phone: IconPhone,

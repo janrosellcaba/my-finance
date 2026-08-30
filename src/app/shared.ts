@@ -125,6 +125,7 @@ export const CATEGORY_ICON_KEYS = [
     "fuel",
     "moto",
     "sport",
+    "bizum",
     "bolt",
     "coffee",
     "phone",
