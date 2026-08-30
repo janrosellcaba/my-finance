@@ -48,7 +48,22 @@ echo "==> 🗄️ Applying database migrations..."
 # Replays the reviewed, committed SQL files in drizzle/ — never use `drizzle-kit push` here.
 # push diffs live schema at runtime and can decide a change is "unsafe" even when schema.ts
 # has a default, offering to truncate the table instead. migrate just runs the exact SQL.
-npx drizzle-kit migrate
+if ! npx drizzle-kit migrate; then
+    echo "⚠️ drizzle-kit migrate failed; will still try to add transaction.created_at if missing"
+fi
+
+# drizzle-kit can exit without applying 0012 (that's what broke /api/dashboard).
+# Apply the column directly when the live DB still doesn't have it.
+created_at_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('transaction') WHERE name='created_at';")"
+if [ "$created_at_cols" = "0" ]; then
+    echo "==> Adding missing transaction.created_at..."
+    sqlite3 "$DATABASE_URL" < /home/jan/my-finance/scripts/ensure-created-at.sql
+fi
+created_at_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('transaction') WHERE name='created_at';")"
+if [ "$created_at_cols" = "0" ]; then
+    echo "❌ transaction.created_at is still missing"
+    exit 1
+fi
 
 echo "==> 🏗️ Building Next.js application..."
 npm run build
