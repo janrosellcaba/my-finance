@@ -1,4 +1,4 @@
-// Focused analytics: period totals, category split, top purchases, monthly trend,
+// Focused analytics: period totals, category split, transfers, monthly trend,
 // and all-time net worth. Dates are "YYYY-MM-DD" and compared lexicographically.
 
 import { applyTransactionToBalances, round2 } from "./balances";
@@ -508,19 +508,59 @@ export function buildAnalytics(input: {
     const accountActivity = accounts.map((acc) => {
         let income = 0;
         let expenses = 0;
+        let transfersIn = 0;
+        let transfersOut = 0;
         for (const tx of allPeriodTx) {
             if (tx.type === "income" && tx.accountId === acc.id) income += tx.amount;
             else if (tx.type === "expense" && tx.accountId === acc.id) expenses += tx.amount;
+            else if (tx.type === "transfer") {
+                if (tx.accountId === acc.id) transfersOut += tx.amount;
+                if (tx.destinationId === acc.id) transfersIn += tx.amount;
+            }
         }
         return {
             accountId: acc.id,
             name: acc.name,
             income: round2(income),
             expenses: round2(expenses),
-            net: round2(income - expenses),
+            transfersIn: round2(transfersIn),
+            transfersOut: round2(transfersOut),
+            net: round2(income - expenses + transfersIn - transfersOut),
             balance: round2(perAccountRun[acc.id] ?? acc.initialBalance),
         };
     });
+
+    const transferRoutesMap = new Map<string, { fromAccountId: string; toAccountId: string; amount: number; count: number }>();
+    for (const tx of allPeriodTx) {
+        if (tx.type !== "transfer") continue;
+        if (
+            focusAccountId &&
+            tx.accountId !== focusAccountId &&
+            tx.destinationId !== focusAccountId
+        ) {
+            continue;
+        }
+        const key = `${tx.accountId}>${tx.destinationId}`;
+        const slot = transferRoutesMap.get(key) ?? {
+            fromAccountId: tx.accountId,
+            toAccountId: tx.destinationId,
+            amount: 0,
+            count: 0,
+        };
+        slot.amount += tx.amount;
+        slot.count++;
+        transferRoutesMap.set(key, slot);
+    }
+    const transfers = [...transferRoutesMap.values()]
+        .map((r) => ({
+            fromAccountId: r.fromAccountId,
+            toAccountId: r.toAccountId,
+            fromName: accountById.get(r.fromAccountId)?.name ?? "Unknown",
+            toName: accountById.get(r.toAccountId)?.name ?? "Unknown",
+            amount: round2(r.amount),
+            txCount: r.count,
+        }))
+        .sort((a, b) => b.amount - a.amount);
 
     const dailySpend = period.elapsedDays > 0 ? round2(summary.expenses / period.elapsedDays) : 0;
     const fullDailySpend =
@@ -653,6 +693,7 @@ export function buildAnalytics(input: {
         },
         netWorthByAccount,
         accountActivity,
+        transfers,
         health: { score: healthScore, label: healthLabel, parts: healthParts },
     };
 }

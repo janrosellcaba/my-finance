@@ -133,6 +133,12 @@ export function AnalyticsDashboard({
                 </Section>
             )}
 
+            {data.transfers.length > 0 && (
+                <Section title="Transfers" subtitle={focusNote}>
+                    <TransferRoutes rows={data.transfers} privacyMode={privacyMode} />
+                </Section>
+            )}
+
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                 <div className="lg:col-span-7">
                     <Section title="Spending by category" subtitle={focusNote}>
@@ -871,6 +877,43 @@ function LifetimeNetWorth({
     );
 }
 
+function TransferRoutes({
+    rows,
+    privacyMode,
+}: {
+    rows: AnalyticsResult["transfers"];
+    privacyMode: boolean;
+}) {
+    return (
+        <Card className="divide-y divide-line !p-0">
+            {rows.map((r) => (
+                <div
+                    key={`${r.fromAccountId}>${r.toAccountId}`}
+                    className="flex items-center justify-between gap-3 px-4 py-2.5"
+                >
+                    <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-ink">
+                            {r.fromName}
+                            <span className="mx-1.5 font-normal text-muted">→</span>
+                            {r.toName}
+                        </p>
+                        <p className="mt-0.5 text-[11px] text-muted">
+                            {r.txCount} transfer{r.txCount === 1 ? "" : "s"}
+                        </p>
+                    </div>
+                    <p
+                        className={`shrink-0 font-bold tabular-nums text-ink ${
+                            privacyMode ? "blur-[6px] select-none opacity-70" : ""
+                        }`}
+                    >
+                        {formatCurrency(r.amount, privacyMode)}
+                    </p>
+                </div>
+            ))}
+        </Card>
+    );
+}
+
 function AccountCards({
     rows,
     accounts,
@@ -913,7 +956,8 @@ function AccountCards({
                             {formatCurrency(r.net, privacyMode)}
                         </p>
                         <p className={`mt-1 text-xs text-muted ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}>
-                            in {formatCurrency(r.income, privacyMode)} · out {formatCurrency(r.expenses, privacyMode)}
+                            in {formatCurrency(r.income + r.transfersIn, privacyMode)} · out{" "}
+                            {formatCurrency(r.expenses + r.transfersOut, privacyMode)}
                         </p>
                     </button>
                 );
