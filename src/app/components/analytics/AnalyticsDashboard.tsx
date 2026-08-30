@@ -43,7 +43,6 @@ export function AnalyticsDashboard({
     selectedAccountId,
     focusName,
     onSelectAccount,
-    onSelectMonth,
 }: {
     data: AnalyticsResult;
     privacyMode: boolean;
@@ -52,7 +51,6 @@ export function AnalyticsDashboard({
     selectedAccountId: string;
     focusName: string | null;
     onSelectAccount: (id: string) => void;
-    onSelectMonth: (monthKey: string) => void;
 }) {
     const { summary, comparison, period, health } = data;
     const money = (n: number) => formatCurrency(n, privacyMode);
@@ -168,17 +166,14 @@ export function AnalyticsDashboard({
                 </div>
 
                 <div className="lg:col-span-12">
-                    <Section
-                        title="Month by month"
-                        subtitle={period.mode === "month" ? "Tap a month to open it" : "Tap a month to zoom in"}
-                    >
-                        <MonthlyChart data={data} privacyMode={privacyMode} onSelectMonth={onSelectMonth} />
+                    <Section title="Month by month">
+                        <MonthlyChart data={data} privacyMode={privacyMode} />
                     </Section>
                 </div>
 
                 {data.netWorthByAccount.length > 1 && (
                     <div className="lg:col-span-6">
-                        <Section title="Account balances" subtitle="Today">
+                        <Section title="Account balances">
                             <AccountBalances
                                 rows={data.netWorthByAccount}
                                 accounts={accounts}
@@ -413,6 +408,7 @@ function CategoryBars({
 
     const max = Math.max(...rows.map((r) => r.amount), 1);
     const fill = tone === "brand" ? "bg-brand" : "bg-danger";
+    const colorOf = (r: CategoryRow, i: number) => r.color ?? PIE_FALLBACK[i % PIE_FALLBACK.length];
 
     const pie = showPie && rows.length >= 2;
 
@@ -425,7 +421,7 @@ function CategoryBars({
                     </div>
                 )}
                 <div className="min-w-0 flex-1 space-y-0.5">
-                    {rows.map((r) => (
+                    {rows.map((r, i) => (
                         <button
                             key={r.categoryId}
                             type="button"
@@ -434,6 +430,10 @@ function CategoryBars({
                         >
                         <div className="flex items-baseline justify-between gap-3 text-sm">
                             <span className="flex min-w-0 items-center gap-2">
+                                <span
+                                    className="h-2 w-2 shrink-0 rounded-full"
+                                    style={{ backgroundColor: colorOf(r, i) }}
+                                />
                                 {r.icon && (
                                     <span
                                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
@@ -533,52 +533,21 @@ function TopPurchases({
     );
 }
 
-function monthFromClick(raw: unknown, series: AnalyticsResult["monthlySeries"]): string | null {
-    if (!raw || typeof raw !== "object") return null;
-    const rec = raw as {
-        month?: string;
-        payload?: { month?: string };
-        activePayload?: { payload?: { month?: string } }[];
-        tooltipPayload?: { payload?: { month?: string } }[];
-        activeLabel?: string;
-    };
-    const direct =
-        rec.month ??
-        rec.payload?.month ??
-        rec.activePayload?.[0]?.payload?.month ??
-        rec.tooltipPayload?.[0]?.payload?.month ??
-        null;
-    if (direct) return direct;
-    if (typeof rec.activeLabel === "string") {
-        return series.find((m) => m.label === rec.activeLabel)?.month ?? null;
-    }
-    return null;
-}
-
 function MonthlyChart({
     data,
     privacyMode,
-    onSelectMonth,
 }: {
     data: AnalyticsResult;
     privacyMode: boolean;
-    onSelectMonth: (monthKey: string) => void;
 }) {
     if (data.monthlySeries.every((m) => m.income === 0 && m.expenses === 0)) {
         return <EmptyNote>Not enough history for a trend yet.</EmptyNote>;
     }
 
-    const active = data.period.mode === "month" ? data.period.anchor : null;
-
-    function pickMonth(raw: unknown) {
-        const month = monthFromClick(raw, data.monthlySeries);
-        if (month) onSelectMonth(month);
-    }
-
     return (
         <Card>
             <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={data.monthlySeries} barGap={2} onClick={(state) => pickMonth(state)}>
+                <BarChart data={data.monthlySeries} barGap={2}>
                     <XAxis dataKey="label" stroke={AXIS} tick={{ fontSize: 11 }} interval="preserveStartEnd" />
                     <YAxis
                         stroke={AXIS}
@@ -600,16 +569,7 @@ function MonthlyChart({
                         radius={[3, 3, 0, 0]}
                         maxBarSize={28}
                         isAnimationActive={false}
-                        onClick={pickMonth}
-                    >
-                        {data.monthlySeries.map((m) => (
-                            <Cell
-                                key={`in-${m.month}`}
-                                fill={BRAND}
-                                fillOpacity={!active || m.month === active ? 1 : 0.35}
-                            />
-                        ))}
-                    </Bar>
+                    />
                     <Bar
                         dataKey="expenses"
                         name="expenses"
@@ -617,16 +577,7 @@ function MonthlyChart({
                         radius={[3, 3, 0, 0]}
                         maxBarSize={28}
                         isAnimationActive={false}
-                        onClick={pickMonth}
-                    >
-                        {data.monthlySeries.map((m) => (
-                            <Cell
-                                key={`ex-${m.month}`}
-                                fill={DANGER}
-                                fillOpacity={!active || m.month === active ? 1 : 0.35}
-                            />
-                        ))}
-                    </Bar>
+                    />
                 </BarChart>
             </ResponsiveContainer>
             <div className="mt-2 flex gap-4 text-xs text-muted">

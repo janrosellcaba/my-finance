@@ -105,7 +105,6 @@ export function AnalyticsView({
                 selectedAccountId={accountId}
                 focusName={focusName}
                 onSelectAccount={setAccountId}
-                onSelectMonth={(monthKey) => handlePeriodChange("month", monthKey)}
             />
         </div>
     );
