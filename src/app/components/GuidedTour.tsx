@@ -1,75 +1,102 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { IconClose } from "./icons";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+    IconBank,
+    IconChart,
+    IconCheckSquare,
+    IconClose,
+    IconEye,
+    IconGrip,
+    IconHome,
+    IconList,
+    IconPencil,
+    IconRadioDot,
+    IconSettings,
+    IconUtensils,
+    IconWallet,
+} from "./icons";
 
 const TOUR_STORAGE_KEY = "myfinance-tour-seen";
-const STORY_MS = 5500;
+const STORY_MS = 8000;
+
+type VisualKind =
+    | "welcome"
+    | "accounts"
+    | "categories"
+    | "home"
+    | "add"
+    | "transactions"
+    | "analytics"
+    | "privacy";
 
 export type TourSlide = {
     id: string;
-    eyebrow: string;
+    step?: string;
     title: string;
     body: string;
-    visual: "welcome" | "home" | "add" | "list" | "analytics" | "todo" | "settings" | "privacy";
+    visual: VisualKind;
+    nav?: "home" | "transactions" | "todo" | "analytics" | "config";
 };
 
 export const TOUR_SLIDES: TourSlide[] = [
     {
         id: "welcome",
-        eyebrow: "Welcome",
-        title: "Your money, clearly",
-        body: "MyFinance tracks income, expenses, and transfers across your accounts — privately, on your own server.",
+        title: "Welcome to MyFinance",
+        body: "A private place to track income, expenses, and transfers. Two setup steps first — then you’re ready to log money.",
         visual: "welcome",
+        nav: "home",
+    },
+    {
+        id: "accounts",
+        step: "Step 1 of 2",
+        title: "Add your bank accounts",
+        body: "Open Settings → Bank accounts. Add each wallet or bank you use. Set the initial balance to what it already holds, and tap the radio to pick a default account for new transactions.",
+        visual: "accounts",
+        nav: "config",
+    },
+    {
+        id: "categories",
+        step: "Step 2 of 2",
+        title: "Set up categories",
+        body: "Settings → Categories. Create income and expense labels (Food, Salary, Rent…). Pick a colour and icon, drag to reorder, and set a default for each type.",
+        visual: "categories",
+        nav: "config",
     },
     {
         id: "home",
-        eyebrow: "Home",
-        title: "Net worth at a glance",
-        body: "The home screen shows total net worth, each account balance, and your most recent transactions.",
+        title: "Your home screen",
+        body: "Net worth at the top, account cards underneath, recent transactions below. The green button starts a new income, expense, or transfer.",
         visual: "home",
+        nav: "home",
     },
     {
         id: "add",
-        eyebrow: "Add",
-        title: "Log anything in seconds",
-        body: "Tap the green add button (or press T) to record income, an expense, or a transfer between accounts.",
+        title: "Add a transaction",
+        body: "Choose type, amount, account, and category. Transfers move money between two of your accounts. Shortcut: press T anywhere.",
         visual: "add",
+        nav: "home",
     },
     {
-        id: "list",
-        eyebrow: "Transactions",
-        title: "Search and filter",
-        body: "Browse every movement, filter by type, account, category, or date, and edit or delete with a tap.",
-        visual: "list",
+        id: "transactions",
+        title: "Transactions tab",
+        body: "Full history with filters for type, account, category, and dates. Tap any row to edit or delete it.",
+        visual: "transactions",
+        nav: "transactions",
     },
     {
         id: "analytics",
-        eyebrow: "Analytics",
-        title: "See where it goes",
-        body: "Charts break down spending and income by category, month trends, transfers, and account balances.",
+        title: "Analytics",
+        body: "Spending and income by category, month trends, transfers, and account balances — so you see where money goes.",
         visual: "analytics",
-    },
-    {
-        id: "todo",
-        eyebrow: "To-do",
-        title: "Money tasks, remembered",
-        body: "Keep small finance reminders here — pay a bill, move money, chase a refund — with optional due dates.",
-        visual: "todo",
-    },
-    {
-        id: "settings",
-        eyebrow: "Settings",
-        title: "Make it yours",
-        body: "Set up accounts and categories, change colours and formats, export or back up your data, and more.",
-        visual: "settings",
+        nav: "analytics",
     },
     {
         id: "privacy",
-        eyebrow: "Privacy",
         title: "Hide amounts anytime",
-        body: "Tap the eye in the header to blur balances. Useful on a train, or when someone glances at your phone.",
+        body: "Tap the eye in the header to blur balances. Find this tour again anytime under Settings → App tour.",
         visual: "privacy",
+        nav: "home",
     },
 ];
 
@@ -90,132 +117,392 @@ export function markTourSeen(): void {
     }
 }
 
-function TourVisual({ kind }: { kind: TourSlide["visual"] }) {
+export function isAccountFirstDay(createdAt: string | null | undefined): boolean {
+    if (!createdAt) return false;
+    const created = Date.parse(createdAt.includes("T") ? createdAt : createdAt.replace(" ", "T") + "Z");
+    if (Number.isNaN(created)) return false;
+    return Date.now() - created < 24 * 60 * 60 * 1000;
+}
+
+function MiniNav({ active }: { active: NonNullable<TourSlide["nav"]> }) {
+    const items = [
+        { key: "home" as const, label: "Home", Icon: IconHome },
+        { key: "transactions" as const, label: "Txns", Icon: IconList },
+        { key: "todo" as const, label: "To-Do", Icon: IconCheckSquare },
+        { key: "analytics" as const, label: "Stats", Icon: IconChart },
+        { key: "config" as const, label: "Settings", Icon: IconSettings },
+    ];
+    return (
+        <div className="flex border-t border-line bg-paper px-0.5 pb-1 pt-1">
+            {items.map(({ key, label, Icon }) => {
+                const on = key === active;
+                return (
+                    <div
+                        key={key}
+                        className={`flex flex-1 flex-col items-center gap-0.5 py-1 ${on ? "text-brand" : "text-muted"}`}
+                    >
+                        <span
+                            className={`flex h-5 w-8 items-center justify-center rounded-full ${on ? "bg-brand/12" : ""}`}
+                        >
+                            <Icon className="h-3.5 w-3.5" />
+                        </span>
+                        <span className="text-[8px] font-semibold leading-none">{label}</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+function PhoneFrame({
+    title,
+    nav,
+    children,
+    privacyBlur,
+}: {
+    title: string;
+    nav: NonNullable<TourSlide["nav"]>;
+    children: ReactNode;
+    privacyBlur?: boolean;
+}) {
+    return (
+        <div className="flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-line bg-cream shadow-[0_12px_40px_rgba(0,0,0,0.28)]">
+            <div className="flex items-center justify-between border-b border-line bg-paper/90 px-3 py-2">
+                <p className="text-[11px] font-extrabold text-ink">{title}</p>
+                <span className={`rounded-full p-1 text-muted ${privacyBlur ? "bg-brand/10 text-brand" : ""}`}>
+                    <IconEye className="h-3.5 w-3.5" />
+                </span>
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden bg-cream">{children}</div>
+            <MiniNav active={nav} />
+        </div>
+    );
+}
+
+function Surface({ children, className = "" }: { children: ReactNode; className?: string }) {
+    return <div className={`rounded-xl border border-line bg-paper ${className}`}>{children}</div>;
+}
+
+function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlide["nav"]> }) {
     if (kind === "welcome") {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-6">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand text-2xl font-extrabold text-white">
-                    €
+            <PhoneFrame title="Hi, Alex" nav={nav}>
+                <div className="flex h-full flex-col items-center justify-center gap-3 px-5 text-center">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-xl font-extrabold text-white shadow-sm">
+                        €
+                    </div>
+                    <div>
+                        <p className="text-base font-extrabold text-ink">MyFinance</p>
+                        <p className="mt-1 text-[11px] leading-snug text-muted">
+                            Track income, expenses &amp; transfers — privately.
+                        </p>
+                    </div>
+                    <div className="mt-1 w-full space-y-1.5 text-left">
+                        <Surface className="flex items-center gap-2 px-3 py-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-[10px] font-bold text-brand">
+                                1
+                            </span>
+                            <span className="text-[11px] font-semibold text-ink">Add bank accounts</span>
+                        </Surface>
+                        <Surface className="flex items-center gap-2 px-3 py-2">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-brand/10 text-[10px] font-bold text-brand">
+                                2
+                            </span>
+                            <span className="text-[11px] font-semibold text-ink">Set up categories</span>
+                        </Surface>
+                        <Surface className="flex items-center gap-2 px-3 py-2 opacity-50">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-lg bg-chip text-[10px] font-bold text-muted">
+                                3
+                            </span>
+                            <span className="text-[11px] font-semibold text-muted">Log transactions</span>
+                        </Surface>
+                    </div>
                 </div>
-                <div className="h-3 w-32 rounded-full bg-white/35" />
-                <div className="h-2 w-24 rounded-full bg-white/20" />
-            </div>
+            </PhoneFrame>
         );
     }
+
+    if (kind === "accounts") {
+        return (
+            <PhoneFrame title="Hi, Alex" nav={nav}>
+                <div className="space-y-2 px-3 pt-3">
+                    <p className="text-sm font-extrabold text-ink">Bank accounts</p>
+                    <p className="text-[10px] leading-snug text-muted">
+                        Settings → Bank accounts. Initial balance = money already there.
+                    </p>
+                    <Surface className="divide-y divide-line overflow-hidden">
+                        {[
+                            { name: "Imagin Main", bal: "€2.450,00", icon: true, def: true },
+                            { name: "Cash", bal: "€85,00", icon: false, def: false },
+                        ].map((a) => (
+                            <div key={a.name} className="flex items-center gap-2 px-2.5 py-2">
+                                <IconRadioDot checked={a.def} className="h-3.5 w-3.5 text-brand" />
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-chip text-muted">
+                                    {a.icon ? <IconBank className="h-3.5 w-3.5" /> : <IconWallet className="h-3.5 w-3.5" />}
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[11px] font-semibold text-ink">{a.name}</p>
+                                    <p className="text-[10px] font-bold tabular-nums text-brand">{a.bal}</p>
+                                </div>
+                                <IconPencil className="h-3 w-3 text-muted" />
+                            </div>
+                        ))}
+                    </Surface>
+                    <div className="rounded-xl bg-brand py-2.5 text-center text-[11px] font-bold text-white">
+                        Add account
+                    </div>
+                </div>
+            </PhoneFrame>
+        );
+    }
+
+    if (kind === "categories") {
+        return (
+            <PhoneFrame title="Hi, Alex" nav={nav}>
+                <div className="space-y-2 px-3 pt-3">
+                    <p className="text-sm font-extrabold text-ink">Categories</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wide text-muted">Expense</p>
+                    <Surface className="divide-y divide-line overflow-hidden">
+                        {[
+                            { name: "Food & Drinks", color: "#bff3d4", def: true },
+                            { name: "Transport", color: "#bfd4f3", def: false },
+                            { name: "Social", color: "#e8f3bf", def: false },
+                        ].map((c) => (
+                            <div key={c.name} className="flex items-center gap-1.5 px-2 py-2">
+                                <IconGrip className="h-3 w-3 text-muted" />
+                                <IconRadioDot checked={c.def} className="h-3.5 w-3.5 text-brand" />
+                                <span
+                                    className="h-3 w-3 rounded-full"
+                                    style={{ backgroundColor: c.color }}
+                                />
+                                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-chip text-ink">
+                                    <IconUtensils className="h-3 w-3" />
+                                </span>
+                                <span className="min-w-0 flex-1 truncate text-[11px] font-semibold text-ink">
+                                    {c.name}
+                                </span>
+                                <IconPencil className="h-3 w-3 text-muted" />
+                            </div>
+                        ))}
+                    </Surface>
+                    <div className="flex gap-1.5">
+                        <div className="flex-1 rounded-lg bg-chip py-2 text-center text-[10px] font-bold text-muted">
+                            Income
+                        </div>
+                        <div className="flex-1 rounded-lg bg-danger py-2 text-center text-[10px] font-bold text-white">
+                            Expense
+                        </div>
+                    </div>
+                </div>
+            </PhoneFrame>
+        );
+    }
+
     if (kind === "home") {
         return (
-            <div className="flex h-full flex-col justify-end gap-2 px-5 pb-6">
-                <div className="rounded-2xl bg-white/15 p-4 backdrop-blur-sm">
-                    <div className="h-2 w-16 rounded-full bg-white/35" />
-                    <div className="mt-2 h-7 w-36 rounded-lg bg-white/55" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                    <div className="rounded-xl bg-white/12 p-3">
-                        <div className="h-2 w-10 rounded-full bg-white/30" />
-                        <div className="mt-2 h-4 w-16 rounded bg-white/45" />
+            <PhoneFrame title="Hi, Alex" nav={nav}>
+                <div className="space-y-2.5 px-3 pt-3">
+                    <Surface className="p-3 text-center">
+                        <p className="text-[9px] font-bold uppercase tracking-wider text-muted">Total Net Worth</p>
+                        <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand">€12.340,50</p>
+                        <div className="mx-auto mt-2 h-6 w-28 rounded-md bg-brand/10" />
+                    </Surface>
+                    <div className="rounded-xl bg-brand py-2.5 text-center text-[11px] font-bold text-white shadow-sm">
+                        + Add Transaction
                     </div>
-                    <div className="rounded-xl bg-white/12 p-3">
-                        <div className="h-2 w-10 rounded-full bg-white/30" />
-                        <div className="mt-2 h-4 w-16 rounded bg-white/45" />
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-muted">Your Accounts</p>
+                    <div className="grid grid-cols-2 gap-1.5">
+                        <Surface className="p-2.5">
+                            <div className="flex items-center gap-1">
+                                <IconBank className="h-3 w-3 text-muted" />
+                                <p className="truncate text-[9px] font-semibold text-muted">Imagin</p>
+                            </div>
+                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€2.450</p>
+                        </Surface>
+                        <Surface className="p-2.5">
+                            <div className="flex items-center gap-1">
+                                <IconWallet className="h-3 w-3 text-muted" />
+                                <p className="truncate text-[9px] font-semibold text-muted">Cash</p>
+                            </div>
+                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€85</p>
+                        </Surface>
                     </div>
+                    <Surface className="flex items-center gap-2 px-2.5 py-2">
+                        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#bff3d4]/40 text-ink">
+                            <IconUtensils className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                            <p className="truncate text-[11px] font-semibold text-ink">Groceries</p>
+                            <p className="truncate text-[9px] text-muted">Food · Imagin</p>
+                        </div>
+                        <p className="text-[11px] font-bold tabular-nums text-danger">−€42,30</p>
+                    </Surface>
                 </div>
-            </div>
+            </PhoneFrame>
         );
     }
+
     if (kind === "add") {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-4 px-6">
-                <div className="w-full max-w-[200px] space-y-2 rounded-2xl bg-white/12 p-4">
-                    <div className="h-8 rounded-lg bg-white/20" />
-                    <div className="h-8 rounded-lg bg-white/20" />
-                    <div className="h-10 rounded-xl bg-brand" />
-                </div>
-                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-brand text-2xl font-bold text-white">
-                    +
-                </div>
-            </div>
-        );
-    }
-    if (kind === "list") {
-        return (
-            <div className="flex h-full flex-col justify-center gap-2 px-5">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="flex items-center gap-3 rounded-xl bg-white/12 px-3 py-2.5">
-                        <div className="h-8 w-8 rounded-lg bg-white/25" />
-                        <div className="min-w-0 flex-1">
-                            <div className="h-2.5 w-24 rounded-full bg-white/45" />
-                            <div className="mt-1.5 h-2 w-16 rounded-full bg-white/25" />
+            <PhoneFrame title="Hi, Alex" nav={nav}>
+                <div className="flex h-full flex-col justify-end bg-ink/25 p-2">
+                    <div className="rounded-t-2xl border border-line bg-paper p-3 shadow-lg">
+                        <div className="mb-2 flex items-center justify-between">
+                            <p className="text-sm font-bold text-ink">Add Transaction</p>
+                            <IconClose className="h-4 w-4 text-muted" />
                         </div>
-                        <div className="h-3 w-12 rounded bg-white/40" />
+                        <div className="mb-2 flex gap-1">
+                            {["Expense", "Income", "Transfer"].map((t, i) => (
+                                <div
+                                    key={t}
+                                    className={`flex-1 rounded-lg py-1.5 text-center text-[9px] font-bold ${
+                                        i === 0 ? "bg-danger text-white" : "bg-chip text-muted"
+                                    }`}
+                                >
+                                    {t}
+                                </div>
+                            ))}
+                        </div>
+                        <div className="space-y-1.5">
+                            <div className="rounded-lg border border-line bg-cream px-2.5 py-2 text-[10px] text-muted">
+                                Amount (€) · 42,30
+                            </div>
+                            <div className="rounded-lg border border-line bg-cream px-2.5 py-2 text-[10px] text-ink">
+                                Food &amp; Drinks
+                            </div>
+                            <div className="rounded-lg border border-line bg-cream px-2.5 py-2 text-[10px] text-ink">
+                                Imagin Main
+                            </div>
+                        </div>
+                        <div className="mt-2 rounded-xl bg-brand py-2.5 text-center text-[11px] font-bold text-white">
+                            Save
+                        </div>
                     </div>
-                ))}
-            </div>
+                </div>
+            </PhoneFrame>
         );
     }
+
+    if (kind === "transactions") {
+        return (
+            <PhoneFrame title="Hi, Alex" nav={nav}>
+                <div className="space-y-2 px-3 pt-3">
+                    <p className="text-sm font-extrabold text-ink">Transactions</p>
+                    <div className="flex gap-1 overflow-hidden">
+                        {["All", "Expense", "Income"].map((f, i) => (
+                            <div
+                                key={f}
+                                className={`shrink-0 rounded-full px-2.5 py-1 text-[9px] font-bold ${
+                                    i === 0 ? "bg-ink text-paper" : "bg-chip text-muted"
+                                }`}
+                            >
+                                {f}
+                            </div>
+                        ))}
+                    </div>
+                    <Surface className="divide-y divide-line overflow-hidden">
+                        {[
+                            { t: "Groceries", s: "Food · 28/08", a: "−€42,30", c: "text-danger" },
+                            { t: "Salary", s: "Salary · 01/08", a: "+€2.100,00", c: "text-brand" },
+                            { t: "Transfer", s: "Cash → Imagin", a: "€50,00", c: "text-ink" },
+                        ].map((r) => (
+                            <div key={r.t} className="flex items-center gap-2 px-2.5 py-2">
+                                <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-chip" />
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate text-[11px] font-semibold text-ink">{r.t}</p>
+                                    <p className="truncate text-[9px] text-muted">{r.s}</p>
+                                </div>
+                                <p className={`text-[11px] font-bold tabular-nums ${r.c}`}>{r.a}</p>
+                            </div>
+                        ))}
+                    </Surface>
+                </div>
+            </PhoneFrame>
+        );
+    }
+
     if (kind === "analytics") {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 px-6">
-                <div className="relative h-28 w-28">
-                    <div
-                        className="absolute inset-0 rounded-full"
-                        style={{
-                            background:
-                                "conic-gradient(from 200deg, color-mix(in srgb, white 70%, transparent) 0 35%, color-mix(in srgb, white 45%, transparent) 35% 62%, color-mix(in srgb, white 25%, transparent) 62% 100%)",
-                        }}
-                    />
-                    <div className="absolute inset-6 rounded-full bg-brand" />
-                </div>
-                <div className="flex w-full gap-1.5">
-                    <div className="h-10 flex-1 rounded-md bg-white/40" />
-                    <div className="h-7 flex-1 self-end rounded-md bg-white/25" />
-                    <div className="h-14 flex-1 rounded-md bg-white/50" />
-                    <div className="h-8 flex-1 self-end rounded-md bg-white/30" />
-                </div>
-            </div>
-        );
-    }
-    if (kind === "todo") {
-        return (
-            <div className="flex h-full flex-col justify-center gap-2 px-5">
-                {["Pay rent", "Move savings", "Check invoice"].map((label, i) => (
-                    <div key={label} className="flex items-center gap-3 rounded-xl bg-white/12 px-3 py-3">
-                        <div
-                            className={`flex h-5 w-5 items-center justify-center rounded-md border-2 border-white/50 ${
-                                i === 0 ? "bg-white/50" : ""
-                            }`}
-                        />
-                        <span className="text-sm font-semibold text-white/90">{label}</span>
+            <PhoneFrame title="Hi, Alex" nav={nav}>
+                <div className="space-y-2 px-3 pt-3">
+                    <p className="text-sm font-extrabold text-ink">Analytics</p>
+                    <div className="flex gap-1">
+                        {["Month", "3M", "Year"].map((p, i) => (
+                            <div
+                                key={p}
+                                className={`flex-1 rounded-lg py-1.5 text-center text-[9px] font-bold ${
+                                    i === 0 ? "bg-ink text-paper" : "bg-chip text-muted"
+                                }`}
+                            >
+                                {p}
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                    <Surface className="p-3">
+                        <p className="text-[9px] font-bold uppercase tracking-wide text-muted">
+                            Spending by category
+                        </p>
+                        <div className="mt-2 flex items-center gap-3">
+                            <div
+                                className="h-16 w-16 shrink-0 rounded-full"
+                                style={{
+                                    background:
+                                        "conic-gradient(#bff3d4 0 42%, #bfd4f3 42% 68%, #f3cebf 68% 100%)",
+                                }}
+                            />
+                            <div className="min-w-0 flex-1 space-y-1">
+                                {[
+                                    { n: "Food", v: "42%" },
+                                    { n: "Transport", v: "26%" },
+                                    { n: "Other", v: "32%" },
+                                ].map((r) => (
+                                    <div key={r.n} className="flex justify-between text-[10px]">
+                                        <span className="font-semibold text-ink">{r.n}</span>
+                                        <span className="tabular-nums text-muted">{r.v}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </Surface>
+                    <Surface className="flex h-14 items-end gap-1 px-3 pb-2 pt-3">
+                        {[40, 55, 35, 70, 48, 62, 44].map((h, i) => (
+                            <div
+                                key={i}
+                                className="flex-1 rounded-t-sm bg-brand/70"
+                                style={{ height: `${h}%` }}
+                            />
+                        ))}
+                    </Surface>
+                </div>
+            </PhoneFrame>
         );
     }
-    if (kind === "settings") {
-        return (
-            <div className="flex h-full flex-col justify-center gap-2 px-5">
-                {["Accounts", "Categories", "Appearance", "Backup"].map((label) => (
-                    <div key={label} className="flex items-center justify-between rounded-xl bg-white/12 px-4 py-3">
-                        <span className="text-sm font-semibold text-white/90">{label}</span>
-                        <span className="text-white/40">›</span>
-                    </div>
-                ))}
-            </div>
-        );
-    }
+
     return (
-        <div className="flex h-full flex-col items-center justify-center gap-4 px-6">
-            <div className="rounded-2xl bg-white/12 px-6 py-5 text-center">
-                <div className="text-3xl font-extrabold tracking-widest text-white/80 blur-[3px]">€2.450,00</div>
-                <div className="mt-3 text-xs font-semibold uppercase tracking-wide text-white/50">Hidden</div>
+        <PhoneFrame title="Hi, Alex" nav={nav} privacyBlur>
+            <div className="space-y-2.5 px-3 pt-3">
+                <Surface className="p-3 text-center">
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-muted">Total Net Worth</p>
+                    <p className="mt-1 text-2xl font-extrabold tabular-nums text-brand blur-[6px] select-none">
+                        €12.340,50
+                    </p>
+                </Surface>
+                <div className="grid grid-cols-2 gap-1.5">
+                    <Surface className="p-2.5">
+                        <p className="text-[9px] font-semibold text-muted">Imagin</p>
+                        <p className="mt-1 text-sm font-bold text-brand blur-[5px] select-none">€2.450</p>
+                    </Surface>
+                    <Surface className="p-2.5">
+                        <p className="text-[9px] font-semibold text-muted">Cash</p>
+                        <p className="mt-1 text-sm font-bold text-brand blur-[5px] select-none">€85</p>
+                    </Surface>
+                </div>
+                <Surface className="px-3 py-2.5 text-center">
+                    <p className="text-[10px] font-semibold text-ink">Amounts hidden</p>
+                    <p className="mt-0.5 text-[9px] text-muted">Tap the eye in the header to show again</p>
+                </Surface>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
-                <svg viewBox="0 0 24 24" className="h-5 w-5 text-white" fill="none" stroke="currentColor" strokeWidth="1.8">
-                    <path d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12Z" />
-                    <circle cx="12" cy="12" r="2.5" />
-                    <path d="M4 4l16 16" />
-                </svg>
-            </div>
-        </div>
+        </PhoneFrame>
     );
 }
 
@@ -274,20 +561,16 @@ export function GuidedTour({ open, onClose }: { open: boolean; onClose: () => vo
     if (!open) return null;
 
     const slide = TOUR_SLIDES[index];
+    const nav = slide.nav ?? "home";
 
     return (
-        <div className="fixed inset-0 z-[80] flex items-stretch justify-center bg-ink/90 p-3 sm:items-center sm:p-6">
-            <div className="relative flex w-full max-w-md flex-col overflow-hidden rounded-3xl bg-brand shadow-2xl sm:max-h-[min(720px,90dvh)] sm:h-[640px] h-full">
-                <div className="absolute inset-0 opacity-40" aria-hidden>
-                    <div className="absolute -left-10 top-24 h-40 w-40 rounded-full bg-white/20 blur-2xl" />
-                    <div className="absolute -right-8 bottom-32 h-48 w-48 rounded-full bg-black/20 blur-2xl" />
-                </div>
-
-                <div className="relative z-10 flex gap-1 px-3 pt-3">
+        <div className="fixed inset-0 z-[80] flex items-stretch justify-center bg-ink/80 p-3 sm:items-center sm:p-6">
+            <div className="relative flex h-full w-full max-w-md flex-col overflow-hidden rounded-3xl bg-cream shadow-2xl sm:h-[min(740px,92dvh)]">
+                <div className="flex gap-1 px-3 pt-3">
                     {TOUR_SLIDES.map((s, i) => (
-                        <div key={s.id} className="h-1 flex-1 overflow-hidden rounded-full bg-white/25">
+                        <div key={s.id} className="h-1 flex-1 overflow-hidden rounded-full bg-line">
                             <div
-                                className="h-full rounded-full bg-white transition-[width] duration-75 ease-linear"
+                                className="h-full rounded-full bg-brand transition-[width] duration-75 ease-linear"
                                 style={{
                                     width: i < index ? "100%" : i === index ? `${progress * 100}%` : "0%",
                                 }}
@@ -296,60 +579,56 @@ export function GuidedTour({ open, onClose }: { open: boolean; onClose: () => vo
                     ))}
                 </div>
 
-                <div className="relative z-10 flex items-center justify-between px-4 py-3">
+                <div className="flex items-center justify-between px-4 py-2.5">
                     <div>
-                        <p className="text-[11px] font-bold uppercase tracking-wider text-white/70">{slide.eyebrow}</p>
-                        <p className="text-sm font-semibold text-white/90">
-                            {index + 1} / {TOUR_SLIDES.length}
-                        </p>
+                        {slide.step ? (
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-brand">{slide.step}</p>
+                        ) : (
+                            <p className="text-[11px] font-bold uppercase tracking-wider text-muted">
+                                {index + 1} / {TOUR_SLIDES.length}
+                            </p>
+                        )}
                     </div>
                     <button
                         type="button"
                         onClick={finish}
                         aria-label="Close tour"
-                        className="rounded-full p-2 text-white/80 transition-colors hover:bg-white/15 hover:text-white"
+                        className="rounded-full p-2 text-muted transition-colors hover:bg-chip hover:text-ink"
                     >
                         <IconClose className="h-5 w-5" />
                     </button>
                 </div>
 
-                <div className="relative z-10 min-h-0 flex-1 px-2">
-                    <div className="mx-auto h-full max-w-sm overflow-hidden rounded-2xl bg-black/15">
-                        <TourVisual kind={slide.visual} />
+                <div className="relative min-h-0 flex-1 px-4">
+                    <div className="mx-auto h-full max-w-[280px]">
+                        <TourVisual kind={slide.visual} nav={nav} />
                     </div>
                     <button
                         type="button"
                         aria-label="Previous"
-                        className="absolute inset-y-0 left-0 w-1/3"
+                        className="absolute inset-y-0 left-0 w-[28%]"
                         onClick={() => goTo(index - 1)}
                     />
                     <button
                         type="button"
                         aria-label="Next"
-                        className="absolute inset-y-0 right-0 w-1/3"
+                        className="absolute inset-y-0 right-0 w-[28%]"
                         onClick={() => goTo(index + 1)}
                     />
                 </div>
 
-                <div className="relative z-10 space-y-2 px-5 pb-6 pt-4">
-                    <h2 className="text-2xl font-extrabold tracking-tight text-white">{slide.title}</h2>
-                    <p className="text-sm leading-relaxed text-white/85">{slide.body}</p>
+                <div className="space-y-2 border-t border-line bg-paper px-5 pb-5 pt-4">
+                    <h2 className="text-xl font-extrabold tracking-tight text-ink">{slide.title}</h2>
+                    <p className="text-sm leading-relaxed text-muted">{slide.body}</p>
                     <button
                         type="button"
                         onClick={() => goTo(index + 1)}
-                        className="mt-3 w-full rounded-2xl bg-white py-3.5 text-base font-bold text-brand select-none"
+                        className="btn-raised mt-1 w-full rounded-2xl py-3.5 text-base font-bold text-white select-none"
                     >
-                        {index === TOUR_SLIDES.length - 1 ? "Done" : "Next"}
+                        {index === TOUR_SLIDES.length - 1 ? "Start using MyFinance" : "Next"}
                     </button>
                 </div>
             </div>
         </div>
     );
-}
-
-export function isAccountFirstDay(createdAt: string | null | undefined): boolean {
-    if (!createdAt) return false;
-    const created = Date.parse(createdAt.includes("T") ? createdAt : createdAt.replace(" ", "T") + "Z");
-    if (Number.isNaN(created)) return false;
-    return Date.now() - created < 24 * 60 * 60 * 1000;
 }
