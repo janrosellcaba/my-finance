@@ -1,5 +1,5 @@
 // Focused analytics: period totals, category split, top purchases, monthly trend,
-// and net worth. Dates are "YYYY-MM-DD" and compared lexicographically.
+// and all-time net worth. Dates are "YYYY-MM-DD" and compared lexicographically.
 
 import { applyTransactionToBalances, round2 } from "./balances";
 
@@ -447,51 +447,32 @@ export function buildAnalytics(input: {
 
     const nwStart = earliest;
     const nwEnd = today > earliest ? today : earliest;
-    const chartStart = period.start < nwStart ? nwStart : period.start;
-    const chartEndRaw = period.end > today ? today : period.end;
-    const chartEnd = chartEndRaw < nwEnd ? chartEndRaw : nwEnd;
 
     const perAccountRun: Record<string, number> = {};
     for (const acc of accounts) perAccountRun[acc.id] = acc.initialBalance;
 
     let nwRun = initialTotal;
     let t = toUTC(nwStart);
-    const chartStartMs = toUTC(chartStart);
-    const chartEndMs = toUTC(chartEnd);
     const nwEndMs = toUTC(nwEnd);
-    const chartDays = Math.round((chartEndMs - chartStartMs) / DAY_MS) + 1;
+    const chartDays = Math.round((nwEndMs - t) / DAY_MS) + 1;
     const step = Math.max(1, Math.ceil(Math.max(1, chartDays) / 200));
-
-    while (t < chartStartMs) {
-        const d = fromUTC(t);
-        nwRun += dailyDelta.get(d) ?? 0;
-        for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
-        t += DAY_MS;
-    }
 
     const netWorthSeries: NetWorthPoint[] = [];
     const perAccountSeries = new Map<string, NetWorthPoint[]>();
     for (const acc of accounts) perAccountSeries.set(acc.id, []);
 
     let chartIndex = 0;
-    while (t <= chartEndMs) {
+    while (t <= nwEndMs) {
         const d = fromUTC(t);
         nwRun += dailyDelta.get(d) ?? 0;
         for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
-        if (chartIndex % step === 0 || t === chartEndMs) {
+        if (chartIndex % step === 0 || t === nwEndMs) {
             netWorthSeries.push({ date: d, netWorth: round2(nwRun) });
             for (const acc of accounts) {
                 perAccountSeries.get(acc.id)!.push({ date: d, netWorth: round2(perAccountRun[acc.id]) });
             }
         }
         chartIndex++;
-        t += DAY_MS;
-    }
-
-    while (t <= nwEndMs) {
-        const d = fromUTC(t);
-        nwRun += dailyDelta.get(d) ?? 0;
-        for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
         t += DAY_MS;
     }
 

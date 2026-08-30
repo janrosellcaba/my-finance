@@ -167,17 +167,12 @@ export function AnalyticsDashboard({
                     </Section>
                 </div>
 
-                <div className="lg:col-span-6">
+                <div className="lg:col-span-12">
                     <Section
                         title="Month by month"
                         subtitle={period.mode === "month" ? "Tap a month to open it" : "Tap a month to zoom in"}
                     >
                         <MonthlyChart data={data} privacyMode={privacyMode} onSelectMonth={onSelectMonth} />
-                    </Section>
-                </div>
-                <div className="lg:col-span-6">
-                    <Section title="Net worth" subtitle={focusName ?? undefined}>
-                        <NetWorthChart data={data} privacyMode={privacyMode} selectedAccountId={selectedAccountId} />
                     </Section>
                 </div>
 
@@ -197,6 +192,10 @@ export function AnalyticsDashboard({
                     </div>
                 )}
             </div>
+
+            <Section title="Net worth" subtitle="All time">
+                <LifetimeNetWorth data={data} accounts={accounts} privacyMode={privacyMode} />
+            </Section>
 
             {scoreOpen && (
                 <Sheet title="Score" subtitle={health.label} onClose={() => setScoreOpen(false)}>
@@ -629,67 +628,114 @@ function MonthlyChart({
     );
 }
 
-function NetWorthChart({
+function LifetimeNetWorth({
     data,
+    accounts,
     privacyMode,
-    selectedAccountId,
 }: {
     data: AnalyticsResult;
+    accounts: Account[];
     privacyMode: boolean;
-    selectedAccountId: string;
 }) {
-    if (data.netWorth.series.length < 2) {
+    const [accountId, setAccountId] = useState("all");
+
+    useEffect(() => {
+        if (accountId !== "all" && !accounts.some((a) => a.id === accountId)) {
+            setAccountId("all");
+        }
+    }, [accounts, accountId]);
+
+    const selected = data.netWorthByAccount.find((a) => a.accountId === accountId);
+    const series = selected ? selected.series : data.netWorth.series;
+    const current = selected ? selected.current : data.netWorth.current;
+    const first = series[0]?.netWorth;
+    const change = first === undefined ? 0 : current - first;
+
+    if (series.length < 2) {
         return (
             <EmptyNote>
                 Not enough history yet. Current net worth:{" "}
-                <span className="font-semibold text-ink">{formatCurrency(data.netWorth.current, privacyMode)}</span>.
+                <span className="font-semibold text-ink">{formatCurrency(current, privacyMode)}</span>.
             </EmptyNote>
         );
     }
 
-    const selected = data.netWorthByAccount.find((a) => a.accountId === selectedAccountId);
-    const series = selected ? selected.series : data.netWorth.series;
-    const current = selected ? selected.current : data.netWorth.current;
-
     return (
         <Card>
+            {accounts.length > 1 && (
+                <div className="mb-3 flex gap-1.5 overflow-x-auto pb-0.5">
+                    <button
+                        type="button"
+                        onClick={() => setAccountId("all")}
+                        className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
+                            accountId === "all" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
+                        }`}
+                    >
+                        All accounts
+                    </button>
+                    {accounts.map((a) => (
+                        <button
+                            key={a.id}
+                            type="button"
+                            onClick={() => setAccountId(a.id)}
+                            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
+                                accountId === a.id ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
+                            }`}
+                        >
+                            {a.name}
+                        </button>
+                    ))}
+                </div>
+            )}
             <p
-                className={`mb-2 text-lg font-extrabold tabular-nums ${privacyMode ? "blur-[6px] select-none opacity-70" : ""} ${
+                className={`text-2xl font-extrabold tabular-nums ${privacyMode ? "blur-[6px] select-none opacity-70" : ""} ${
                     current >= 0 ? "text-ink" : "text-danger"
                 }`}
             >
                 {formatCurrency(current, privacyMode)}
             </p>
-            <ResponsiveContainer width="100%" height={180}>
-                <LineChart data={series}>
-                    <XAxis
-                        dataKey="date"
-                        stroke={AXIS}
-                        tick={{ fontSize: 11 }}
-                        minTickGap={40}
-                        tickFormatter={(d: string) => formatDate(d).slice(3)}
-                    />
-                    <YAxis
-                        stroke={AXIS}
-                        tick={{ fontSize: 11 }}
-                        width={56}
-                        tickFormatter={(v: number) => moneyTick(v, privacyMode)}
-                    />
-                    <Tooltip
-                        formatter={(v) => (typeof v === "number" ? formatCurrency(v, privacyMode) : String(v))}
-                        labelFormatter={(l) => (typeof l === "string" ? formatDate(l) : String(l))}
-                        isAnimationActive={false}
-                    />
-                    <Line
-                        type="monotone"
-                        dataKey="netWorth"
-                        stroke={BRAND}
-                        strokeWidth={2}
-                        dot={false}
-                        isAnimationActive={false}
-                    />
-                </LineChart>
-            </ResponsiveContainer>
+            {change !== 0 && (
+                <p
+                    className={`mt-0.5 text-xs font-semibold tabular-nums ${
+                        change >= 0 ? "text-brand" : "text-danger"
+                    } ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}
+                >
+                    {change >= 0 ? "+" : ""}
+                    {formatCurrency(change, privacyMode)} since {formatDate(series[0].date)}
+                </p>
+            )}
+            <div className="mt-3">
+                <ResponsiveContainer width="100%" height={240}>
+                    <LineChart data={series}>
+                        <XAxis
+                            dataKey="date"
+                            stroke={AXIS}
+                            tick={{ fontSize: 11 }}
+                            minTickGap={40}
+                            tickFormatter={(d: string) => formatDate(d).slice(3)}
+                        />
+                        <YAxis
+                            stroke={AXIS}
+                            tick={{ fontSize: 11 }}
+                            width={56}
+                            tickFormatter={(v: number) => moneyTick(v, privacyMode)}
+                        />
+                        <Tooltip
+                            formatter={(v) => (typeof v === "number" ? formatCurrency(v, privacyMode) : String(v))}
+                            labelFormatter={(l) => (typeof l === "string" ? formatDate(l) : String(l))}
+                            isAnimationActive={false}
+                        />
+                        <Line
+                            type="monotone"
+                            dataKey="netWorth"
+                            stroke={BRAND}
+                            strokeWidth={2}
+                            dot={false}
+                            isAnimationActive={false}
+                        />
+                    </LineChart>
+                </ResponsiveContainer>
+            </div>
         </Card>
     );
 }
