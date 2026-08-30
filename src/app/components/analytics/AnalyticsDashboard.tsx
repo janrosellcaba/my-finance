@@ -1,7 +1,19 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { Bar, BarChart, Cell, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+    Bar,
+    BarChart,
+    Cell,
+    Line,
+    LineChart,
+    Pie,
+    PieChart,
+    ResponsiveContainer,
+    Tooltip,
+    XAxis,
+    YAxis,
+} from "recharts";
 import type { AnalyticsResult, CategoryRow } from "@/lib/analytics";
 import { type Account, type Category, type Transaction, AMOUNT_MASK, formatCurrency, formatDate } from "../../shared";
 import { TransactionCard } from "../TransactionCard";
@@ -129,6 +141,7 @@ export function AnalyticsDashboard({
                         <CategoryBars
                             rows={data.spendingByCategory}
                             privacyMode={privacyMode}
+                            showPie
                             onSelect={(row) => {
                                 setScoreOpen(false);
                                 setDrill({ title: row.name, categoryId: row.categoryId, type: "expense" });
@@ -247,15 +260,144 @@ function ScoreBreakdown({
     );
 }
 
+const PIE_FALLBACK = ["#c45c4a", "#d4a04a", "#6a9a6a", "#5a8aaa", "#8a6aaa", "#c47a6a", "#7a8a5a"];
+const OTHER_FILL = "#a39e8e";
+
+type PieSlice = {
+    name: string;
+    amount: number;
+    color: string;
+    share: number | null;
+    row: CategoryRow | null;
+};
+
+function slicesFromRows(rows: CategoryRow[]): PieSlice[] {
+    const colorOf = (r: CategoryRow, i: number) => r.color ?? PIE_FALLBACK[i % PIE_FALLBACK.length];
+    const limit = 7;
+    if (rows.length <= limit) {
+        return rows.map((r, i) => ({
+            name: r.name,
+            amount: r.amount,
+            color: colorOf(r, i),
+            share: r.share,
+            row: r,
+        }));
+    }
+    const head = rows.slice(0, limit - 1);
+    const tail = rows.slice(limit - 1);
+    const otherAmount = tail.reduce((s, r) => s + r.amount, 0);
+    const total = rows.reduce((s, r) => s + r.amount, 0);
+    return [
+        ...head.map((r, i) => ({
+            name: r.name,
+            amount: r.amount,
+            color: colorOf(r, i),
+            share: r.share,
+            row: r,
+        })),
+        {
+            name: "Other",
+            amount: otherAmount,
+            color: OTHER_FILL,
+            share: total === 0 ? null : Math.round((otherAmount / total) * 100),
+            row: null,
+        },
+    ];
+}
+
+function CategoryPie({
+    rows,
+    privacyMode,
+    onSelect,
+}: {
+    rows: CategoryRow[];
+    privacyMode: boolean;
+    onSelect: (row: CategoryRow) => void;
+}) {
+    const slices = slicesFromRows(rows);
+    const total = rows.reduce((s, r) => s + r.amount, 0);
+
+    return (
+        <div className="relative mx-auto w-full max-w-[260px]">
+            <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                    <Pie
+                        data={slices}
+                        dataKey="amount"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={84}
+                        paddingAngle={slices.length > 1 ? 2 : 0}
+                        cornerRadius={3}
+                        startAngle={90}
+                        endAngle={-270}
+                        stroke="var(--color-paper)"
+                        strokeWidth={2}
+                        label={false}
+                        labelLine={false}
+                        isAnimationActive={false}
+                        rootTabIndex={-1}
+                        style={{ cursor: "pointer", outline: "none" }}
+                        onClick={(d) => {
+                            const fromPayload = (d.payload as PieSlice | undefined)?.row;
+                            const fromSpread = (d as PieSlice).row;
+                            const row = fromPayload ?? fromSpread;
+                            if (row) onSelect(row);
+                        }}
+                    >
+                        {slices.map((s) => (
+                            <Cell key={s.row?.categoryId ?? s.name} fill={s.color} />
+                        ))}
+                    </Pie>
+                    <Tooltip
+                        isAnimationActive={false}
+                        content={({ active, payload }) => {
+                            if (!active || !payload?.length) return null;
+                            const d = payload[0].payload as PieSlice;
+                            return (
+                                <div className="rounded-xl border border-line bg-paper px-3 py-2 text-xs shadow-sm">
+                                    <p className="font-semibold text-ink">{d.name}</p>
+                                    <p
+                                        className={`mt-0.5 tabular-nums text-muted ${
+                                            privacyMode ? "blur-[5px] select-none opacity-70" : ""
+                                        }`}
+                                    >
+                                        {formatCurrency(d.amount, privacyMode)}
+                                        {d.share !== null && !privacyMode ? ` · ${d.share.toFixed(0)}%` : ""}
+                                    </p>
+                                </div>
+                            );
+                        }}
+                    />
+                </PieChart>
+            </ResponsiveContainer>
+            <div className="pointer-events-none absolute left-1/2 top-1/2 flex w-[7.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Spent</p>
+                <p
+                    className={`text-center text-base font-extrabold leading-tight tabular-nums text-ink ${
+                        privacyMode ? "blur-[6px] select-none opacity-70" : ""
+                    }`}
+                >
+                    {formatCurrency(total, privacyMode)}
+                </p>
+            </div>
+        </div>
+    );
+}
+
 function CategoryBars({
     rows,
     privacyMode,
     tone = "danger",
+    showPie = false,
     onSelect,
 }: {
     rows: CategoryRow[];
     privacyMode: boolean;
     tone?: "danger" | "brand";
+    showPie?: boolean;
     onSelect: (row: CategoryRow) => void;
 }) {
     if (rows.length === 0) return <EmptyNote>Nothing in this period.</EmptyNote>;
@@ -263,16 +405,24 @@ function CategoryBars({
     const max = Math.max(...rows.map((r) => r.amount), 1);
     const fill = tone === "brand" ? "bg-brand" : "bg-danger";
 
+    const pie = showPie && rows.length >= 2;
+
     return (
         <Card className="!p-2">
-            <div className="space-y-0.5">
-                {rows.map((r) => (
-                    <button
-                        key={r.categoryId}
-                        type="button"
-                        onClick={() => onSelect(r)}
-                        className="w-full rounded-xl px-2 py-2.5 text-left transition-colors duration-150 hover:bg-chip/70"
-                    >
+            <div className={pie ? "lg:flex lg:items-center" : undefined}>
+                {pie && (
+                    <div className="lg:w-60 lg:shrink-0">
+                        <CategoryPie rows={rows} privacyMode={privacyMode} onSelect={onSelect} />
+                    </div>
+                )}
+                <div className="min-w-0 flex-1 space-y-0.5">
+                    {rows.map((r) => (
+                        <button
+                            key={r.categoryId}
+                            type="button"
+                            onClick={() => onSelect(r)}
+                            className="w-full rounded-xl px-2 py-2.5 text-left transition-colors duration-150 hover:bg-chip/70"
+                        >
                         <div className="flex items-baseline justify-between gap-3 text-sm">
                             <span className="flex min-w-0 items-center gap-2">
                                 {r.icon && (
@@ -312,21 +462,24 @@ function CategoryBars({
                                 </span>
                             </span>
                         </div>
-                        <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-chip">
-                            <div
-                                className={`h-full rounded-full ${r.color ? "" : fill}`}
-                                style={{
-                                    width: `${Math.max(2, (r.amount / max) * 100)}%`,
-                                    backgroundColor: r.color ?? undefined,
-                                }}
-                            />
-                        </div>
+                        {!pie && (
+                            <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-chip">
+                                <div
+                                    className={`h-full rounded-full ${r.color ? "" : fill}`}
+                                    style={{
+                                        width: `${Math.max(2, (r.amount / max) * 100)}%`,
+                                        backgroundColor: r.color ?? undefined,
+                                    }}
+                                />
+                            </div>
+                        )}
                         <p className="mt-1 text-[11px] text-muted">
                             {r.txCount} time{r.txCount === 1 ? "" : "s"}
                             {r.share !== null && !privacyMode ? ` · ${r.share.toFixed(0)}%` : ""}
                         </p>
                     </button>
                 ))}
+                </div>
             </div>
         </Card>
     );
