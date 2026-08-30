@@ -465,9 +465,16 @@ export function buildAnalytics(input: {
     const perAccountSeries = new Map<string, NetWorthPoint[]>();
     for (const acc of accounts) perAccountSeries.set(acc.id, []);
 
+    const periodStartMs = toUTC(period.start);
+    const balanceAtPeriodStart: Record<string, number> = {};
+    for (const acc of accounts) balanceAtPeriodStart[acc.id] = acc.initialBalance;
+
     let chartIndex = 0;
     while (t <= nwEndMs) {
         const d = fromUTC(t);
+        if (t === periodStartMs) {
+            for (const acc of accounts) balanceAtPeriodStart[acc.id] = perAccountRun[acc.id];
+        }
         nwRun += dailyDelta.get(d) ?? 0;
         for (const tx of txsByDate.get(d) ?? []) applyTransactionToBalances(perAccountRun, tx);
         if (chartIndex % step === 0 || t === nwEndMs) {
@@ -483,10 +490,14 @@ export function buildAnalytics(input: {
     const currentNetWorth = round2(nwRun);
     const netWorthByAccount = accounts.map((acc) => {
         const series = perAccountSeries.get(acc.id)!;
+        const current = series.length > 0 ? series[series.length - 1].netWorth : round2(acc.initialBalance);
+        const prevAmount = round2(balanceAtPeriodStart[acc.id] ?? acc.initialBalance);
         return {
             accountId: acc.id,
             name: acc.name,
-            current: series.length > 0 ? series[series.length - 1].netWorth : round2(acc.initialBalance),
+            current,
+            prevAmount,
+            changePct: pctChange(current, prevAmount),
             series,
         };
     });

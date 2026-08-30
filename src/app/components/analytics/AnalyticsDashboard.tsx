@@ -178,6 +178,8 @@ export function AnalyticsDashboard({
                                 rows={data.netWorthByAccount}
                                 accounts={accounts}
                                 privacyMode={privacyMode}
+                                selectedId={selectedAccountId}
+                                onSelect={onSelectAccount}
                             />
                         </Section>
                     </div>
@@ -596,6 +598,8 @@ type BalanceSlice = {
     accountId: string;
     name: string;
     amount: number;
+    prevAmount: number;
+    changePct: number | null;
     color: string;
     share: number | null;
     icon: string | null;
@@ -605,10 +609,14 @@ function AccountBalances({
     rows,
     accounts,
     privacyMode,
+    selectedId,
+    onSelect,
 }: {
     rows: AnalyticsResult["netWorthByAccount"];
     accounts: Account[];
     privacyMode: boolean;
+    selectedId: string;
+    onSelect: (id: string) => void;
 }) {
     const total = rows.reduce((s, r) => s + r.current, 0);
     const items: BalanceSlice[] = [...rows]
@@ -617,6 +625,8 @@ function AccountBalances({
             accountId: r.accountId,
             name: r.name,
             amount: r.current,
+            prevAmount: r.prevAmount,
+            changePct: r.changePct,
             color: PIE_FALLBACK[i % PIE_FALLBACK.length],
             share: total === 0 ? null : Math.round((r.current / total) * 100),
             icon: accounts.find((a) => a.id === r.accountId)?.icon ?? null,
@@ -697,35 +707,52 @@ function AccountBalances({
                     </div>
                 )}
                 <div className="min-w-0 flex-1 space-y-0.5">
-                    {items.map((r) => (
-                        <div
-                            key={r.accountId}
-                            className="flex items-center justify-between gap-3 rounded-xl px-2 py-2.5"
-                        >
-                            <span className="flex min-w-0 items-center gap-2">
-                                <span
-                                    className="h-2 w-2 shrink-0 rounded-full"
-                                    style={{ backgroundColor: r.color }}
-                                />
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted">
-                                    <AccountIcon iconKey={r.icon ?? "wallet"} className="h-3.5 w-3.5" />
+                    {items.map((r) => {
+                        const active = selectedId === r.accountId;
+                        return (
+                            <button
+                                key={r.accountId}
+                                type="button"
+                                onClick={() => onSelect(active ? "all" : r.accountId)}
+                                className={`flex w-full items-center justify-between gap-3 rounded-xl px-2 py-2.5 text-left transition-colors duration-150 ${
+                                    active ? "bg-chip/80" : "hover:bg-chip/70"
+                                }`}
+                            >
+                                <span className="flex min-w-0 items-center gap-2">
+                                    <span
+                                        className="h-2 w-2 shrink-0 rounded-full"
+                                        style={{ backgroundColor: r.color }}
+                                    />
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted">
+                                        <AccountIcon iconKey={r.icon ?? "wallet"} className="h-3.5 w-3.5" />
+                                    </span>
+                                    <span className="min-w-0 truncate font-semibold text-ink">{r.name}</span>
                                 </span>
-                                <span className="min-w-0 truncate font-semibold text-ink">{r.name}</span>
-                            </span>
-                            <span className="flex shrink-0 items-baseline gap-2">
-                                {r.share !== null && !privacyMode && (
-                                    <span className="text-[11px] text-muted">{r.share.toFixed(0)}%</span>
-                                )}
-                                <span
-                                    className={`font-bold tabular-nums ${
-                                        r.amount >= 0 ? "text-ink" : "text-danger"
-                                    } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
-                                >
-                                    {formatCurrency(r.amount, privacyMode)}
+                                <span className="flex shrink-0 items-baseline gap-2">
+                                    <DeltaPill
+                                        delta={
+                                            r.changePct === null
+                                                ? null
+                                                : {
+                                                      current: r.amount,
+                                                      previous: r.prevAmount,
+                                                      change: r.amount - r.prevAmount,
+                                                      changePct: r.changePct,
+                                                  }
+                                        }
+                                        privacyMode={privacyMode}
+                                    />
+                                    <span
+                                        className={`font-bold tabular-nums ${
+                                            r.amount >= 0 ? "text-ink" : "text-danger"
+                                        } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
+                                    >
+                                        {formatCurrency(r.amount, privacyMode)}
+                                    </span>
                                 </span>
-                            </span>
-                        </div>
-                    ))}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
         </Card>
