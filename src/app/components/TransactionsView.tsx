@@ -19,7 +19,7 @@ export function TransactionsView({
     onTransactionChanged: () => void;
 }) {
     const [transactions, setTransactions] = useState<Transaction[]>([]);
-    const [cursor, setCursor] = useState<{ date: string; id: string } | null>(null);
+    const [cursor, setCursor] = useState<{ date: string; createdAt: string; id: string } | null>(null);
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
@@ -36,7 +36,7 @@ export function TransactionsView({
     const { requestDelete } = useUndoToast();
 
     const fetchPage = useCallback(
-        async (after: { date: string; id: string } | null, replace: boolean) => {
+        async (after: { date: string; createdAt: string; id: string } | null, replace: boolean) => {
             const params = new URLSearchParams();
             if (search) params.set("search", search);
             if (categoryFilter) params.set("category", categoryFilter);
@@ -46,6 +46,7 @@ export function TransactionsView({
             if (dateTo) params.set("endDate", dateTo);
             if (after) {
                 params.set("cursorDate", after.date);
+                params.set("cursorCreatedAt", after.createdAt);
                 params.set("cursorId", after.id);
             }
 
@@ -53,7 +54,7 @@ export function TransactionsView({
             const data = (await res.json()) as {
                 success: boolean;
                 transactions?: Transaction[];
-                nextCursor?: { date: string; id: string } | null;
+                nextCursor?: { date: string; createdAt: string; id: string } | null;
             };
             if (data.success && data.transactions) {
                 setTransactions((prev) => (replace ? data.transactions! : [...prev, ...data.transactions!]));

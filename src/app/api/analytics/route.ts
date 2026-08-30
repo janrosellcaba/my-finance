@@ -35,6 +35,7 @@ export async function GET(request: Request) {
                     amount: transaction.amount,
                     accountId: transaction.accountId,
                     destinationId: transaction.destinationId,
+                    createdAt: transaction.createdAt,
                 })
                 .from(transaction)
                 .where(eq(transaction.userId, user.id))

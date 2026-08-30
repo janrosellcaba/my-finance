@@ -45,8 +45,12 @@ export const transaction = sqliteTable("transaction", {
     accountId: text("account_id").notNull().references(() => account.id, { onDelete: "restrict" }),
 
     destinationId: text("destination_id").notNull(),
+    // Insertion time — breaks ties on the same calendar date so entry order is respected
+    // (newest-created first in the list). ISO-8601 with ms, e.g. 2026-08-30T14:32:01.123Z.
+    createdAt: text("created_at").notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
 }, (table) => [
     index("idx_transaction_user_date").on(table.userId, table.date),
+    index("idx_transaction_user_date_created").on(table.userId, table.date, table.createdAt),
     index("idx_transaction_user_category").on(table.userId, table.destinationId),
     index("idx_transaction_user_account").on(table.userId, table.accountId),
 ]);

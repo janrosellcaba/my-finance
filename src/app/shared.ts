@@ -22,6 +22,7 @@ export type Transaction = {
     amount: number;
     accountId: string;
     destinationId: string;
+    createdAt?: string;
     /** Account balance after this transaction (source account). */
     balanceAfter?: number;
 };

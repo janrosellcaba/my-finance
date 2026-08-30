@@ -3,7 +3,7 @@ import { getDb } from "@/db";
 import { transaction, account } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { applyTransactionToBalances, round2 } from "@/lib/balances";
-import { and, desc, eq, gte, lt, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
 
 // How much history the home screen's net-worth sparkline and account "% change"
 // badges look back over. Kept short — this is an at-a-glance widget, not analytics.
@@ -74,6 +74,7 @@ export async function GET() {
                 })
                 .from(transaction)
                 .where(and(eq(transaction.userId, user.id), gte(transaction.date, startDate)))
+                .orderBy(asc(transaction.date), asc(transaction.createdAt), asc(transaction.id))
                 .all(),
         ]);
 
@@ -119,7 +120,7 @@ export async function GET() {
             .select()
             .from(transaction)
             .where(eq(transaction.userId, user.id))
-            .orderBy(desc(transaction.date))
+            .orderBy(desc(transaction.date), desc(transaction.createdAt), desc(transaction.id))
             .limit(5)
             .all();
 

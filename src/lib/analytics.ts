@@ -18,6 +18,7 @@ export type AnalyticsTx = {
     amount: number;
     accountId: string;
     destinationId: string;
+    createdAt?: string;
 };
 
 export type AnalyticsAccount = { id: string; name: string; initialBalance: number };
@@ -478,7 +479,13 @@ export function buildAnalytics(input: {
     today: string;
 }) {
     const { accounts, categories, mode, anchor, today } = input;
-    const txs = [...input.txs].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : a.id < b.id ? -1 : 1));
+    const txs = [...input.txs].sort((a, b) => {
+        if (a.date !== b.date) return a.date < b.date ? -1 : 1;
+        const aCreated = a.createdAt ?? "";
+        const bCreated = b.createdAt ?? "";
+        if (aCreated !== bCreated) return aCreated < bCreated ? -1 : 1;
+        return a.id < b.id ? -1 : 1;
+    });
 
     const categoryById = new Map(categories.map((c) => [c.id, c]));
     const accountById = new Map(accounts.map((a) => [a.id, a]));

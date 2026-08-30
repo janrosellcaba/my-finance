@@ -113,6 +113,7 @@ export async function POST(request: Request) {
         }
 
         const initialBalanceDeltas = new Map<string, number>();
+        const importStartedAt = Date.now();
         const transactionRows: {
             id: string;
             userId: string;
@@ -122,6 +123,7 @@ export async function POST(request: Request) {
             amount: number;
             accountId: string;
             destinationId: string;
+            createdAt: string;
         }[] = [];
 
         let initialBalanceRowsApplied = 0;
@@ -149,6 +151,8 @@ export async function POST(request: Request) {
                 amount: row.amount,
                 accountId,
                 destinationId,
+                // Preserve CSV row order within the same calendar date.
+                createdAt: new Date(importStartedAt + transactionRows.length).toISOString(),
             });
         }
 

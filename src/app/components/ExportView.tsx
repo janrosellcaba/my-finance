@@ -16,18 +16,19 @@ type Transaction = {
 
 async function fetchAllTransactions(): Promise<Transaction[]> {
     const all: Transaction[] = [];
-    let cursor: { date: string; id: string } | null = null;
+    let cursor: { date: string; createdAt: string; id: string } | null = null;
     for (;;) {
         const params = new URLSearchParams();
         if (cursor) {
             params.set("cursorDate", cursor.date);
+            params.set("cursorCreatedAt", cursor.createdAt);
             params.set("cursorId", cursor.id);
         }
         const res = await fetch(`/api/transactions?${params.toString()}`);
         const data = (await res.json()) as {
             success: boolean;
             transactions?: Transaction[];
-            nextCursor?: { date: string; id: string } | null;
+            nextCursor?: { date: string; createdAt: string; id: string } | null;
         };
         if (!data.success || !data.transactions) break;
         all.push(...data.transactions);

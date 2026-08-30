@@ -63,6 +63,7 @@ export async function POST(request: Request) {
             amount: round2(amount),
             accountId,
             destinationId,
+            createdAt: new Date().toISOString(),
         });
 
         return NextResponse.json({ success: true, transactionId }, { status: 201 });
@@ -186,6 +187,7 @@ export async function GET(request: Request) {
         const startDate = searchParams.get("startDate") || "";
         const endDate = searchParams.get("endDate") || "";
         const cursorDate = searchParams.get("cursorDate") || "";
+        const cursorCreatedAt = searchParams.get("cursorCreatedAt") || "";
         const cursorId = searchParams.get("cursorId") || "";
 
         if (typeFilter && !["income", "expense", "transfer"].includes(typeFilter)) {
@@ -219,13 +221,18 @@ export async function GET(request: Request) {
         if (endDate) {
             conditions.push(lte(transaction.date, endDate));
         }
-        if (cursorDate && cursorId) {
-            // Keyset pagination: fetch strictly-older rows than the last one seen, using the
-            // (userId, date) index instead of an OFFSET that would re-scan every skipped row.
+        if (cursorDate && cursorCreatedAt && cursorId) {
+            // Keyset pagination: strictly older than (date, createdAt, id). createdAt is the
+            // same-day tiebreaker so entry order is preserved (newest-created first).
             conditions.push(
                 or(
                     lt(transaction.date, cursorDate),
-                    and(eq(transaction.date, cursorDate), lt(transaction.id, cursorId))
+                    and(eq(transaction.date, cursorDate), lt(transaction.createdAt, cursorCreatedAt)),
+                    and(
+                        eq(transaction.date, cursorDate),
+                        eq(transaction.createdAt, cursorCreatedAt),
+                        lt(transaction.id, cursorId)
+                    )
                 )!
             );
         }
@@ -234,13 +241,15 @@ export async function GET(request: Request) {
             .select()
             .from(transaction)
             .where(and(...conditions))
-            .orderBy(desc(transaction.date), desc(transaction.id))
+            .orderBy(desc(transaction.date), desc(transaction.createdAt), desc(transaction.id))
             .limit(LIMIT)
             .all();
 
         const last = transactionsList[transactionsList.length - 1];
         const nextCursor =
-            transactionsList.length === LIMIT && last ? { date: last.date, id: last.id } : null;
+            transactionsList.length === LIMIT && last
+                ? { date: last.date, createdAt: last.createdAt, id: last.id }
+                : null;
 
         // Running balance after each tx (source account), computed from full history so
         // filters/pagination don't skew the number under each amount.
@@ -260,7 +269,7 @@ export async function GET(request: Request) {
                     })
                     .from(transaction)
                     .where(eq(transaction.userId, user.id))
-                    .orderBy(asc(transaction.date), asc(transaction.id))
+                    .orderBy(asc(transaction.date), asc(transaction.createdAt), asc(transaction.id))
                     .all(),
             ]);
 
@@ -285,7 +294,14 @@ export async function GET(request: Request) {
             success: true,
             limit: LIMIT,
             transactions: transactionsList.map((tx) => ({
-                ...tx,
+                id: tx.id,
+                date: tx.date,
+                description: tx.description,
+                type: tx.type,
+                amount: tx.amount,
+                accountId: tx.accountId,
+                destinationId: tx.destinationId,
+                createdAt: tx.createdAt,
                 balanceAfter: balanceAfterById[tx.id] ?? 0,
             })),
             nextCursor,
