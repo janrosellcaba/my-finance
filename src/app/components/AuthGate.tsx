@@ -102,11 +102,11 @@ export function AuthGate() {
                     {mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}
                 </button>
 
-                <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
-                    Need help?{" "}
+                <p className="mt-4 text-center text-xs text-muted">
+                    Contact support{" "}
                     <a
                         href={`mailto:${SUPPORT_EMAIL}?subject=MyFinance%20support`}
-                        className="font-semibold text-brand transition-colors duration-150 hover:text-brand-dark"
+                        className="font-medium text-brand transition-colors duration-150 hover:text-brand-dark"
                     >
                         {SUPPORT_EMAIL}
                     </a>
