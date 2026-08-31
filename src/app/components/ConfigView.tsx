@@ -13,6 +13,7 @@ import {
     INPUT_CLS,
     parseAmountEs,
     PRIMARY_BTN,
+    SUPPORT_EMAIL,
 } from "../shared";
 import { AccountList } from "./AccountList";
 import { CategoryList } from "./CategoryList";
@@ -44,8 +45,6 @@ const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
     support: "Contact support",
     danger: "Delete data",
 };
-
-const SUPPORT_EMAIL = "jan@janrosell.com";
 
 function SegmentedButton({
     active,

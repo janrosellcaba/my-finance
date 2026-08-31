@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { INPUT_CLS, PRIMARY_BTN } from "../shared";
+import { INPUT_CLS, PRIMARY_BTN, SUPPORT_EMAIL } from "../shared";
 import { PasswordInput } from "./PasswordInput";
 
 export function AuthGate() {
@@ -101,6 +101,16 @@ export function AuthGate() {
                 >
                     {mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}
                 </button>
+
+                <p className="mt-6 border-t border-line pt-5 text-center text-sm text-muted">
+                    Need help?{" "}
+                    <a
+                        href={`mailto:${SUPPORT_EMAIL}?subject=MyFinance%20support`}
+                        className="font-semibold text-brand transition-colors duration-150 hover:text-brand-dark"
+                    >
+                        {SUPPORT_EMAIL}
+                    </a>
+                </p>
             </div>
         </div>
     );

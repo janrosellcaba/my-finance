@@ -196,6 +196,8 @@ export const DANGER_BTN =
 export const INK_BTN =
     "btn-raised-ink rounded-xl px-5 py-3 font-semibold text-paper select-none disabled:opacity-60";
 
+export const SUPPORT_EMAIL = "jan@janrosell.com";
+
 // Dates are stored as "YYYY-MM-DD"; display format follows Appearance → date format.
 export function getTodayLocalDateISO(d = new Date()): string {
     const y = d.getFullYear();
