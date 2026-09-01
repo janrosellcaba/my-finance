@@ -404,7 +404,7 @@ export function ConfigView({
             <div className="space-y-6 px-5 pt-6">
                 <div>
                     <h1 className="text-2xl font-extrabold text-ink">Settings</h1>
-                    <p className="mt-1 text-sm text-muted">Accounts, data, look &amp; feel, and account safety.</p>
+                    {/* <p className="mt-1 text-sm text-muted">Accounts, data, look &amp; feel, and account safety.</p> */}
                 </div>
 
                 {error && <p className="text-sm font-medium text-danger">{error}</p>}
