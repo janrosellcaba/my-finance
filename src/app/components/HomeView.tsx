@@ -138,6 +138,7 @@ export function HomeView({
                             accounts={accounts}
                             categories={categories}
                             privacyMode={privacyMode}
+                            accountBalance={tx.balanceAfter}
                         />
                     ))}
                 </div>

@@ -106,6 +106,14 @@ export const CATEGORY_COLOR_PALETTE = [
     "#f3bfce",
 ];
 
+/** Pastel chip fill + a darker same-hue glyph so category icons stay readable. */
+export function categoryChipStyle(color: string): { backgroundColor: string; color: string } {
+    return {
+        backgroundColor: color,
+        color: `color-mix(in srgb, ${color} 34%, #141210)`,
+    };
+}
+
 // Curated icon keys offered as the category icon picker — resolved to actual icon
 // components in icons.tsx (kept separate so this file stays framework-agnostic).
 export const CATEGORY_ICON_KEYS = [

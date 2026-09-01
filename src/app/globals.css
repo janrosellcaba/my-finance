@@ -217,9 +217,9 @@ body {
 		0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
-/* Subtle Linear-style raised primary — soft top highlight, thin rim, short depth. */
+/* Subtle Linear-style raised primary — soft top highlight, same-hue rim, short depth. */
 .btn-raised {
-	border: 1px solid color-mix(in srgb, var(--color-brand-dark) 70%, black);
+	border: 1px solid color-mix(in srgb, var(--color-brand-dark) 70%, var(--color-brand));
 	background: linear-gradient(
 		180deg,
 		color-mix(in srgb, var(--color-brand) 78%, white) 0%,
@@ -228,8 +228,8 @@ body {
 	);
 	box-shadow:
 		inset 0 1px 0 rgba(255, 255, 255, 0.28),
-		inset 0 -1px 0 rgba(0, 0, 0, 0.12),
-		0 1px 2px rgba(0, 0, 0, 0.14);
+		inset 0 -1px 0 color-mix(in srgb, var(--color-brand-dark) 28%, transparent),
+		0 1px 2px color-mix(in srgb, var(--color-brand-dark) 22%, transparent);
 	transition:
 		transform 150ms ease-out,
 		box-shadow 150ms ease-out,
@@ -250,7 +250,7 @@ body {
 }
 
 :root[data-theme="dark"] .btn-raised {
-	border-color: color-mix(in srgb, var(--color-brand-dark) 55%, black);
+	border-color: color-mix(in srgb, var(--color-brand) 55%, var(--color-brand-dark));
 	background: linear-gradient(
 		180deg,
 		color-mix(in srgb, var(--color-brand) 55%, white) 0%,
@@ -259,8 +259,8 @@ body {
 	);
 	box-shadow:
 		inset 0 1px 0 rgba(255, 255, 255, 0.22),
-		inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-		0 1px 2px rgba(0, 0, 0, 0.35);
+		inset 0 -1px 0 color-mix(in srgb, var(--color-brand-dark) 40%, transparent),
+		0 1px 2px rgba(0, 0, 0, 0.28);
 }
 
 .btn-raised-ink {

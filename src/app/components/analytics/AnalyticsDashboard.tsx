@@ -15,7 +15,7 @@ import {
     YAxis,
 } from "recharts";
 import type { AnalyticsResult, CategoryRow } from "@/lib/analytics";
-import { type Account, type Category, type Transaction, AMOUNT_MASK, formatCurrency, formatDate } from "../../shared";
+import { type Account, type Category, type Transaction, AMOUNT_MASK, categoryChipStyle, formatCurrency, formatDate } from "../../shared";
 import { TransactionCard } from "../TransactionCard";
 import { AccountIcon, CategoryIcon, IconClose } from "../icons";
 import { Card, DeltaPill, EmptyNote, Section, StatTile } from "./primitives";
@@ -445,10 +445,7 @@ function CategoryBars({
                                 {r.icon && (
                                     <span
                                         className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg"
-                                        style={{
-                                            backgroundColor: r.color ? `${r.color}25` : undefined,
-                                            color: r.color ?? undefined,
-                                        }}
+                                        style={r.color ? categoryChipStyle(r.color) : undefined}
                                     >
                                         <CategoryIcon iconKey={r.icon} className="h-3.5 w-3.5" />
                                     </span>

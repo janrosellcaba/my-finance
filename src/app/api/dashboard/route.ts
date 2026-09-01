@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/db";
+import { getDb, getSqlite } from "@/db";
 import { transaction, account } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { applyTransactionToBalances, round2 } from "@/lib/balances";
+import { balanceAfterForPage } from "@/lib/runningBalances";
 import { and, asc, desc, eq, gte, lt, sql } from "drizzle-orm";
 
 // How much history the home screen's net-worth sparkline and account "% change"
@@ -116,7 +117,7 @@ export async function GET() {
 
         const totalNetWorth = netWorthHistory[netWorthHistory.length - 1] ?? 0;
 
-        const recentTransactions = await db
+        const recentList = await db
             .select({
                 id: transaction.id,
                 date: transaction.date,
@@ -131,6 +132,14 @@ export async function GET() {
             .orderBy(desc(transaction.date), desc(transaction.createdAt), desc(transaction.id))
             .limit(5)
             .all();
+
+        const balanceAfterById =
+            recentList.length > 0 ? balanceAfterForPage(getSqlite(), user.id, recentList, "") : {};
+
+        const recentTransactions = recentList.map((tx) => ({
+            ...tx,
+            balanceAfter: balanceAfterById[tx.id] ?? 0,
+        }));
 
         return NextResponse.json({
             success: true,

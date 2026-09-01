@@ -1,6 +1,6 @@
 "use client";
 
-import { type Account, type Category, type Transaction, formatCurrency, formatDate } from "../shared";
+import { type Account, type Category, type Transaction, categoryChipStyle, formatCurrency, formatDate } from "../shared";
 import { CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight } from "./icons";
 
 function resolveName(id: string, accounts: Account[], categories: Category[]): string {
@@ -54,17 +54,10 @@ export function TransactionCard({
             <div className="flex min-w-0 items-center gap-3">
                 <span
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-transform duration-150 group-hover:scale-105"
-                    style={{
-                        backgroundColor: categoryColor ? `${categoryColor}25` : undefined,
-                    }}
+                    style={categoryColor ? categoryChipStyle(categoryColor) : undefined}
                 >
                     {categoryIcon ? (
-                        <span
-                            className="flex h-full w-full items-center justify-center rounded-xl"
-                            style={{
-                                color: categoryColor ?? "inherit",
-                            }}
-                        >
+                        <span className="flex h-full w-full items-center justify-center rounded-xl">
                             <CategoryIcon iconKey={categoryIcon} className="h-4.5 w-4.5" />
                         </span>
                     ) : tx.type === "income" ? (
