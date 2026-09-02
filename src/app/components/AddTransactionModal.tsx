@@ -1,12 +1,14 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import {
     type Account,
     type Category,
+    type DescriptionSuggestion,
     type Transaction,
     type TransactionType,
     currencySymbol,
+    formatCurrency,
     getTodayLocalDateISO,
     INPUT_CLS,
     PRIMARY_BTN,
@@ -32,14 +34,6 @@ export function AddTransactionModal({
 }) {
     const isEditing = !!transaction;
 
-    useEffect(() => {
-        function handleKeyDown(e: KeyboardEvent) {
-            if (e.key === "Escape") onClose();
-        }
-        window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [onClose]);
-
     function defaultCategoryFor(t: "income" | "expense"): string {
         return categories.find((c) => c.type === t && c.isDefault)?.id ?? "";
     }
@@ -54,6 +48,60 @@ export function AddTransactionModal({
     const [amount, setAmount] = useState(transaction ? String(Math.abs(transaction.amount)) : "");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
+    const [suggestions, setSuggestions] = useState<DescriptionSuggestion[]>([]);
+    const [listOpen, setListOpen] = useState(false);
+    const [highlight, setHighlight] = useState(0);
+    const [descFocused, setDescFocused] = useState(false);
+    const lastAppliedDescription = useRef<string | null>(null);
+    const listboxId = useId();
+
+    useEffect(() => {
+        function handleKeyDown(e: globalThis.KeyboardEvent) {
+            if (e.key !== "Escape") return;
+            if (listOpen) {
+                e.preventDefault();
+                setListOpen(false);
+                return;
+            }
+            onClose();
+        }
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [onClose, listOpen]);
+
+    useEffect(() => {
+        const q = description.trim();
+        if (lastAppliedDescription.current !== null && q === lastAppliedDescription.current) {
+            return;
+        }
+        lastAppliedDescription.current = null;
+        if (!descFocused || q.length < 2) {
+            setSuggestions([]);
+            setListOpen(false);
+            return;
+        }
+
+        const ac = new AbortController();
+        const timer = window.setTimeout(async () => {
+            try {
+                const params = new URLSearchParams({ q });
+                if (transaction?.id) params.set("exclude", transaction.id);
+                const res = await fetch(`/api/transactions/suggestions?${params}`, { signal: ac.signal });
+                const data = (await res.json()) as { success?: boolean; suggestions?: DescriptionSuggestion[] };
+                if (!data.success || !data.suggestions) return;
+                setSuggestions(data.suggestions);
+                setHighlight(0);
+                setListOpen(data.suggestions.length > 0);
+            } catch (err) {
+                if (err instanceof DOMException && err.name === "AbortError") return;
+            }
+        }, 180);
+
+        return () => {
+            window.clearTimeout(timer);
+            ac.abort();
+        };
+    }, [description, descFocused, transaction?.id]);
 
     const destinationOptions: { id: string; name: string }[] =
         type === "transfer" ? accounts.filter((a) => a.id !== accountId) : categories.filter((c) => c.type === type);
@@ -61,6 +109,54 @@ export function AddTransactionModal({
     function handleTypeChange(next: TransactionType) {
         setType(next);
         setDestinationId(isEditing || next === "transfer" ? "" : defaultCategoryFor(next));
+    }
+
+    function applySuggestion(s: DescriptionSuggestion) {
+        lastAppliedDescription.current = s.description;
+        setDescription(s.description);
+        setType(s.type);
+        if (accounts.some((a) => a.id === s.accountId)) {
+            setAccountId(s.accountId);
+        }
+        const destExists =
+            s.type === "transfer"
+                ? accounts.some((a) => a.id === s.destinationId)
+                : categories.some((c) => c.id === s.destinationId);
+        if (destExists) {
+            setDestinationId(s.destinationId);
+        } else if (s.type !== "transfer") {
+            setDestinationId(defaultCategoryFor(s.type));
+        } else {
+            setDestinationId("");
+        }
+        setAmount(String(Math.abs(s.amount)));
+        setSuggestions([]);
+        setListOpen(false);
+    }
+
+    function handleDescriptionKeyDown(e: KeyboardEvent<HTMLInputElement>) {
+        if (!listOpen || suggestions.length === 0) {
+            if (e.key === "ArrowDown" && suggestions.length > 0) {
+                e.preventDefault();
+                setListOpen(true);
+            }
+            return;
+        }
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setHighlight((i) => (i + 1) % suggestions.length);
+            return;
+        }
+        if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setHighlight((i) => (i - 1 + suggestions.length) % suggestions.length);
+            return;
+        }
+        if (e.key === "Enter") {
+            e.preventDefault();
+            const picked = suggestions[highlight];
+            if (picked) applySuggestion(picked);
+        }
     }
 
     async function handleSubmit(e: FormEvent) {
@@ -194,15 +290,82 @@ export function AddTransactionModal({
                     <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} />
                 </label>
 
-                <label className="mb-3 block">
+                <label className="relative mb-3 block">
                     <span className="mb-1 block text-sm font-semibold text-ink">Description</span>
                     <input
                         type="text"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
+                        onFocus={() => setDescFocused(true)}
+                        onBlur={() => {
+                            setDescFocused(false);
+                            window.setTimeout(() => setListOpen(false), 120);
+                        }}
+                        onKeyDown={handleDescriptionKeyDown}
                         placeholder="e.g. Groceries"
+                        autoComplete="off"
+                        autoCorrect="off"
+                        role="combobox"
+                        aria-autocomplete="list"
+                        aria-expanded={listOpen && suggestions.length > 0}
+                        aria-controls={listboxId}
+                        aria-activedescendant={
+                            listOpen && suggestions[highlight] ? `${listboxId}-${highlight}` : undefined
+                        }
                         className={INPUT_CLS}
                     />
+                    {listOpen && suggestions.length > 0 && (
+                        <ul
+                            id={listboxId}
+                            role="listbox"
+                            aria-label="Past descriptions"
+                            className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-line bg-paper shadow-lg"
+                        >
+                            {suggestions.map((s, i) => {
+                                const fromName = accounts.find((a) => a.id === s.accountId)?.name ?? "Account";
+                                const toName =
+                                    s.type === "transfer"
+                                        ? (accounts.find((a) => a.id === s.destinationId)?.name ?? "Account")
+                                        : (categories.find((c) => c.id === s.destinationId)?.name ?? "Category");
+                                const subtitle =
+                                    s.type === "transfer"
+                                        ? `${fromName} → ${toName}`
+                                        : `${toName} · ${fromName}`;
+                                const amountCls =
+                                    s.type === "expense"
+                                        ? "text-danger"
+                                        : s.type === "income"
+                                          ? "text-brand"
+                                          : "text-ink";
+                                const sign = s.type === "expense" ? "−" : s.type === "income" ? "+" : "";
+                                return (
+                                    <li key={`${s.description}-${s.accountId}-${s.destinationId}-${s.type}`} role="presentation">
+                                        <button
+                                            type="button"
+                                            id={`${listboxId}-${i}`}
+                                            role="option"
+                                            aria-selected={i === highlight}
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onMouseEnter={() => setHighlight(i)}
+                                            onClick={() => applySuggestion(s)}
+                                            className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-150 ${
+                                                i === highlight ? "bg-chip" : "hover:bg-chip/70"
+                                            }`}
+                                        >
+                                            <span className="min-w-0">
+                                                <span className="block truncate font-semibold text-ink">{s.description}</span>
+                                                <span className="block truncate text-xs text-muted">{subtitle}</span>
+                                            </span>
+                                            <span className={`shrink-0 text-sm font-bold tabular-nums ${amountCls}`}>
+                                                {sign}
+                                                {formatCurrency(Math.abs(s.amount))}
+                                            </span>
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    )}
                 </label>
 
                 <label className="mb-3 block">

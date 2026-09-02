@@ -14,6 +14,13 @@ export type Category = {
 };
 
 export type TransactionType = "income" | "expense" | "transfer";
+export type DescriptionSuggestion = {
+    description: string;
+    type: TransactionType;
+    amount: number;
+    accountId: string;
+    destinationId: string;
+};
 export type Transaction = {
     id: string;
     date: string;
