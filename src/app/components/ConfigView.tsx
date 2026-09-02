@@ -14,6 +14,8 @@ import {
     parseAmountEs,
     PRIMARY_BTN,
     SUPPORT_EMAIL,
+    SUPPORT_TOPICS,
+    type SupportTopic,
 } from "../shared";
 import { AccountList } from "./AccountList";
 import { CategoryList } from "./CategoryList";
@@ -107,6 +109,11 @@ export function ConfigView({
     const [error, setError] = useState("");
     const [showChangePassword, setShowChangePassword] = useState(false);
     const [pendingDeleteCategoryIds, setPendingDeleteCategoryIds] = useState<Set<string>>(new Set());
+    const [supportEmail, setSupportEmail] = useState("");
+    const [supportTopic, setSupportTopic] = useState<SupportTopic>("Help");
+    const [supportMessage, setSupportMessage] = useState("");
+    const [supportSending, setSupportSending] = useState(false);
+    const [supportStatus, setSupportStatus] = useState<{ type: "success" | "error"; text: string } | null>(null);
     const { requestDelete } = useUndoToast();
 
     async function handleAddAccount(e: FormEvent) {
@@ -247,6 +254,38 @@ export function ConfigView({
                 onRefresh();
             },
         });
+    }
+
+    async function handleSupportSubmit(e: FormEvent) {
+        e.preventDefault();
+        const email = supportEmail.trim();
+        const message = supportMessage.trim();
+        setSupportStatus(null);
+
+        if (!email || !message) {
+            setSupportStatus({ type: "error", text: "Please fill in your email and message." });
+            return;
+        }
+
+        setSupportSending(true);
+        try {
+            const res = await fetch("/api/contact", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email, topic: supportTopic, message }),
+            });
+            const data = (await res.json()) as { error?: string };
+            if (!res.ok) {
+                setSupportStatus({ type: "error", text: data.error || "Could not send message. Please try again." });
+                return;
+            }
+            setSupportMessage("");
+            setSupportStatus({ type: "success", text: "Message sent — thanks for reaching out!" });
+        } catch {
+            setSupportStatus({ type: "error", text: "Network error. Please try again." });
+        } finally {
+            setSupportSending(false);
+        }
     }
 
     async function handleDeleteAllTransactions() {
@@ -744,23 +783,71 @@ export function ConfigView({
                     <p className="text-sm text-muted">
                         Need help, found a bug, or have an idea? Write to the developer and maintainer of MyFinance.
                     </p>
-                    <div className="rounded-xl bg-chip px-4 py-3">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Email</p>
+                    <form onSubmit={handleSupportSubmit} className="space-y-4">
+                        <label className="block">
+                            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+                                Your email
+                            </span>
+                            <input
+                                type="email"
+                                value={supportEmail}
+                                onChange={(e) => setSupportEmail(e.target.value)}
+                                required
+                                autoComplete="email"
+                                placeholder="you@example.com"
+                                className={INPUT_CLS}
+                            />
+                        </label>
+                        <div className="space-y-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-muted">Topic</p>
+                            <div className="flex gap-2">
+                                {SUPPORT_TOPICS.map((topic) => (
+                                    <SegmentedButton
+                                        key={topic}
+                                        active={supportTopic === topic}
+                                        onClick={() => setSupportTopic(topic)}
+                                    >
+                                        {topic}
+                                    </SegmentedButton>
+                                ))}
+                            </div>
+                        </div>
+                        <label className="block">
+                            <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
+                                Message
+                            </span>
+                            <textarea
+                                value={supportMessage}
+                                onChange={(e) => setSupportMessage(e.target.value)}
+                                required
+                                rows={5}
+                                maxLength={2000}
+                                placeholder="What were you doing, and roughly when?"
+                                className={`${INPUT_CLS} resize-y`}
+                            />
+                        </label>
+                        {supportStatus && (
+                            <p
+                                role="status"
+                                className={`text-sm font-medium ${
+                                    supportStatus.type === "success" ? "text-brand" : "text-danger"
+                                }`}
+                            >
+                                {supportStatus.text}
+                            </p>
+                        )}
+                        <button type="submit" disabled={supportSending} className={`${PRIMARY_BTN} w-full`}>
+                            {supportSending ? "Sending…" : "Send message"}
+                        </button>
+                    </form>
+                    <p className="text-xs text-muted">
+                        Or email{" "}
                         <a
                             href={`mailto:${SUPPORT_EMAIL}?subject=MyFinance%20support`}
-                            className="mt-1 block text-base font-bold text-brand break-all"
+                            className="font-medium text-brand transition-colors duration-150 hover:text-brand-dark"
                         >
                             {SUPPORT_EMAIL}
                         </a>
-                    </div>
-                    <a
-                        href={`mailto:${SUPPORT_EMAIL}?subject=MyFinance%20support`}
-                        className={`${PRIMARY_BTN} block w-full text-center`}
-                    >
-                        Write an email
-                    </a>
-                    <p className="text-xs text-muted">
-                        Include what you were doing and roughly when it happened — that makes replies much faster.
                     </p>
                 </section>
             )}

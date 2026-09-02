@@ -206,6 +206,9 @@ export const INK_BTN =
 
 export const SUPPORT_EMAIL = "jan@janrosell.com";
 
+export const SUPPORT_TOPICS = ["Help", "Bug", "Idea"] as const;
+export type SupportTopic = (typeof SUPPORT_TOPICS)[number];
+
 // Dates are stored as "YYYY-MM-DD"; display format follows Appearance → date format.
 export function getTodayLocalDateISO(d = new Date()): string {
     const y = d.getFullYear();
