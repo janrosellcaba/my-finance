@@ -83,6 +83,25 @@ if [ "$accent_cols" = "0" ]; then
     exit 1
 fi
 
+todo_parent_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='parent_id';")"
+todo_sort_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='sort_order';")"
+if [ "$todo_parent_cols" = "0" ] || [ "$todo_sort_cols" = "0" ]; then
+    echo "==> Adding missing todo parent_id / sort_order columns..."
+    if [ "$todo_parent_cols" = "0" ]; then
+        sqlite3 "$DATABASE_URL" "ALTER TABLE todo ADD COLUMN parent_id text;"
+    fi
+    if [ "$todo_sort_cols" = "0" ]; then
+        sqlite3 "$DATABASE_URL" "ALTER TABLE todo ADD COLUMN sort_order integer NOT NULL DEFAULT 0;"
+    fi
+    sqlite3 "$DATABASE_URL" "CREATE INDEX IF NOT EXISTS idx_todo_user_parent_sort ON todo (user_id, parent_id, sort_order);"
+fi
+todo_parent_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='parent_id';")"
+todo_sort_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='sort_order';")"
+if [ "$todo_parent_cols" = "0" ] || [ "$todo_sort_cols" = "0" ]; then
+    echo "❌ todo parent_id / sort_order are still missing"
+    exit 1
+fi
+
 echo "==> 🏗️ Building Next.js application..."
 npm run build
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import {
     type Account,
     type Category,
@@ -8,13 +8,12 @@ import {
     type Transaction,
     type TransactionType,
     currencySymbol,
-    formatCurrency,
     getTodayLocalDateISO,
     INPUT_CLS,
     PRIMARY_BTN,
     parseAmountInput,
 } from "../shared";
-import { IconClose } from "./icons";
+import { IconClose, IconChevronRight } from "./icons";
 import { enqueueOutbox } from "@/lib/offlineStore";
 
 export function AddTransactionModal({
@@ -48,26 +47,35 @@ export function AddTransactionModal({
     const [amount, setAmount] = useState(transaction ? String(Math.abs(transaction.amount)) : "");
     const [error, setError] = useState("");
     const [saving, setSaving] = useState(false);
-    const [suggestions, setSuggestions] = useState<DescriptionSuggestion[]>([]);
-    const [listOpen, setListOpen] = useState(false);
-    const [highlight, setHighlight] = useState(0);
+    const [suggestion, setSuggestion] = useState<DescriptionSuggestion | null>(null);
     const [descFocused, setDescFocused] = useState(false);
     const lastAppliedDescription = useRef<string | null>(null);
-    const listboxId = useId();
+    const dismissedFor = useRef<string | null>(null);
+    const descInputRef = useRef<HTMLInputElement>(null);
+    const ghostRef = useRef<HTMLDivElement>(null);
+    const suggestionRef = useRef<DescriptionSuggestion | null>(null);
+    suggestionRef.current = suggestion;
+
+    function syncGhostScroll() {
+        if (ghostRef.current && descInputRef.current) {
+            ghostRef.current.scrollLeft = descInputRef.current.scrollLeft;
+        }
+    }
 
     useEffect(() => {
         function handleKeyDown(e: globalThis.KeyboardEvent) {
             if (e.key !== "Escape") return;
-            if (listOpen) {
+            if (suggestion) {
                 e.preventDefault();
-                setListOpen(false);
+                dismissedFor.current = description.trim().toLowerCase();
+                setSuggestion(null);
                 return;
             }
             onClose();
         }
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, [onClose, listOpen]);
+    }, [onClose, suggestion, description]);
 
     useEffect(() => {
         const q = description.trim();
@@ -75,11 +83,20 @@ export function AddTransactionModal({
             return;
         }
         lastAppliedDescription.current = null;
-        if (!descFocused || q.length < 2) {
-            setSuggestions([]);
-            setListOpen(false);
+        if (dismissedFor.current !== null && q.toLowerCase() !== dismissedFor.current) {
+            dismissedFor.current = null;
+        }
+        if (!descFocused || q.length < 2 || dismissedFor.current === q.toLowerCase()) {
+            setSuggestion(null);
             return;
         }
+
+        const typed = description.toLowerCase();
+        const current = suggestionRef.current;
+        if (current && current.description.toLowerCase().startsWith(typed)) {
+            return;
+        }
+        setSuggestion(null);
 
         const ac = new AbortController();
         const timer = window.setTimeout(async () => {
@@ -88,20 +105,35 @@ export function AddTransactionModal({
                 if (transaction?.id) params.set("exclude", transaction.id);
                 const res = await fetch(`/api/transactions/suggestions?${params}`, { signal: ac.signal });
                 const data = (await res.json()) as { success?: boolean; suggestions?: DescriptionSuggestion[] };
-                if (!data.success || !data.suggestions) return;
-                setSuggestions(data.suggestions);
-                setHighlight(0);
-                setListOpen(data.suggestions.length > 0);
+                if (!data.success || !data.suggestions?.[0]) {
+                    setSuggestion(null);
+                    return;
+                }
+                const next = data.suggestions[0];
+                if (!next.description.toLowerCase().startsWith(typed)) {
+                    setSuggestion(null);
+                    return;
+                }
+                setSuggestion(next);
             } catch (err) {
                 if (err instanceof DOMException && err.name === "AbortError") return;
             }
-        }, 180);
+        }, 120);
 
         return () => {
             window.clearTimeout(timer);
             ac.abort();
         };
     }, [description, descFocused, transaction?.id]);
+
+    useEffect(() => {
+        syncGhostScroll();
+    }, [description, suggestion]);
+
+    const ghostSuffix =
+        suggestion && suggestion.description.length > description.length
+            ? suggestion.description.slice(description.length)
+            : "";
 
     const destinationOptions: { id: string; name: string }[] =
         type === "transfer" ? accounts.filter((a) => a.id !== accountId) : categories.filter((c) => c.type === type);
@@ -130,33 +162,19 @@ export function AddTransactionModal({
             setDestinationId("");
         }
         setAmount(String(Math.abs(s.amount)));
-        setSuggestions([]);
-        setListOpen(false);
+        setSuggestion(null);
     }
 
     function handleDescriptionKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-        if (!listOpen || suggestions.length === 0) {
-            if (e.key === "ArrowDown" && suggestions.length > 0) {
-                e.preventDefault();
-                setListOpen(true);
-            }
-            return;
-        }
-        if (e.key === "ArrowDown") {
-            e.preventDefault();
-            setHighlight((i) => (i + 1) % suggestions.length);
-            return;
-        }
-        if (e.key === "ArrowUp") {
-            e.preventDefault();
-            setHighlight((i) => (i - 1 + suggestions.length) % suggestions.length);
-            return;
-        }
-        if (e.key === "Enter") {
-            e.preventDefault();
-            const picked = suggestions[highlight];
-            if (picked) applySuggestion(picked);
-        }
+        if (!suggestion || e.nativeEvent.isComposing) return;
+        const accept =
+            e.key === "Tab" ||
+            (e.key === "ArrowRight" &&
+                e.currentTarget.selectionStart === e.currentTarget.selectionEnd &&
+                e.currentTarget.selectionStart === description.length);
+        if (!accept) return;
+        e.preventDefault();
+        applySuggestion(suggestion);
     }
 
     async function handleSubmit(e: FormEvent) {
@@ -290,82 +308,63 @@ export function AddTransactionModal({
                     <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} />
                 </label>
 
-                <label className="relative mb-3 block">
+                <label className="mb-3 block">
                     <span className="mb-1 block text-sm font-semibold text-ink">Description</span>
-                    <input
-                        type="text"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        onFocus={() => setDescFocused(true)}
-                        onBlur={() => {
-                            setDescFocused(false);
-                            window.setTimeout(() => setListOpen(false), 120);
-                        }}
-                        onKeyDown={handleDescriptionKeyDown}
-                        placeholder="e.g. Groceries"
-                        autoComplete="off"
-                        autoCorrect="off"
-                        role="combobox"
-                        aria-autocomplete="list"
-                        aria-expanded={listOpen && suggestions.length > 0}
-                        aria-controls={listboxId}
-                        aria-activedescendant={
-                            listOpen && suggestions[highlight] ? `${listboxId}-${highlight}` : undefined
-                        }
-                        className={INPUT_CLS}
-                    />
-                    {listOpen && suggestions.length > 0 && (
-                        <ul
-                            id={listboxId}
-                            role="listbox"
-                            aria-label="Past descriptions"
-                            className="absolute left-0 right-0 z-20 mt-1 max-h-64 overflow-y-auto rounded-2xl border border-line bg-paper shadow-lg"
-                        >
-                            {suggestions.map((s, i) => {
-                                const fromName = accounts.find((a) => a.id === s.accountId)?.name ?? "Account";
-                                const toName =
-                                    s.type === "transfer"
-                                        ? (accounts.find((a) => a.id === s.destinationId)?.name ?? "Account")
-                                        : (categories.find((c) => c.id === s.destinationId)?.name ?? "Category");
-                                const subtitle =
-                                    s.type === "transfer"
-                                        ? `${fromName} → ${toName}`
-                                        : `${toName} · ${fromName}`;
-                                const amountCls =
-                                    s.type === "expense"
-                                        ? "text-danger"
-                                        : s.type === "income"
-                                          ? "text-brand"
-                                          : "text-ink";
-                                const sign = s.type === "expense" ? "−" : s.type === "income" ? "+" : "";
-                                return (
-                                    <li key={`${s.description}-${s.accountId}-${s.destinationId}-${s.type}`} role="presentation">
-                                        <button
-                                            type="button"
-                                            id={`${listboxId}-${i}`}
-                                            role="option"
-                                            aria-selected={i === highlight}
-                                            onMouseDown={(e) => e.preventDefault()}
-                                            onMouseEnter={() => setHighlight(i)}
-                                            onClick={() => applySuggestion(s)}
-                                            className={`flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-150 ${
-                                                i === highlight ? "bg-chip" : "hover:bg-chip/70"
-                                            }`}
-                                        >
-                                            <span className="min-w-0">
-                                                <span className="block truncate font-semibold text-ink">{s.description}</span>
-                                                <span className="block truncate text-xs text-muted">{subtitle}</span>
-                                            </span>
-                                            <span className={`shrink-0 text-sm font-bold tabular-nums ${amountCls}`}>
-                                                {sign}
-                                                {formatCurrency(Math.abs(s.amount))}
-                                            </span>
-                                        </button>
-                                    </li>
-                                );
-                            })}
-                        </ul>
-                    )}
+                    <div className="field-recessed relative w-full rounded-xl border border-line bg-paper text-base text-ink transition-colors duration-150 focus-within:border-brand focus-within:outline-none focus-within:ring-4 focus-within:ring-brand/10">
+                        {ghostSuffix && (
+                            <div
+                                ref={ghostRef}
+                                aria-hidden
+                                className={`pointer-events-none absolute inset-0 z-[1] overflow-hidden whitespace-pre px-4 py-3 text-base leading-normal select-none ${
+                                    suggestion ? "pr-12" : ""
+                                }`}
+                            >
+                                <span className="text-transparent">{description}</span>
+                                <span
+                                    className="pointer-events-auto text-muted/55"
+                                    onPointerDown={(e) => {
+                                        e.preventDefault();
+                                        if (suggestion) applySuggestion(suggestion);
+                                    }}
+                                >
+                                    {ghostSuffix}
+                                </span>
+                            </div>
+                        )}
+                        <input
+                            ref={descInputRef}
+                            type="text"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            onFocus={() => setDescFocused(true)}
+                            onBlur={() => setDescFocused(false)}
+                            onKeyDown={handleDescriptionKeyDown}
+                            onScroll={syncGhostScroll}
+                            placeholder="e.g. Groceries"
+                            autoComplete="off"
+                            autoCorrect="off"
+                            spellCheck={false}
+                            aria-autocomplete="inline"
+                            className={`relative w-full bg-transparent px-4 py-3 text-base leading-normal text-ink outline-none ${
+                                suggestion ? "pr-12" : ""
+                            }`}
+                        />
+                        {suggestion && (
+                            <button
+                                type="button"
+                                tabIndex={-1}
+                                aria-label="Accept suggestion"
+                                onPointerDown={(e) => {
+                                    e.preventDefault();
+                                    applySuggestion(suggestion);
+                                }}
+                                className="absolute right-1.5 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 touch-manipulation items-center justify-center rounded-lg text-muted transition-colors duration-150 hover:bg-chip hover:text-ink sm:w-auto sm:px-2.5"
+                            >
+                                <span className="hidden text-[10px] font-bold uppercase tracking-wider sm:inline">Tab</span>
+                                <IconChevronRight className="h-5 w-5 sm:hidden" />
+                            </button>
+                        )}
+                    </div>
                 </label>
 
                 <label className="mb-3 block">
