@@ -64,9 +64,12 @@ export const todo = sqliteTable("todo", {
     text: text("text").notNull(),
     dueDate: text("due_date"),
     completed: integer("completed", { mode: "boolean" }).notNull().default(false),
+    parentId: text("parent_id"),
+    sortOrder: integer("sort_order").notNull().default(0),
     createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
 }, (table) => [
-    index("idx_todo_user").on(table.userId)
+    index("idx_todo_user").on(table.userId),
+    index("idx_todo_user_parent_sort").on(table.userId, table.parentId, table.sortOrder),
 ]);
 
 export const session = sqliteTable("session", {

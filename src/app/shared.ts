@@ -45,6 +45,8 @@ export type Todo = {
     text: string;
     dueDate: string | null;
     completed: boolean;
+    parentId: string | null;
+    sortOrder: number;
     createdAt: string;
 };
 export type Tab = "home" | "transactions" | "todo" | "analytics" | "config";
