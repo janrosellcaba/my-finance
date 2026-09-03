@@ -188,10 +188,10 @@ export function IconGrip({ className }: { className?: string }) {
 export function IconUtensils({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M7 3v7a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2V3" />
-            <path d="M9 12v9" />
-            <path d="M16 3v9h0a3 3 0 0 0 3-3V3" />
-            <path d="M16 12v9" />
+            <path d="M4.5 3.5v6.2c0 1.4 1.1 2.5 2.5 2.5h2c1.4 0 2.5-1.1 2.5-2.5V3.5" />
+            <path d="M8.5 3.5v17" />
+            <path d="M16.5 3.5v17" />
+            <path d="M16.5 3.5a5.25 5.25 0 0 1 0 10.5" />
         </svg>
     );
 }
@@ -284,7 +284,7 @@ export function IconTicket({ className }: { className?: string }) {
 export function IconPlane({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M21 16.2 14.2 13.5V9.8A1.8 1.8 0 0 0 12.4 8H12a1.8 1.8 0 0 0-1.8 1.8v3.7L3 16.2v1.6l7.2-1.7V19l-1.8 1.2V21l2.8-.8L14 21v-.8L12.2 19v-3l7.2 1.7Z" />
+            <path d="M16 10h4a2 2 0 0 1 0 4h-4l-4 7h-3l2-7H7L5 16H3l1.8-4L3 8h2l2 2h4L9 3h3z" />
         </svg>
     );
 }
@@ -345,16 +345,13 @@ export function IconSport({ className }: { className?: string }) {
     );
 }
 
-/** Bizum-style mark: slanted rounded bars forming a lightning bolt + two dots. */
+/** Bizum-style mark: lightning bolt + two dots. */
 export function IconBizum({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" className={className} fill="currentColor" aria-hidden>
-            <rect x="12.2" y="2.2" width="7.2" height="2.6" rx="1.3" transform="rotate(36 15.8 3.5)" />
-            <rect x="9.4" y="6.4" width="7.2" height="2.6" rx="1.3" transform="rotate(36 13 7.7)" />
-            <rect x="6.6" y="10.6" width="7.2" height="2.6" rx="1.3" transform="rotate(36 10.2 11.9)" />
-            <rect x="3.8" y="14.8" width="7.2" height="2.6" rx="1.3" transform="rotate(36 7.4 16.1)" />
-            <circle cx="16.8" cy="14.2" r="1.55" />
-            <circle cx="19.6" cy="17.6" r="1.55" />
+            <path d="M13.4 2.2 6.2 13.1h5.05L9 21.8l8.2-11.4h-5.05L13.4 2.2Z" />
+            <circle cx="18.35" cy="16.1" r="1.55" />
+            <circle cx="20.7" cy="19.35" r="1.55" />
         </svg>
     );
 }
