@@ -13,6 +13,7 @@ import {
     PRIMARY_BTN,
     parseAmountInput,
 } from "../shared";
+import { useT } from "@/i18n/I18nProvider";
 import { IconClose, IconChevronRight } from "./icons";
 import { enqueueOutbox } from "@/lib/offlineStore";
 
@@ -31,10 +32,11 @@ export function AddTransactionModal({
     onSaved: () => void;
     onDelete?: (transaction: Transaction) => void;
 }) {
+    const t = useT();
     const isEditing = !!transaction;
 
-    function defaultCategoryFor(t: "income" | "expense"): string {
-        return categories.find((c) => c.type === t && c.isDefault)?.id ?? "";
+    function defaultCategoryFor(txType: "income" | "expense"): string {
+        return categories.find((c) => c.type === txType && c.isDefault)?.id ?? "";
     }
 
     const [date, setDate] = useState(() => transaction?.date ?? getTodayLocalDateISO());
@@ -184,23 +186,23 @@ export function AddTransactionModal({
         const amountNum = parseAmountInput(amount);
 
         if (!date) {
-            setError("Please fill in the date.");
+            setError(t("tx.fillDate"));
             return;
         }
         if (!accountId) {
-            setError("Please choose an account.");
+            setError(t("tx.chooseAccount"));
             return;
         }
         if (!destinationId) {
-            setError(type === "transfer" ? "Please choose a destination account." : "Please choose a category.");
+            setError(type === "transfer" ? t("tx.chooseDestination") : t("tx.chooseCategory"));
             return;
         }
         if (type === "transfer" && accountId === destinationId) {
-            setError("Source and destination accounts must be different.");
+            setError(t("tx.accountsMustDiffer"));
             return;
         }
         if (amountNum === null || amountNum <= 0) {
-            setError("Please enter an amount greater than zero.");
+            setError(t("tx.amountGreaterThanZero"));
             return;
         }
 
@@ -208,7 +210,7 @@ export function AddTransactionModal({
         if (!desc) {
             desc =
                 type === "transfer"
-                    ? "Transfer"
+                    ? t("type.transfer")
                     : (categories.find((c) => c.id === destinationId)?.name ?? "");
         }
 
@@ -237,7 +239,7 @@ export function AddTransactionModal({
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setError(data.error || "Could not save transaction.");
+                setError(data.error || t("tx.saveFailed"));
                 setSaving(false);
                 return;
             }
@@ -249,7 +251,7 @@ export function AddTransactionModal({
                 onSaved();
                 return;
             }
-            setError("Network error. Please try again.");
+            setError(t("common.networkError"));
             setSaving(false);
         }
     }
@@ -264,18 +266,18 @@ export function AddTransactionModal({
             <form
                 role="dialog"
                 aria-modal="true"
-                aria-label={isEditing ? "Edit Transaction" : "Add Transaction"}
+                aria-label={isEditing ? t("tx.editTitle") : t("tx.addTitle")}
                 onClick={(e) => e.stopPropagation()}
                 onSubmit={handleSubmit}
                 className="max-h-[90vh] w-full max-w-md overflow-y-auto surface rounded-t-3xl p-6 shadow-xl sm:rounded-3xl"
             >
                 <div className="mx-auto -mt-1 mb-4 h-1.5 w-10 rounded-full bg-muted/25 sm:hidden" />
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-xl font-bold text-ink">{isEditing ? "Edit Transaction" : "Add Transaction"}</h2>
+                    <h2 className="text-xl font-bold text-ink">{isEditing ? t("tx.editTitle") : t("tx.addTitle")}</h2>
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Close"
+                        aria-label={t("common.close")}
                         className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
                     >
                         <IconClose className="h-5 w-5" />
@@ -283,33 +285,37 @@ export function AddTransactionModal({
                 </div>
 
                 <div className="mb-4 grid grid-cols-3 gap-2">
-                    {(["income", "expense", "transfer"] as const).map((t) => (
+                    {(["income", "expense", "transfer"] as const).map((txType) => (
                         <button
-                            key={t}
+                            key={txType}
                             type="button"
-                            onClick={() => handleTypeChange(t)}
-                            className={`rounded-xl py-3 text-sm font-bold capitalize transition-colors duration-150 select-none ${
-                                type === t
-                                    ? t === "income"
+                            onClick={() => handleTypeChange(txType)}
+                            className={`rounded-xl py-3 text-sm font-bold transition-colors duration-150 select-none ${
+                                type === txType
+                                    ? txType === "income"
                                         ? "bg-brand text-white"
-                                        : t === "expense"
+                                        : txType === "expense"
                                           ? "bg-danger text-white"
                                           : "bg-ink text-paper"
                                     : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
-                            {t}
+                            {txType === "income"
+                                ? t("type.income")
+                                : txType === "expense"
+                                  ? t("type.expense")
+                                  : t("type.transfer")}
                         </button>
                     ))}
                 </div>
 
                 <label className="mb-3 block">
-                    <span className="mb-1 block text-sm font-semibold text-ink">Date</span>
+                    <span className="mb-1 block text-sm font-semibold text-ink">{t("tx.date")}</span>
                     <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={INPUT_CLS} />
                 </label>
 
                 <label className="mb-3 block">
-                    <span className="mb-1 block text-sm font-semibold text-ink">Description</span>
+                    <span className="mb-1 block text-sm font-semibold text-ink">{t("tx.description")}</span>
                     <div className="field-recessed relative w-full rounded-xl border border-line bg-paper text-base text-ink transition-colors duration-150 focus-within:border-brand focus-within:outline-none focus-within:ring-4 focus-within:ring-brand/10">
                         {ghostSuffix && (
                             <div
@@ -340,7 +346,7 @@ export function AddTransactionModal({
                             onBlur={() => setDescFocused(false)}
                             onKeyDown={handleDescriptionKeyDown}
                             onScroll={syncGhostScroll}
-                            placeholder="e.g. Groceries"
+                            placeholder={t("tx.descriptionPlaceholder")}
                             autoComplete="off"
                             autoCorrect="off"
                             spellCheck={false}
@@ -353,7 +359,7 @@ export function AddTransactionModal({
                             <button
                                 type="button"
                                 tabIndex={-1}
-                                aria-label="Accept suggestion"
+                                aria-label={t("tx.acceptSuggestion")}
                                 onPointerDown={(e) => {
                                     e.preventDefault();
                                     applySuggestion(suggestion);
@@ -369,7 +375,7 @@ export function AddTransactionModal({
 
                 <label className="mb-3 block">
                     <span className="mb-1 block text-sm font-semibold text-ink">
-                        Amount ({currencySymbol()})
+                        {t("tx.amount", { symbol: currencySymbol() })}
                     </span>
                     <input
                         type="text"
@@ -382,9 +388,11 @@ export function AddTransactionModal({
                 </label>
 
                 <label className="mb-3 block">
-                    <span className="mb-1 block text-sm font-semibold text-ink">{type === "transfer" ? "From Account" : "Account"}</span>
+                    <span className="mb-1 block text-sm font-semibold text-ink">
+                        {type === "transfer" ? t("tx.fromAccount") : t("tx.account")}
+                    </span>
                     <select value={accountId} onChange={(e) => setAccountId(e.target.value)} className={INPUT_CLS}>
-                        <option value="">Select an account</option>
+                        <option value="">{t("tx.selectAccount")}</option>
                         {accounts.map((a) => (
                             <option key={a.id} value={a.id}>
                                 {a.name}
@@ -394,9 +402,13 @@ export function AddTransactionModal({
                 </label>
 
                 <label className="mb-4 block">
-                    <span className="mb-1 block text-sm font-semibold text-ink">{type === "transfer" ? "To Account" : "Category"}</span>
+                    <span className="mb-1 block text-sm font-semibold text-ink">
+                        {type === "transfer" ? t("tx.toAccount") : t("tx.category")}
+                    </span>
                     <select value={destinationId} onChange={(e) => setDestinationId(e.target.value)} className={INPUT_CLS}>
-                        <option value="">{type === "transfer" ? "Select destination account" : "Select a category"}</option>
+                        <option value="">
+                            {type === "transfer" ? t("tx.selectDestination") : t("tx.selectCategory")}
+                        </option>
                         {destinationOptions.map((o) => (
                             <option key={o.id} value={o.id}>
                                 {o.name}
@@ -408,7 +420,7 @@ export function AddTransactionModal({
                 {error && <p className="mb-3 text-sm font-medium text-danger">{error}</p>}
 
                 <button type="submit" disabled={saving} className={`${PRIMARY_BTN} w-full`}>
-                    {saving ? "Saving…" : isEditing ? "Save Changes" : "Save Transaction"}
+                    {saving ? t("common.saving") : isEditing ? t("tx.saveChanges") : t("tx.saveTransaction")}
                 </button>
 
                 {isEditing && (
@@ -418,7 +430,7 @@ export function AddTransactionModal({
                         disabled={saving}
                         className="mt-3 w-full rounded-2xl border-2 border-danger/25 bg-danger-soft py-4 text-lg font-bold text-danger transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-danger/40 hover:shadow-md active:translate-y-0 disabled:opacity-60 select-none"
                     >
-                        Delete Transaction
+                        {t("tx.deleteTransaction")}
                     </button>
                 )}
             </form>

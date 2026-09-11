@@ -245,17 +245,21 @@ export type MonthlyPoint = {
     netSavings: number;
 };
 
+export type HealthPartKey = "savings" | "spending" | "trend" | "cushion";
+export type HealthNoteKey = "savingsRate" | "spendLess" | "spendMore" | "nwUp" | "nwDown" | "cushion";
+export type HealthLabelKey = "notEnough" | "lookingStrong" | "trackingWell" | "worthALook" | "needsALook";
+
 export type HealthPart = {
-    key: string;
-    label: string;
+    key: HealthPartKey;
     score: number;
     weight: number;
-    note: string;
+    noteKey: HealthNoteKey;
+    noteParams: Record<string, string | number>;
 };
 
 export type Health = {
     score: number | null;
-    label: string;
+    labelKey: HealthLabelKey;
     parts: HealthPart[];
 };
 
@@ -590,10 +594,10 @@ export function buildAnalytics(input: {
             const s = Math.max(0, Math.min(100, ((rate + 10) / 50) * 100));
             healthParts.push({
                 key: "savings",
-                label: "Savings rate",
                 score: Math.round(s),
                 weight: 3,
-                note: `${rate.toFixed(0)}% of income kept`,
+                noteKey: "savingsRate",
+                noteParams: { pct: rate.toFixed(0) },
             });
         }
         if (fullPrevTotals && fullPrevTotals.expenses > 0) {
@@ -602,13 +606,10 @@ export function buildAnalytics(input: {
             const s = Math.max(0, Math.min(100, 55 - pct));
             healthParts.push({
                 key: "spending",
-                label: "Spending",
                 score: Math.round(s),
                 weight: 2,
-                note:
-                    change <= 0
-                        ? `${money0(-change)} less than last period`
-                        : `${money0(change)} more than last period`,
+                noteKey: change <= 0 ? "spendLess" : "spendMore",
+                noteParams: { amount: money0(Math.abs(change)) },
             });
         }
         if (recentComplete.length >= 2) {
@@ -621,13 +622,10 @@ export function buildAnalytics(input: {
                     : Math.max(0, 55 + (grew / Math.max(1, Math.abs(first))) * 200);
             healthParts.push({
                 key: "trend",
-                label: "Net worth",
                 score: Math.round(Math.max(0, Math.min(100, s))),
                 weight: 3,
-                note:
-                    grew >= 0
-                        ? `up ${money0(grew)} over ${recentComplete.length} months`
-                        : `down ${money0(grew)} over ${recentComplete.length} months`,
+                noteKey: grew >= 0 ? "nwUp" : "nwDown",
+                noteParams: { amount: money0(Math.abs(grew)), months: recentComplete.length },
             });
         }
         const burnMonths = recentComplete.slice(-3);
@@ -640,26 +638,26 @@ export function buildAnalytics(input: {
             const cover = currentNetWorth / monthlyBurn;
             healthParts.push({
                 key: "cushion",
-                label: "Cushion",
                 score: Math.round(Math.max(0, Math.min(100, (cover / 3) * 100))),
                 weight: 2,
-                note: `${cover.toFixed(1)} months of spending covered`,
+                noteKey: "cushion",
+                noteParams: { cover: cover.toFixed(1) },
             });
         }
     }
     const healthWeight = sum(healthParts.map((p) => p.weight));
     const healthScore =
         healthWeight > 0 ? Math.round(sum(healthParts.map((p) => p.score * p.weight)) / healthWeight) : null;
-    const healthLabel =
+    const healthLabelKey: HealthLabelKey =
         healthScore === null
-            ? "Not enough yet"
+            ? "notEnough"
             : healthScore >= 75
-              ? "Looking strong"
+              ? "lookingStrong"
               : healthScore >= 55
-                ? "Tracking well"
+                ? "trackingWell"
                 : healthScore >= 35
-                  ? "Worth a look"
-                  : "Needs a look";
+                  ? "worthALook"
+                  : "needsALook";
 
     return {
         period: {
@@ -695,6 +693,6 @@ export function buildAnalytics(input: {
         netWorthByAccount,
         accountActivity,
         transfers,
-        health: { score: healthScore, label: healthLabel, parts: healthParts },
+        health: { score: healthScore, labelKey: healthLabelKey, parts: healthParts },
     };
 }

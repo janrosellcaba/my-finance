@@ -10,8 +10,10 @@ import {
     type AccentColor,
     type CurrencyCode,
     type DateFormat,
+    type Language,
     type Theme,
 } from "@/app/shared";
+import { isLanguage } from "@/i18n";
 
 const ACCENTS = new Set(ACCENT_COLORS.map((c) => c.key));
 const CURRENCIES = new Set(CURRENCY_OPTIONS.map((c) => c.key));
@@ -23,6 +25,7 @@ type AppearanceBody = {
     accent?: unknown;
     currency?: unknown;
     dateFormat?: unknown;
+    language?: unknown;
 };
 
 export async function PATCH(request: Request) {
@@ -43,6 +46,7 @@ export async function PATCH(request: Request) {
             accentColor?: AccentColor;
             currency?: CurrencyCode;
             dateFormat?: DateFormat;
+            language?: Language;
         } = {};
 
         if ("theme" in body) {
@@ -74,6 +78,12 @@ export async function PATCH(request: Request) {
                 return NextResponse.json({ error: "Invalid dateFormat." }, { status: 400 });
             }
             patch.dateFormat = body.dateFormat as DateFormat;
+        }
+        if ("language" in body) {
+            if (!isLanguage(body.language)) {
+                return NextResponse.json({ error: "Invalid language." }, { status: 400 });
+            }
+            patch.language = body.language;
         }
 
         if (Object.keys(patch).length === 0) {

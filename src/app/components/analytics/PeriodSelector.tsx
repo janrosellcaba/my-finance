@@ -1,13 +1,7 @@
 "use client";
 
 import { type PeriodMode } from "@/lib/analytics";
-
-const MODES: { key: PeriodMode; label: string; title: string }[] = [
-    { key: "month", label: "Month", title: "A single calendar month" },
-    { key: "3m", label: "3 mo", title: "The last 3 months" },
-    { key: "year", label: "Year", title: "A single calendar year" },
-    { key: "all", label: "All", title: "Everything on record" },
-];
+import { useT } from "@/i18n/I18nProvider";
 
 export function PeriodSelector({
     mode,
@@ -24,6 +18,14 @@ export function PeriodSelector({
     yearOptions: string[];
     onChange: (mode: PeriodMode, anchor: string | null) => void;
 }) {
+    const t = useT();
+    const modes: { key: PeriodMode; label: string; title: string }[] = [
+        { key: "month", label: t("analytics.periodMonth"), title: t("analytics.periodMonthTitle") },
+        { key: "3m", label: t("analytics.period3m"), title: t("analytics.period3mTitle") },
+        { key: "year", label: t("analytics.periodYear"), title: t("analytics.periodYearTitle") },
+        { key: "all", label: t("analytics.periodAll"), title: t("analytics.periodAllTitle") },
+    ];
+
     // Rolling windows are pinned to today, so only the two specific modes get a navigator.
     const steppable = mode === "month" || mode === "year";
     const options = mode === "month" ? monthOptions.map((m) => m.key) : yearOptions;
@@ -47,7 +49,7 @@ export function PeriodSelector({
     return (
         <div className="space-y-2">
             <div className="grid grid-cols-4 gap-1 rounded-xl bg-chip/80 p-1 shadow-[inset_0_1px_2px_rgba(35,34,29,0.06)]">
-                {MODES.map((m) => (
+                {modes.map((m) => (
                     <button
                         key={m.key}
                         type="button"
@@ -70,7 +72,7 @@ export function PeriodSelector({
                         type="button"
                         onClick={() => step(-1)}
                         disabled={!canPrev}
-                        aria-label="Previous period"
+                        aria-label={t("analytics.prevPeriod")}
                         className="shrink-0 rounded-xl bg-chip px-3 py-2.5 text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink disabled:opacity-30"
                     >
                         ‹
@@ -98,7 +100,7 @@ export function PeriodSelector({
                         type="button"
                         onClick={() => step(1)}
                         disabled={!canNext}
-                        aria-label="Next period"
+                        aria-label={t("analytics.nextPeriod")}
                         className="shrink-0 rounded-xl bg-chip px-3 py-2.5 text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink disabled:opacity-30"
                     >
                         ›

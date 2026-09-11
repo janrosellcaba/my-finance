@@ -2,6 +2,7 @@
 
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { useT } from "@/i18n/I18nProvider";
 import { type Category, CATEGORY_COLOR_PALETTE, CATEGORY_ICON_KEYS } from "../shared";
 import { CATEGORY_ICON_COMPONENTS, CategoryIcon, IconClose, IconGrip, IconPencil, IconRadioDot } from "./icons";
 
@@ -38,6 +39,7 @@ export function SortableCategoryRow({
     onCommitEditing: () => void;
     onCancelEditing: () => void;
 }) {
+    const t = useT();
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: category.id });
     const style = { transform: CSS.Transform.toString(transform), transition };
 
@@ -48,7 +50,7 @@ export function SortableCategoryRow({
                     type="button"
                     {...attributes}
                     {...listeners}
-                    aria-label={`Reorder ${category.name}`}
+                    aria-label={t("categories.reorderAria", { name: category.name })}
                     className="shrink-0 cursor-grab touch-none rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink active:cursor-grabbing"
                 >
                     <IconGrip className="h-4 w-4" />
@@ -58,8 +60,12 @@ export function SortableCategoryRow({
                     onClick={onSetDefault}
                     role="radio"
                     aria-checked={category.isDefault}
-                    title={category.isDefault ? "Default category" : "Set as default"}
-                    aria-label={category.isDefault ? `${category.name} is the default` : `Set ${category.name} as default`}
+                    title={category.isDefault ? t("categories.defaultCategory") : t("categories.setAsDefault")}
+                    aria-label={
+                        category.isDefault
+                            ? t("categories.isDefault", { name: category.name })
+                            : t("categories.setDefaultAria", { name: category.name })
+                    }
                     className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
                         category.isDefault ? "text-brand" : "text-muted hover:text-ink"
                     }`}
@@ -69,14 +75,14 @@ export function SortableCategoryRow({
                 <button
                     type="button"
                     onClick={onToggleColorPicker}
-                    aria-label={`Change color for ${category.name}`}
+                    aria-label={t("categories.changeColor", { name: category.name })}
                     className="h-5 w-5 shrink-0 rounded-full border border-line/50"
                     style={{ backgroundColor: category.color ?? "#e5e0d8" }}
                 />
                 <button
                     type="button"
                     onClick={onToggleIconPicker}
-                    aria-label={`Change icon for ${category.name}`}
+                    aria-label={t("categories.changeIcon", { name: category.name })}
                     className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
                 >
                     {category.icon ? (
@@ -108,7 +114,7 @@ export function SortableCategoryRow({
                         <button
                             type="button"
                             onClick={onStartEditing}
-                            aria-label={`Rename ${category.name}`}
+                            aria-label={t("categories.rename", { name: category.name })}
                             className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
                         >
                             <IconPencil className="h-4 w-4" />
@@ -118,7 +124,7 @@ export function SortableCategoryRow({
                 <button
                     type="button"
                     onClick={onDelete}
-                    aria-label={`Delete ${category.name}`}
+                    aria-label={t("categories.deleteAria", { name: category.name })}
                     className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
                 >
                     <IconClose className="h-4 w-4" />
@@ -131,7 +137,7 @@ export function SortableCategoryRow({
                             key={swatch}
                             type="button"
                             onClick={() => onSetColor(swatch)}
-                            aria-label={`Set ${category.name} color to ${swatch}`}
+                            aria-label={t("categories.setColor", { name: category.name, color: swatch })}
                             className={`h-6 w-6 shrink-0 rounded-full border-2 transition-transform duration-150 hover:scale-110 ${
                                 category.color === swatch ? "border-ink" : "border-white/60"
                             }`}
@@ -145,7 +151,7 @@ export function SortableCategoryRow({
                     <button
                         type="button"
                         onClick={() => onSetIcon(null)}
-                        aria-label={`Remove icon from ${category.name}`}
+                        aria-label={t("categories.removeIcon", { name: category.name })}
                         className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition-transform duration-150 hover:scale-110 ${
                             category.icon === null ? "border-ink bg-paper" : "border-white/60 bg-paper"
                         }`}
@@ -159,7 +165,7 @@ export function SortableCategoryRow({
                                 key={key}
                                 type="button"
                                 onClick={() => onSetIcon(key)}
-                                aria-label={`Set ${category.name} icon to ${key}`}
+                                aria-label={t("categories.setIcon", { name: category.name, icon: key })}
                                 className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-paper text-ink transition-transform duration-150 hover:scale-110 ${
                                     category.icon === key ? "border-ink" : "border-white/60"
                                 }`}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/i18n/I18nProvider";
 import { INPUT_CLS } from "../shared";
 import { IconEye, IconEyeOff } from "./icons";
 
@@ -17,6 +18,7 @@ export function PasswordInput({
     required?: boolean;
     minLength?: number;
 }) {
+    const t = useT();
     const [visible, setVisible] = useState(false);
 
     return (
@@ -33,7 +35,7 @@ export function PasswordInput({
             <button
                 type="button"
                 onClick={() => setVisible((v) => !v)}
-                aria-label={visible ? "Hide password" : "Show password"}
+                aria-label={visible ? t("auth.hidePassword") : t("auth.showPassword")}
                 aria-pressed={visible}
                 className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
             >

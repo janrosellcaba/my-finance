@@ -1,23 +1,11 @@
+import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
 import { users, account, category } from "@/db/schema";
 import { hashPassword } from "@/lib/password";
 import { createSession, setSessionCookie } from "@/lib/session";
 import { eq } from "drizzle-orm";
-
-const DEFAULT_ACCOUNTS = ["Main Bank", "Cash"];
-const DEFAULT_INCOME_CATEGORIES: { name: string; icon: string | null }[] = [
-    { name: "Salary", icon: "salary" },
-    { name: "Investments", icon: "investments" },
-    { name: "Other Income", icon: null },
-];
-const DEFAULT_EXPENSE_CATEGORIES: { name: string; icon: string | null }[] = [
-    { name: "Food & Drinks", icon: "food" },
-    { name: "Transport", icon: "transport" },
-    { name: "Shopping", icon: "shopping" },
-    { name: "Services", icon: "services" },
-    { name: "Other Expense", icon: null },
-];
+import { isLanguage, languageFromAcceptLanguage, makeT } from "@/i18n";
 
 export async function POST(request: Request) {
     try {
@@ -25,6 +13,7 @@ export async function POST(request: Request) {
             username?: unknown;
             password?: unknown;
             secretCode?: unknown;
+            language?: unknown;
         } | null;
         if (!body) {
             return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
@@ -60,29 +49,33 @@ export async function POST(request: Request) {
 
         const passwordHash = await hashPassword(password);
         const userId = crypto.randomUUID();
+        const language = isLanguage(body.language)
+            ? body.language
+            : languageFromAcceptLanguage((await headers()).get("accept-language"));
+        const t = makeT(language);
 
-        const accountsToInsert = DEFAULT_ACCOUNTS.map((accountName) => ({
+        const accountsToInsert = [t("seeds.mainBank"), t("seeds.cash")].map((accountName) => ({
             id: crypto.randomUUID(),
             userId,
             name: accountName,
         }));
 
         const categoriesToInsert = [
-            ...DEFAULT_INCOME_CATEGORIES.map(({ name, icon }) => ({
-                id: crypto.randomUUID(),
-                userId,
-                name,
-                type: "income" as const,
-                icon,
-            })),
-            ...DEFAULT_EXPENSE_CATEGORIES.map(({ name, icon }) => ({
-                id: crypto.randomUUID(),
-                userId,
-                name,
-                type: "expense" as const,
-                icon,
-            })),
-        ];
+            { name: t("seeds.salary"), icon: "salary" as string | null, type: "income" as const },
+            { name: t("seeds.investments"), icon: "investments", type: "income" as const },
+            { name: t("seeds.otherIncome"), icon: null, type: "income" as const },
+            { name: t("seeds.food"), icon: "food", type: "expense" as const },
+            { name: t("seeds.transport"), icon: "transport", type: "expense" as const },
+            { name: t("seeds.shopping"), icon: "shopping", type: "expense" as const },
+            { name: t("seeds.services"), icon: "services", type: "expense" as const },
+            { name: t("seeds.otherExpense"), icon: null, type: "expense" as const },
+        ].map(({ name, icon, type }) => ({
+            id: crypto.randomUUID(),
+            userId,
+            name,
+            type,
+            icon,
+        }));
 
         db.transaction((tx) => {
             tx.insert(users)
@@ -90,6 +83,7 @@ export async function POST(request: Request) {
                     id: userId,
                     username,
                     passwordHash,
+                    language,
                 })
                 .run();
             tx.insert(account).values(accountsToInsert).run();

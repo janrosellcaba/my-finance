@@ -23,6 +23,7 @@ export async function GET() {
                 accentColor: users.accentColor,
                 currency: users.currency,
                 dateFormat: users.dateFormat,
+                language: users.language,
             })
             .from(users)
             .where(eq(users.id, user.id))

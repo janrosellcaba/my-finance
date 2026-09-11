@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { type TFunction } from "@/i18n";
+import { useT } from "@/i18n/I18nProvider";
 import { type Account, type Category, formatCurrency, formatDate, INK_BTN, INPUT_CLS } from "../shared";
 
 type TransactionType = "income" | "expense" | "transfer";
@@ -38,7 +40,12 @@ async function fetchAllTransactions(): Promise<Transaction[]> {
     return all;
 }
 
-function buildExportRows(transactions: Transaction[], accounts: Account[], categories: Category[]): string {
+function buildExportRows(
+    transactions: Transaction[],
+    accounts: Account[],
+    categories: Category[],
+    t: TFunction
+): string {
     const accountNames = new Map(accounts.map((a) => [a.id, a.name]));
     const categoryNames = new Map(categories.map((c) => [c.id, c.name]));
 
@@ -47,20 +54,20 @@ function buildExportRows(transactions: Transaction[], accounts: Account[], categ
 
     for (const tx of transactions) {
         if (tx.type === "transfer") {
-            const sourceName = accountNames.get(tx.accountId) ?? "Unknown";
-            const destName = accountNames.get(tx.destinationId) ?? "Unknown";
+            const sourceName = accountNames.get(tx.accountId) ?? t("common.unknown");
+            const destName = accountNames.get(tx.destinationId) ?? t("common.unknown");
             rows.push({
                 date: tx.date,
-                description: `Transfer to ${destName}`,
-                category: "Transfer In",
+                description: t("export.transferTo", { name: destName }),
+                category: t("export.transferIn"),
                 account: destName,
                 amount: tx.amount,
                 type: "Transfer",
             });
             rows.push({
                 date: tx.date,
-                description: `Transfer from ${sourceName}`,
-                category: "Transfer Out",
+                description: t("export.transferFrom", { name: sourceName }),
+                category: t("export.transferOut"),
                 account: sourceName,
                 amount: -tx.amount,
                 type: "Transfer",
@@ -69,8 +76,8 @@ function buildExportRows(transactions: Transaction[], accounts: Account[], categ
             rows.push({
                 date: tx.date,
                 description: tx.description,
-                category: categoryNames.get(tx.destinationId) ?? "Unknown",
-                account: accountNames.get(tx.accountId) ?? "Unknown",
+                category: categoryNames.get(tx.destinationId) ?? t("common.unknown"),
+                account: accountNames.get(tx.accountId) ?? t("common.unknown"),
                 amount: tx.type === "expense" ? -tx.amount : tx.amount,
                 type: tx.type === "expense" ? "Expense" : "Income",
             });
@@ -85,6 +92,7 @@ function buildExportRows(transactions: Transaction[], accounts: Account[], categ
 }
 
 export function ExportView({ accounts, categories }: { accounts: Account[]; categories: Category[] }) {
+    const t = useT();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -101,7 +109,7 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
                 if (!cancelled) setTransactions(all);
             })
             .catch(() => {
-                if (!cancelled) setError("Could not load your transactions.");
+                if (!cancelled) setError(t("export.loadFailed"));
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -109,14 +117,17 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [t]);
 
     const filtered = useMemo(
         () => transactions.filter((tx) => (!fromDate || tx.date >= fromDate) && (!toDate || tx.date <= toDate)),
         [transactions, fromDate, toDate]
     );
 
-    const text = useMemo(() => buildExportRows(filtered, accounts, categories), [filtered, accounts, categories]);
+    const text = useMemo(
+        () => buildExportRows(filtered, accounts, categories, t),
+        [filtered, accounts, categories, t]
+    );
 
     async function handleCopy() {
         try {
@@ -124,37 +135,30 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
             setCopied(true);
             setTimeout(() => setCopied(false), 2000);
         } catch {
-            setError("Could not copy automatically — select the text below and copy it manually.");
+            setError(t("export.copyFailed"));
         }
     }
 
     return (
         <div className="space-y-4">
             <section className="surface rounded-2xl p-5">
-                <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">How it works</h2>
+                <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">{t("export.how")}</h2>
                 <div className="space-y-2 text-sm text-muted">
-                    <p>
-                        Builds a tab-separated table you can paste into Excel or Google Sheets. Each column lands in
-                        its own cell.
-                    </p>
-                    <p>
-                        Columns: <span className="font-semibold text-ink">Date, Description, Category, Account, Amount, Type</span>
-                        , newest first. Transfers are exported as two rows (out of one account, into the other), matching
-                        how Import expects them.
-                    </p>
-                    <p>Leave the date range empty to export everything, or narrow it to part of your history.</p>
+                    <p>{t("export.intro")}</p>
+                    <p>{t("export.columns", { cols: t("export.columnNames") })}</p>
+                    <p>{t("export.rangeHint")}</p>
                 </div>
             </section>
 
             <section className="surface rounded-2xl p-5">
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Date range</h2>
+                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{t("export.dateRange")}</h2>
                 <div className="flex gap-2">
                     <label className="flex-1 block">
-                        <span className="mb-1 block text-xs font-semibold text-muted">From</span>
+                        <span className="mb-1 block text-xs font-semibold text-muted">{t("export.from")}</span>
                         <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={INPUT_CLS} />
                     </label>
                     <label className="flex-1 block">
-                        <span className="mb-1 block text-xs font-semibold text-muted">To</span>
+                        <span className="mb-1 block text-xs font-semibold text-muted">{t("export.to")}</span>
                         <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={INPUT_CLS} />
                     </label>
                 </div>
@@ -167,22 +171,22 @@ export function ExportView({ accounts, categories }: { accounts: Account[]; cate
                         }}
                         className="mt-2 text-sm font-semibold text-muted transition-colors duration-150 hover:text-ink"
                     >
-                        Clear range (export everything)
+                        {t("export.clearRange")}
                     </button>
                 )}
             </section>
 
-            {loading && <p className="text-center text-muted">Loading your transactions…</p>}
+            {loading && <p className="text-center text-muted">{t("export.loading")}</p>}
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
             {!loading && !error && (
                 <section className="surface rounded-2xl p-5">
                     <div className="mb-3 flex items-center justify-between">
                         <h2 className="text-sm font-bold uppercase tracking-wide text-muted">
-                            {filtered.length} transactions
+                            {t("export.count", { count: filtered.length })}
                         </h2>
                         <button type="button" onClick={handleCopy} className={`${INK_BTN} px-4 py-2 text-sm`}>
-                            {copied ? "Copied!" : "Copy to Clipboard"}
+                            {copied ? t("export.copied") : t("export.copy")}
                         </button>
                     </div>
                     <textarea

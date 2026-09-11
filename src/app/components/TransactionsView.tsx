@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useT } from "@/i18n/I18nProvider";
 import { type Account, type Category, type Transaction, INPUT_CLS } from "../shared";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { TransactionCard } from "./TransactionCard";
@@ -18,6 +19,7 @@ export function TransactionsView({
     privacyMode: boolean;
     onTransactionChanged: () => void;
 }) {
+    const t = useT();
     const [transactions, setTransactions] = useState<Transaction[]>([]);
     const [cursor, setCursor] = useState<{ date: string; createdAt: string; id: string } | null>(null);
     const [search, setSearch] = useState("");
@@ -74,7 +76,7 @@ export function TransactionsView({
         setEditingTransaction(null);
         setPendingDeleteIds((prev) => new Set(prev).add(tx.id));
         requestDelete({
-            message: "Transaction deleted.",
+            message: t("tx.deleted"),
             onUndo: () => {
                 setPendingDeleteIds((prev) => {
                     const next = new Set(prev);
@@ -114,7 +116,7 @@ export function TransactionsView({
 
     return (
         <div className="space-y-4 px-5 pt-6">
-            <h1 className="text-2xl font-extrabold text-ink">Transactions</h1>
+            <h1 className="text-2xl font-extrabold text-ink">{t("tx.title")}</h1>
 
             <div className="flex gap-2">
                 <div className="relative flex-1">
@@ -122,14 +124,14 @@ export function TransactionsView({
                     <input
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        placeholder="Search description…"
+                        placeholder={t("tx.searchPlaceholder")}
                         className={`pl-10 ${searchInput ? "pr-10" : ""} ${INPUT_CLS}`}
                     />
                     {searchInput && (
                         <button
                             type="button"
                             onClick={() => setSearchInput("")}
-                            aria-label="Clear search"
+                            aria-label={t("tx.clearSearch")}
                             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
                         >
                             <IconClose className="h-3.5 w-3.5" />
@@ -139,7 +141,7 @@ export function TransactionsView({
                 <button
                     type="button"
                     onClick={() => setShowFilters((v) => !v)}
-                    aria-label="Toggle filters"
+                    aria-label={t("tx.toggleFilters")}
                     aria-pressed={showFilters}
                     className={`relative shrink-0 rounded-xl p-3 transition-colors duration-150 ${
                         showFilters ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
@@ -155,22 +157,28 @@ export function TransactionsView({
             {showFilters && (
                 <div className="space-y-3 surface rounded-2xl p-3">
                     <div className="flex gap-2 overflow-x-auto pb-1">
-                        {(["", "income", "expense", "transfer"] as const).map((t) => (
+                        {(["", "income", "expense", "transfer"] as const).map((txType) => (
                             <button
                                 type="button"
-                                key={t || "all"}
-                                onClick={() => setTypeFilter(t)}
-                                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold capitalize transition-colors duration-150 select-none ${
-                                    typeFilter === t
-                                        ? t === "income"
+                                key={txType || "all"}
+                                onClick={() => setTypeFilter(txType)}
+                                className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition-colors duration-150 select-none ${
+                                    typeFilter === txType
+                                        ? txType === "income"
                                             ? "bg-brand text-white"
-                                            : t === "expense"
+                                            : txType === "expense"
                                               ? "bg-danger text-white"
                                               : "bg-ink text-paper"
                                         : "bg-chip text-muted hover:bg-chip-hover"
                                 }`}
                             >
-                                {t || "All types"}
+                                {txType === "income"
+                                    ? t("type.income")
+                                    : txType === "expense"
+                                      ? t("type.expense")
+                                      : txType === "transfer"
+                                        ? t("type.transfer")
+                                        : t("type.allTypes")}
                             </button>
                         ))}
                     </div>
@@ -183,7 +191,7 @@ export function TransactionsView({
                                 accountFilter === "" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
-                            All accounts
+                            {t("tx.allAccounts")}
                         </button>
                         {accounts.map((a) => (
                             <button
@@ -207,7 +215,7 @@ export function TransactionsView({
                                 categoryFilter === "" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
-                            All categories
+                            {t("tx.allCategories")}
                         </button>
                         {categories.map((c) => (
                             <button
@@ -229,11 +237,11 @@ export function TransactionsView({
 
                     <div className="flex items-end gap-2">
                         <label className="flex-1 block">
-                            <span className="mb-1 block text-xs font-semibold text-muted">From</span>
+                            <span className="mb-1 block text-xs font-semibold text-muted">{t("tx.from")}</span>
                             <input type="date" value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} className={INPUT_CLS} />
                         </label>
                         <label className="flex-1 block">
-                            <span className="mb-1 block text-xs font-semibold text-muted">To</span>
+                            <span className="mb-1 block text-xs font-semibold text-muted">{t("tx.to")}</span>
                             <input type="date" value={dateTo} onChange={(e) => setDateTo(e.target.value)} className={INPUT_CLS} />
                         </label>
                         {(dateFrom || dateTo) && (
@@ -243,7 +251,7 @@ export function TransactionsView({
                                     setDateFrom("");
                                     setDateTo("");
                                 }}
-                                aria-label="Clear date range"
+                                aria-label={t("tx.clearDateRange")}
                                 className="shrink-0 rounded-xl bg-chip p-3 text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
                             >
                                 <IconClose className="h-4 w-4" />
@@ -270,8 +278,8 @@ export function TransactionsView({
                     <div className="rounded-full bg-chip p-3 text-muted">
                         <IconSearch className="h-5 w-5" />
                     </div>
-                    <p className="font-semibold text-ink">No transactions found</p>
-                    <p className="text-sm text-muted">Try a different search term or filter.</p>
+                    <p className="font-semibold text-ink">{t("tx.noneFound")}</p>
+                    <p className="text-sm text-muted">{t("tx.noneFoundHint")}</p>
                 </div>
             ) : (
                 <div className="divide-y divide-line surface rounded-2xl">
@@ -312,7 +320,7 @@ export function TransactionsView({
                     disabled={loadingMore}
                     className="w-full rounded-2xl border-2 border-line py-3 font-semibold text-muted transition-colors duration-150 hover:border-brand hover:text-brand disabled:opacity-60 select-none"
                 >
-                    {loadingMore ? "Loading…" : "Show More"}
+                    {loadingMore ? t("common.loading") : t("tx.showMore")}
                 </button>
             )}
         </div>

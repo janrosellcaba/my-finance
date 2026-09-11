@@ -17,6 +17,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { type Category } from "../shared";
+import { useT } from "@/i18n/I18nProvider";
 import { SortableCategoryRow } from "./SortableCategoryRow";
 
 export function CategoryList({
@@ -40,6 +41,7 @@ export function CategoryList({
     onRename: (c: Category, name: string) => void;
     onDelete: (c: Category) => void;
 }) {
+    const t = useT();
     const [colorPickerFor, setColorPickerFor] = useState<string | null>(null);
     const [iconPickerFor, setIconPickerFor] = useState<string | null>(null);
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export function CategoryList({
         <div>
             <h3 className="mb-2 text-xs font-bold uppercase tracking-wide text-muted">{title}</h3>
             {localItems.length === 0 ? (
-                <p className="text-sm text-muted">No categories yet.</p>
+                <p className="text-sm text-muted">{t("categories.none")}</p>
             ) : (
                 <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                     <SortableContext items={localItems.map((c) => c.id)} strategy={verticalListSortingStrategy}>

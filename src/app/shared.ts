@@ -54,6 +54,7 @@ export type Theme = "light" | "dark";
 export type AccentColor = "green" | "blue" | "terracotta" | "slate" | "rose";
 export type CurrencyCode = "EUR" | "USD" | "GBP";
 export type DateFormat = "DMY" | "MDY" | "YMD";
+export type Language = "en" | "es" | "ca";
 
 export const ACCENT_COLORS: { key: AccentColor; label: string; swatch: string }[] = [
     { key: "green", label: "Green", swatch: "#1f7a54" },
@@ -81,6 +82,7 @@ export type AppearancePrefs = {
     accent: AccentColor;
     currency: CurrencyCode;
     dateFormat: DateFormat;
+    language: Language;
 };
 
 export const DEFAULT_APPEARANCE: AppearancePrefs = {
@@ -89,6 +91,7 @@ export const DEFAULT_APPEARANCE: AppearancePrefs = {
     accent: "green",
     currency: "EUR",
     dateFormat: "DMY",
+    language: "en",
 };
 
 // 20 evenly-spaced light pastel colors, offered as the category color picker palette.
@@ -286,6 +289,8 @@ export function parseAmountInput(raw: string): number | null {
 // preview) and api/import/route.ts (server) so the two can't drift out of sync.
 export const INITIAL_BALANCE_CATEGORY = "initial balance";
 
+const INITIAL_BALANCE_ALIASES = new Set(["initial balance", "saldo inicial", "balanç inicial"]);
+
 export function isInitialBalanceRow(type: string, categoryName: string): boolean {
-    return type === "income" && categoryName.trim().toLowerCase() === INITIAL_BALANCE_CATEGORY;
+    return type === "income" && INITIAL_BALANCE_ALIASES.has(categoryName.trim().toLowerCase());
 }

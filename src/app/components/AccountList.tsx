@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useT } from "@/i18n/I18nProvider";
 import { type Account, ACCOUNT_ICON_KEYS, formatCurrency } from "../shared";
 import { ACCOUNT_ICON_COMPONENTS, AccountIcon, IconClose, IconPencil, IconRadioDot } from "./icons";
 
@@ -21,6 +22,7 @@ export function AccountList({
     onSetIcon: (a: Account, icon: string | null) => void;
     onDelete: (a: Account) => void;
 }) {
+    const t = useT();
     const [editingNameId, setEditingNameId] = useState<string | null>(null);
     const [editingNameValue, setEditingNameValue] = useState("");
     const [editingBalanceId, setEditingBalanceId] = useState<string | null>(null);
@@ -54,7 +56,7 @@ export function AccountList({
     }
 
     if (items.length === 0) {
-        return <p className="text-sm text-muted">No accounts yet.</p>;
+        return <p className="text-sm text-muted">{t("accounts.none")}</p>;
     }
 
     return (
@@ -68,8 +70,12 @@ export function AccountList({
                             onClick={() => onSetDefault(a)}
                             role="radio"
                             aria-checked={a.isDefault}
-                            title={a.isDefault ? "Default account" : "Set as default"}
-                            aria-label={a.isDefault ? `${a.name} is the default` : `Set ${a.name} as default`}
+                            title={a.isDefault ? t("accounts.defaultAccount") : t("accounts.setAsDefault")}
+                            aria-label={
+                                a.isDefault
+                                    ? t("accounts.isDefault", { name: a.name })
+                                    : t("accounts.setDefaultAria", { name: a.name })
+                            }
                             className={`shrink-0 rounded-full p-1.5 transition-colors duration-150 ${
                                 a.isDefault ? "text-brand" : "text-muted hover:text-ink"
                             }`}
@@ -79,7 +85,7 @@ export function AccountList({
                         <button
                             type="button"
                             onClick={() => setIconPickerFor(iconPickerFor === a.id ? null : a.id)}
-                            aria-label={`Change icon for ${a.name}`}
+                            aria-label={t("accounts.changeIcon", { name: a.name })}
                             className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
                         >
                             {a.icon ? (
@@ -114,7 +120,7 @@ export function AccountList({
                             <button
                                 type="button"
                                 onClick={() => startEditingName(a)}
-                                aria-label={`Rename ${a.name}`}
+                                aria-label={t("accounts.rename", { name: a.name })}
                                 className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
                             >
                                 <IconPencil className="h-4 w-4" />
@@ -141,7 +147,7 @@ export function AccountList({
                                 />
                             ) : (
                                 <span className="min-w-0 flex-1 truncate text-sm text-muted">
-                                    Starts at{" "}
+                                    {t("accounts.startsAt")}{" "}
                                     <span
                                         className={`inline-block tabular-nums transition-[filter,opacity] duration-250 ${
                                             privacyMode ? "blur-[6px] select-none opacity-70" : ""
@@ -154,7 +160,7 @@ export function AccountList({
                             <button
                                 type="button"
                                 onClick={() => startEditingBalance(a)}
-                                aria-label={`Edit initial balance for ${a.name}`}
+                                aria-label={t("accounts.editBalance", { name: a.name })}
                                 className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:text-ink"
                             >
                                 <IconPencil className="h-4 w-4" />
@@ -164,7 +170,7 @@ export function AccountList({
                     <button
                         type="button"
                         onClick={() => onDelete(a)}
-                        aria-label={`Delete ${a.name}`}
+                        aria-label={t("accounts.deleteAria", { name: a.name })}
                         className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-danger-soft hover:text-danger"
                     >
                         <IconClose className="h-4 w-4" />
@@ -178,7 +184,7 @@ export function AccountList({
                                 onSetIcon(a, null);
                                 setIconPickerFor(null);
                             }}
-                            aria-label={`Remove icon from ${a.name}`}
+                            aria-label={t("accounts.removeIcon", { name: a.name })}
                             className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-paper transition-transform duration-150 hover:scale-110 ${
                                 a.icon === null ? "border-ink" : "border-white/60"
                             }`}
@@ -195,7 +201,7 @@ export function AccountList({
                                         onSetIcon(a, key);
                                         setIconPickerFor(null);
                                     }}
-                                    aria-label={`Set ${a.name} icon to ${key}`}
+                                    aria-label={t("accounts.setIcon", { name: a.name, icon: key })}
                                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-paper text-ink transition-transform duration-150 hover:scale-110 ${
                                         a.icon === key ? "border-ink" : "border-white/60"
                                     }`}

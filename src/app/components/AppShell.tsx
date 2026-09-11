@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -28,6 +28,8 @@ import {
 } from "./GuidedTour";
 import { SetupWizard } from "./SetupWizard";
 import { getFromCache, getOutbox, saveToCache, syncOutbox } from "@/lib/offlineStore";
+import { LANGUAGE_HTML } from "@/i18n";
+import { I18nProvider, useT } from "@/i18n/I18nProvider";
 
 const TransactionsView = dynamic(() => import("./TransactionsView").then((m) => m.TransactionsView), {
     ssr: false,
@@ -40,6 +42,7 @@ function applyDomAppearance(prefs: AppearancePrefs) {
     const root = document.documentElement;
     root.dataset.theme = prefs.theme;
     root.dataset.accent = prefs.accent;
+    root.lang = LANGUAGE_HTML[prefs.language];
     delete root.dataset.density;
     delete root.dataset.font;
     setFormatPrefs({ currency: prefs.currency, dateFormat: prefs.dateFormat });
@@ -49,10 +52,12 @@ export function AppShell({
     username,
     initialAppearance,
     accountCreatedAt,
+    persistLanguage,
 }: {
     username: string;
     initialAppearance: AppearancePrefs;
     accountCreatedAt: string;
+    persistLanguage: boolean;
 }) {
     const router = useRouter();
     const [tab, setTab] = useState<Tab>("home");
@@ -73,6 +78,15 @@ export function AppShell({
     useEffect(() => {
         applyDomAppearance(initialAppearance);
     }, [initialAppearance]);
+
+    useEffect(() => {
+        if (!persistLanguage) return;
+        void fetch("/api/appearance", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ language: initialAppearance.language }),
+        });
+    }, [persistLanguage, initialAppearance.language]);
 
     useEffect(() => {
         if (isAccountFirstDay(accountCreatedAt) && !hasSeenTour()) {
@@ -248,6 +262,7 @@ export function AppShell({
         if (partial.accent !== undefined) body.accent = partial.accent;
         if (partial.currency !== undefined) body.currency = partial.currency;
         if (partial.dateFormat !== undefined) body.dateFormat = partial.dateFormat;
+        if (partial.language !== undefined) body.language = partial.language;
 
         const res = await fetch("/api/appearance", {
             method: "PATCH",
@@ -264,6 +279,105 @@ export function AppShell({
         await patchAppearance({ privacyMode: !appearance.privacyMode });
     }
 
+    return (
+        <I18nProvider language={appearance.language}>
+            <AppShellView
+                username={username}
+                tab={tab}
+                setTab={setTab}
+                dashboard={dashboard}
+                loadingDashboard={loadingDashboard}
+                accounts={accounts}
+                categories={categories}
+                showAddModal={showAddModal}
+                setShowAddModal={setShowAddModal}
+                appearance={appearance}
+                isOnline={isOnline}
+                outboxCount={outboxCount}
+                showTour={showTour}
+                setShowTour={setShowTour}
+                showTourBanner={showTourBanner}
+                setShowTourBanner={setShowTourBanner}
+                showSetup={showSetup}
+                setupIncomplete={setupIncomplete}
+                mainRef={mainRef}
+                openSetup={openSetup}
+                finishSetup={finishSetup}
+                handleLogout={handleLogout}
+                handlePasswordChanged={handlePasswordChanged}
+                handleAccountDeleted={handleAccountDeleted}
+                handleTransactionSaved={handleTransactionSaved}
+                handleTogglePrivacy={handleTogglePrivacy}
+                patchAppearance={patchAppearance}
+                loadConfig={loadConfig}
+                loadDashboard={loadDashboard}
+            />
+        </I18nProvider>
+    );
+}
+
+function AppShellView({
+    username,
+    tab,
+    setTab,
+    dashboard,
+    loadingDashboard,
+    accounts,
+    categories,
+    showAddModal,
+    setShowAddModal,
+    appearance,
+    isOnline,
+    outboxCount,
+    showTour,
+    setShowTour,
+    showTourBanner,
+    setShowTourBanner,
+    showSetup,
+    setupIncomplete,
+    mainRef,
+    openSetup,
+    finishSetup,
+    handleLogout,
+    handlePasswordChanged,
+    handleAccountDeleted,
+    handleTransactionSaved,
+    handleTogglePrivacy,
+    patchAppearance,
+    loadConfig,
+    loadDashboard,
+}: {
+    username: string;
+    tab: Tab;
+    setTab: (tab: Tab) => void;
+    dashboard: DashboardSummary | null;
+    loadingDashboard: boolean;
+    accounts: Account[];
+    categories: Category[];
+    showAddModal: boolean;
+    setShowAddModal: (show: boolean) => void;
+    appearance: AppearancePrefs;
+    isOnline: boolean;
+    outboxCount: number;
+    showTour: boolean;
+    setShowTour: (show: boolean) => void;
+    showTourBanner: boolean;
+    setShowTourBanner: (show: boolean) => void;
+    showSetup: boolean;
+    setupIncomplete: boolean;
+    mainRef: RefObject<HTMLElement | null>;
+    openSetup: () => void;
+    finishSetup: () => void;
+    handleLogout: () => void;
+    handlePasswordChanged: () => void;
+    handleAccountDeleted: () => void;
+    handleTransactionSaved: () => void;
+    handleTogglePrivacy: () => void;
+    patchAppearance: (partial: Partial<AppearancePrefs>) => void;
+    loadConfig: () => Promise<void>;
+    loadDashboard: () => Promise<void>;
+}) {
+    const t = useT();
     const { privacyMode } = appearance;
 
     return (
@@ -273,12 +387,12 @@ export function AppShell({
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <Image src="/logo.png" alt="" width={20} height={20} className="theme-logo opacity-80" />
-                            <p className="text-lg font-extrabold text-ink">Hi, {username}</p>
+                            <p className="text-lg font-extrabold text-ink">{t("header.hi", { name: username })}</p>
                         </div>
                         <button
                             type="button"
                             onClick={handleTogglePrivacy}
-                            aria-label={privacyMode ? "Show amounts" : "Hide amounts"}
+                            aria-label={privacyMode ? t("header.showAmounts") : t("header.hideAmounts")}
                             aria-pressed={privacyMode}
                             className={`rounded-full p-2.5 transition-all duration-150 active:scale-90 ${
                                 privacyMode
@@ -295,10 +409,8 @@ export function AppShell({
                     <div className="shrink-0 border-b border-brand/20 bg-brand-soft px-4 py-3">
                         <div className="mx-auto flex max-w-md items-start gap-3">
                             <div className="min-w-0 flex-1">
-                                <p className="text-sm font-bold text-ink">New here?</p>
-                                <p className="mt-0.5 text-xs text-muted">
-                                    Take a quick tour, then we&apos;ll help you set up accounts and categories.
-                                </p>
+                                <p className="text-sm font-bold text-ink">{t("header.newHere")}</p>
+                                <p className="mt-0.5 text-xs text-muted">{t("header.tourBanner")}</p>
                                 <button
                                     type="button"
                                     onClick={() => {
@@ -307,12 +419,12 @@ export function AppShell({
                                     }}
                                     className="mt-2 text-sm font-bold text-brand"
                                 >
-                                    Take the tour
+                                    {t("header.takeTour")}
                                 </button>
                             </div>
                             <button
                                 type="button"
-                                aria-label="Dismiss"
+                                aria-label={t("common.dismiss")}
                                 onClick={() => {
                                     markTourSeen();
                                     setShowTourBanner(false);
@@ -329,7 +441,10 @@ export function AppShell({
                     <div className="shrink-0 bg-ink px-4 py-2 text-center text-xs font-semibold text-paper flex items-center justify-center gap-2">
                         <span className="h-2 w-2 rounded-full bg-amber-400 animate-pulse" />
                         <span>
-                            Offline Mode{outboxCount > 0 ? ` — ${outboxCount} item(s) pending sync` : " — showing cached data"}
+                            {t("header.offline")}
+                            {outboxCount > 0
+                                ? ` — ${t("header.pendingSync", { count: outboxCount })}`
+                                : ` — ${t("header.cachedData")}`}
                         </span>
                     </div>
                 )}
@@ -418,3 +533,4 @@ export function AppShell({
         </UndoToastProvider>
     );
 }
+

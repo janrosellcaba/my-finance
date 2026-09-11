@@ -1,10 +1,11 @@
 "use client";
 
 import { type Account, type Category, type Transaction, categoryChipStyle, formatCurrency, formatDate } from "../shared";
+import { useT } from "@/i18n/I18nProvider";
 import { CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight } from "./icons";
 
-function resolveName(id: string, accounts: Account[], categories: Category[]): string {
-    return accounts.find((a) => a.id === id)?.name ?? categories.find((c) => c.id === id)?.name ?? "Unknown";
+function resolveName(id: string, accounts: Account[], categories: Category[], fallback: string): string {
+    return accounts.find((a) => a.id === id)?.name ?? categories.find((c) => c.id === id)?.name ?? fallback;
 }
 
 export function TransactionCard({
@@ -24,17 +25,19 @@ export function TransactionCard({
     onClick?: () => void;
     compact?: boolean;
 }) {
+    const t = useT();
     const sign = tx.type === "expense" ? "-" : tx.type === "income" ? "+" : "";
     const color = tx.type === "expense" ? "text-danger" : tx.type === "income" ? "text-brand" : "text-ink";
-    const fromName = resolveName(tx.accountId, accounts, categories);
-    const toName = resolveName(tx.destinationId, accounts, categories);
+    const unknown = t("common.unknown");
+    const fromName = resolveName(tx.accountId, accounts, categories, unknown);
+    const toName = resolveName(tx.destinationId, accounts, categories, unknown);
     const subtitle = tx.type === "transfer" ? `${fromName} → ${toName}` : `${toName} · ${fromName}`;
     const category = tx.type !== "transfer" ? categories.find((c) => c.id === tx.destinationId) : undefined;
     const categoryColor = category?.color ?? null;
     const categoryIcon = category?.icon ?? null;
     const title =
         tx.description.trim() ||
-        (tx.type === "transfer" ? "Transfer" : (category?.name ?? toName));
+        (tx.type === "transfer" ? t("type.transfer") : (category?.name ?? toName));
     const Tag = onClick ? "button" : "div";
 
     return (

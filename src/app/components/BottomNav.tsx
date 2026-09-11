@@ -1,16 +1,18 @@
 "use client";
 
 import { type ReactElement } from "react";
+import { useT } from "@/i18n/I18nProvider";
 import { type Tab } from "../shared";
 import { IconChart, IconCheckSquare, IconHome, IconList, IconSettings } from "./icons";
 
 export function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: Tab) => void }) {
+    const t = useT();
     const items: { key: Tab; label: string; Icon: (props: { className?: string }) => ReactElement }[] = [
-        { key: "home", label: "Home", Icon: IconHome },
-        { key: "transactions", label: "Transactions", Icon: IconList },
-        { key: "todo", label: "To-Do", Icon: IconCheckSquare },
-        { key: "analytics", label: "Analytics", Icon: IconChart },
-        { key: "config", label: "Settings", Icon: IconSettings },
+        { key: "home", label: t("nav.home"), Icon: IconHome },
+        { key: "transactions", label: t("nav.transactions"), Icon: IconList },
+        { key: "todo", label: t("nav.todo"), Icon: IconCheckSquare },
+        { key: "analytics", label: t("nav.analytics"), Icon: IconChart },
+        { key: "config", label: t("nav.settings"), Icon: IconSettings },
     ];
 
     return (

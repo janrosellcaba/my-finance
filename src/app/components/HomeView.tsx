@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/i18n/I18nProvider";
 import { type Account, type Category, type DashboardSummary, formatCurrency, PRIMARY_BTN } from "../shared";
 import { DeltaPill, Sparkline } from "./analytics/primitives";
 import { AccountIcon } from "./icons";
@@ -57,12 +58,14 @@ export function HomeView({
     privacyMode: boolean;
     onAddClick: () => void;
 }) {
+    const t = useT();
+
     if (loading) {
         return <HomeSkeleton />;
     }
 
     if (!dashboard) {
-        return <p className="px-5 pt-10 text-center text-muted">Could not load your dashboard.</p>;
+        return <p className="px-5 pt-10 text-center text-muted">{t("home.loadError")}</p>;
     }
 
     const positive = dashboard.totalNetWorth >= 0;
@@ -73,7 +76,7 @@ export function HomeView({
         <div className="space-y-6 px-5 pt-6">
             <div className="relative overflow-hidden surface rounded-3xl p-6 text-center">
                 <div className="absolute inset-0 bg-gradient-to-b from-brand/5 via-transparent to-transparent pointer-events-none" />
-                <p className="relative text-xs font-bold uppercase tracking-wider text-muted">Total Net Worth</p>
+                <p className="relative text-xs font-bold uppercase tracking-wider text-muted">{t("home.totalNetWorth")}</p>
                 <p
                     className={`relative mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl tabular-nums transition-[filter,opacity] duration-250 ${
                         positive ? "text-brand" : "text-danger"
@@ -88,7 +91,7 @@ export function HomeView({
                         }`}
                     >
                         <Sparkline values={dashboard.netWorthHistory} tone={netWorthTone} />
-                        <p className="mt-1 text-[11px] font-medium text-muted">Past 30 Days</p>
+                        <p className="mt-1 text-[11px] font-medium text-muted">{t("home.past30Days")}</p>
                     </div>
                 )}
             </div>
@@ -98,11 +101,11 @@ export function HomeView({
                 onClick={onAddClick}
                 className={`${PRIMARY_BTN} w-full`}
             >
-                + Add Transaction
+                {t("home.addTransaction")}
             </button>
 
             <div>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Your Accounts</h2>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</h2>
                 <div className="grid grid-cols-2 gap-3">
                     {dashboard.accounts.map((acc) => (
                         <div key={acc.id} className="group surface rounded-2xl p-4 transition-all duration-150 hover:brightness-[1.01]">
@@ -128,9 +131,9 @@ export function HomeView({
             </div>
 
             <div>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">Recent Activity</h2>
+                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">{t("home.recentActivity")}</h2>
                 <div className="space-y-2">
-                    {recent.length === 0 && <p className="text-sm text-muted">No transactions yet.</p>}
+                    {recent.length === 0 && <p className="text-sm text-muted">{t("home.noTransactions")}</p>}
                     {recent.map((tx) => (
                         <TransactionCard
                             key={tx.id}

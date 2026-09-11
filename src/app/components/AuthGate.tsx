@@ -3,10 +3,13 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useLanguage, useT } from "@/i18n/I18nProvider";
 import { INPUT_CLS, PRIMARY_BTN, SUPPORT_EMAIL } from "../shared";
 import { PasswordInput } from "./PasswordInput";
 
 export function AuthGate() {
+    const t = useT();
+    const language = useLanguage();
     const router = useRouter();
     const [mode, setMode] = useState<"login" | "signup">("login");
     const [username, setUsername] = useState("");
@@ -21,7 +24,8 @@ export function AuthGate() {
         setLoading(true);
 
         const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/signup";
-        const payload = mode === "login" ? { username, password } : { username, password, secretCode };
+        const payload =
+            mode === "login" ? { username, password } : { username, password, secretCode, language };
 
         try {
             const res = await fetch(endpoint, {
@@ -31,13 +35,13 @@ export function AuthGate() {
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setError(data.error || "Something went wrong.");
+                setError(data.error || t("common.somethingWrong"));
                 setLoading(false);
                 return;
             }
             router.refresh();
         } catch {
-            setError("Network error. Please try again.");
+            setError(t("common.networkError"));
             setLoading(false);
         }
     }
@@ -50,12 +54,12 @@ export function AuthGate() {
                 </div>
                 <h1 className="text-center text-3xl font-extrabold tracking-tight text-ink">MyFinance</h1>
                 <p className="mb-6 text-center text-sm text-muted">
-                    {mode === "login" ? "Welcome back." : "Create your account."}
+                    {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
                 </p>
 
                 <form onSubmit={handleSubmit} className="space-y-3">
                     <label className="block">
-                        <span className="mb-1 block text-sm font-semibold text-ink">Username</span>
+                        <span className="mb-1 block text-sm font-semibold text-ink">{t("auth.username")}</span>
                         <input
                             value={username}
                             onChange={(e) => setUsername(e.target.value)}
@@ -67,7 +71,7 @@ export function AuthGate() {
                     </label>
 
                     <label className="block">
-                        <span className="mb-1 block text-sm font-semibold text-ink">Password</span>
+                        <span className="mb-1 block text-sm font-semibold text-ink">{t("auth.password")}</span>
                         <PasswordInput
                             value={password}
                             onChange={setPassword}
@@ -79,7 +83,7 @@ export function AuthGate() {
 
                     {mode === "signup" && (
                         <label className="block">
-                            <span className="mb-1 block text-sm font-semibold text-ink">Registration Safety Code</span>
+                            <span className="mb-1 block text-sm font-semibold text-ink">{t("auth.safetyCode")}</span>
                             <input value={secretCode} onChange={(e) => setSecretCode(e.target.value)} required className={INPUT_CLS} />
                         </label>
                     )}
@@ -87,7 +91,7 @@ export function AuthGate() {
                     {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
                     <button type="submit" disabled={loading} className={`${PRIMARY_BTN} w-full`}>
-                        {loading ? "Please wait…" : mode === "login" ? "Log In" : "Create Account"}
+                        {loading ? t("common.pleaseWait") : mode === "login" ? t("auth.logIn") : t("auth.createAccountBtn")}
                     </button>
                 </form>
 
@@ -99,11 +103,11 @@ export function AuthGate() {
                     }}
                     className="mt-5 w-full text-center text-sm font-semibold text-muted transition-colors duration-150 hover:text-ink"
                 >
-                    {mode === "login" ? "New here? Create an account" : "Already have an account? Log in"}
+                    {mode === "login" ? t("auth.newHere") : t("auth.haveAccount")}
                 </button>
 
                 <p className="mt-4 text-center text-xs text-muted">
-                    Contact support{" "}
+                    {t("auth.contactSupport")}{" "}
                     <a
                         href={`mailto:${SUPPORT_EMAIL}?subject=MyFinance%20support`}
                         className="font-medium text-brand transition-colors duration-150 hover:text-brand-dark"

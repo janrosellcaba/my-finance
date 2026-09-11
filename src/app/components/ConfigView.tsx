@@ -1,10 +1,14 @@
 "use client";
 
 import { useState, type FormEvent, type ReactNode } from "react";
+import { LANGUAGE_OPTIONS, type TFunction } from "@/i18n";
+import { useT } from "@/i18n/I18nProvider";
 import {
     type Account,
+    type AccentColor,
     type AppearancePrefs,
     type Category,
+    type CurrencyCode,
     ACCENT_COLORS,
     CURRENCY_OPTIONS,
     DANGER_BTN,
@@ -37,16 +41,66 @@ type ConfigSection =
     | "support"
     | "danger";
 
-const CONFIG_SECTION_TITLES: Record<Exclude<ConfigSection, "menu">, string> = {
-    accounts: "Accounts",
-    categories: "Categories",
-    export: "Export",
-    import: "Import",
-    backup: "Backup",
-    appearance: "Appearance",
-    support: "Contact support",
-    danger: "Delete data",
-};
+function configSectionTitles(t: TFunction): Record<Exclude<ConfigSection, "menu">, string> {
+    return {
+        accounts: t("settings.sectionAccounts"),
+        categories: t("settings.sectionCategories"),
+        export: t("settings.sectionExport"),
+        import: t("settings.sectionImport"),
+        backup: t("settings.sectionBackup"),
+        appearance: t("settings.sectionAppearance"),
+        support: t("settings.sectionSupport"),
+        danger: t("settings.sectionDanger"),
+    };
+}
+
+function emphasize(template: string, label: string) {
+    const [before, after = ""] = template.split("\0");
+    return (
+        <>
+            {before}
+            <span className="font-semibold text-ink">{label}</span>
+            {after}
+        </>
+    );
+}
+
+function accentLabel(key: AccentColor, t: TFunction) {
+    switch (key) {
+        case "green":
+            return t("appearance.accentGreen");
+        case "blue":
+            return t("appearance.accentBlue");
+        case "terracotta":
+            return t("appearance.accentTerracotta");
+        case "slate":
+            return t("appearance.accentSlate");
+        case "rose":
+            return t("appearance.accentRose");
+    }
+}
+
+function currencyLabel(key: CurrencyCode, t: TFunction) {
+    switch (key) {
+        case "EUR":
+            return t("appearance.currencyEUR");
+        case "USD":
+            return t("appearance.currencyUSD");
+        case "GBP":
+            return t("appearance.currencyGBP");
+    }
+}
+
+function supportTopicLabel(topic: SupportTopic, t: TFunction) {
+    switch (topic) {
+        case "Help":
+            return t("support.topicHelp");
+        case "Bug":
+            return t("support.topicBug");
+        case "Idea":
+            return t("support.topicIdea");
+    }
+}
 
 function SegmentedButton({
     active,
@@ -99,6 +153,7 @@ export function ConfigView({
     showFinishSetup: boolean;
     onOpenSetup: () => void;
 }) {
+    const t = useT();
     const [section, setSection] = useState<ConfigSection>("menu");
     const [accountName, setAccountName] = useState("");
     const [accountInitialBalance, setAccountInitialBalance] = useState("");
@@ -122,7 +177,7 @@ export function ConfigView({
         const trimmedBalance = accountInitialBalance.trim();
         const initialBalance = trimmedBalance ? parseAmountEs(trimmedBalance) : 0;
         if (initialBalance === null) {
-            setError("Invalid initial balance.");
+            setError(t("accounts.invalidBalance"));
             return;
         }
         setSavingAccount(true);
@@ -135,7 +190,7 @@ export function ConfigView({
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setError(data.error || "Could not add account.");
+                setError(data.error || t("accounts.addFailed"));
                 return;
             }
             setAccountName("");
@@ -149,7 +204,7 @@ export function ConfigView({
     async function handleSetInitialBalance(a: Account, rawValue: string) {
         const value = parseAmountEs(rawValue);
         if (value === null) {
-            setError("Invalid initial balance.");
+            setError(t("accounts.invalidBalance"));
             return;
         }
         setError("");
@@ -160,7 +215,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update initial balance.");
+            setError(data.error || t("accounts.updateBalanceFailed"));
             return;
         }
         onRefresh();
@@ -175,7 +230,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not rename account.");
+            setError(data.error || t("accounts.renameFailed"));
             return;
         }
         onRefresh();
@@ -194,7 +249,7 @@ export function ConfigView({
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setError(data.error || "Could not add category.");
+                setError(data.error || t("categories.addFailed"));
                 return;
             }
             setCategoryName("");
@@ -205,11 +260,7 @@ export function ConfigView({
     }
 
     async function handleDeleteAccount(a: Account) {
-        if (
-            !confirm(
-                `Delete “${a.name}”? This also deletes every transaction linked to it (as source or destination). This cannot be undone.`
-            )
-        ) {
+        if (!confirm(t("accounts.deleteConfirm", { name: a.name }))) {
             return;
         }
         setError("");
@@ -220,7 +271,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not delete account.");
+            setError(data.error || t("accounts.deleteFailed"));
             return;
         }
         onRefresh();
@@ -230,7 +281,7 @@ export function ConfigView({
         setError("");
         setPendingDeleteCategoryIds((prev) => new Set(prev).add(c.id));
         requestDelete({
-            message: `“${c.name}” deleted.`,
+            message: t("categories.deleted", { name: c.name }),
             onUndo: () => {
                 setPendingDeleteCategoryIds((prev) => {
                     const next = new Set(prev);
@@ -245,7 +296,7 @@ export function ConfigView({
                     body: JSON.stringify({ target: "category", id: c.id }),
                 });
                 const data = (await res.json()) as { error?: string };
-                if (!res.ok) setError(data.error || "Could not delete category.");
+                if (!res.ok) setError(data.error || t("categories.deleteFailed"));
                 setPendingDeleteCategoryIds((prev) => {
                     const next = new Set(prev);
                     next.delete(c.id);
@@ -263,7 +314,7 @@ export function ConfigView({
         setSupportStatus(null);
 
         if (!email || !message) {
-            setSupportStatus({ type: "error", text: "Please fill in your email and message." });
+            setSupportStatus({ type: "error", text: t("support.fillFields") });
             return;
         }
 
@@ -276,24 +327,20 @@ export function ConfigView({
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setSupportStatus({ type: "error", text: data.error || "Could not send message. Please try again." });
+                setSupportStatus({ type: "error", text: data.error || t("support.sendFailed") });
                 return;
             }
             setSupportMessage("");
-            setSupportStatus({ type: "success", text: "Message sent — thanks for reaching out!" });
+            setSupportStatus({ type: "success", text: t("support.sent") });
         } catch {
-            setSupportStatus({ type: "error", text: "Network error. Please try again." });
+            setSupportStatus({ type: "error", text: t("common.networkError") });
         } finally {
             setSupportSending(false);
         }
     }
 
     async function handleDeleteAllTransactions() {
-        if (
-            !confirm(
-                "Delete all transactions and reset every account’s initial balance to 0? Accounts and categories stay. This cannot be undone."
-            )
-        ) {
+        if (!confirm(t("danger.deleteAllTxConfirm"))) {
             return;
         }
         setError("");
@@ -304,18 +351,14 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not delete transactions.");
+            setError(data.error || t("danger.deleteAllFailed"));
             return;
         }
         onRefresh();
     }
 
     async function handleDeleteMyAccount() {
-        if (
-            !confirm(
-                "Permanently delete your MyFinance login and all of your data (accounts, categories, transactions, to-dos)? You will be logged out. This cannot be undone."
-            )
-        ) {
+        if (!confirm(t("danger.deleteAccountConfirm"))) {
             return;
         }
         setError("");
@@ -326,7 +369,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not delete your account.");
+            setError(data.error || t("danger.deleteAccountFailed"));
             return;
         }
         onAccountDeleted();
@@ -341,7 +384,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not reorder categories.");
+            setError(data.error || t("categories.reorderFailed"));
             return false;
         }
         onRefresh();
@@ -357,7 +400,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update default account.");
+            setError(data.error || t("accounts.defaultFailed"));
             return;
         }
         onRefresh();
@@ -372,7 +415,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update account icon.");
+            setError(data.error || t("accounts.iconFailed"));
             return;
         }
         onRefresh();
@@ -387,7 +430,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update default category.");
+            setError(data.error || t("categories.defaultFailed"));
             return;
         }
         onRefresh();
@@ -402,7 +445,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update category color.");
+            setError(data.error || t("categories.colorFailed"));
             return;
         }
         onRefresh();
@@ -417,7 +460,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update category icon.");
+            setError(data.error || t("categories.iconFailed"));
             return;
         }
         onRefresh();
@@ -432,7 +475,7 @@ export function ConfigView({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not rename category.");
+            setError(data.error || t("categories.renameFailed"));
             return;
         }
         onRefresh();
@@ -442,33 +485,33 @@ export function ConfigView({
         return (
             <div className="space-y-6 px-5 pt-6">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-ink">Settings</h1>
+                    <h1 className="text-2xl font-extrabold text-ink">{t("settings.title")}</h1>
                     {/* <p className="mt-1 text-sm text-muted">Accounts, data, look &amp; feel, and account safety.</p> */}
                 </div>
 
                 {error && <p className="text-sm font-medium text-danger">{error}</p>}
 
                 <div className="overflow-hidden surface rounded-2xl">
-                    <MenuRow label="Bank accounts" onClick={() => setSection("accounts")} />
-                    <MenuRow label="Categories" onClick={() => setSection("categories")} />
-                    <MenuRow label="Export" onClick={() => setSection("export")} />
-                    <MenuRow label="Import" onClick={() => setSection("import")} />
-                    <MenuRow label="Backup" onClick={() => setSection("backup")} />
-                    <MenuRow label="Appearance" onClick={() => setSection("appearance")} />
+                    <MenuRow label={t("settings.bankAccounts")} onClick={() => setSection("accounts")} />
+                    <MenuRow label={t("settings.categories")} onClick={() => setSection("categories")} />
+                    <MenuRow label={t("settings.export")} onClick={() => setSection("export")} />
+                    <MenuRow label={t("settings.import")} onClick={() => setSection("import")} />
+                    <MenuRow label={t("settings.backup")} onClick={() => setSection("backup")} />
+                    <MenuRow label={t("settings.appearance")} onClick={() => setSection("appearance")} />
                 </div>
 
                 <div className="overflow-hidden surface rounded-2xl">
                     {showFinishSetup && (
-                        <MenuRow label="Finish setup" onClick={onOpenSetup} />
+                        <MenuRow label={t("settings.finishSetup")} onClick={onOpenSetup} />
                     )}
-                    <MenuRow label="App tour" onClick={onOpenTour} />
-                    <MenuRow label="Contact support" onClick={() => setSection("support")} />
-                    <MenuRow label="Change password" chevron={false} last onClick={() => setShowChangePassword(true)} />
+                    <MenuRow label={t("settings.appTour")} onClick={onOpenTour} />
+                    <MenuRow label={t("settings.contactSupport")} onClick={() => setSection("support")} />
+                    <MenuRow label={t("settings.changePassword")} chevron={false} last onClick={() => setShowChangePassword(true)} />
                 </div>
 
                 <div className="overflow-hidden surface rounded-2xl">
-                    <MenuRow label="Delete data" danger onClick={() => setSection("danger")} />
-                    <MenuRow label="Log out" chevron={false} danger last onClick={onLogout} />
+                    <MenuRow label={t("settings.deleteData")} danger onClick={() => setSection("danger")} />
+                    <MenuRow label={t("settings.logOut")} chevron={false} danger last onClick={onLogout} />
                 </div>
 
                 {showChangePassword && (
@@ -487,12 +530,12 @@ export function ConfigView({
                 <button
                     type="button"
                     onClick={() => setSection("menu")}
-                    aria-label="Back to settings"
+                    aria-label={t("settings.backToSettings")}
                     className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
                 >
                     <IconArrowLeft className="h-5 w-5" />
                 </button>
-                <h1 className="text-2xl font-extrabold text-ink">{CONFIG_SECTION_TITLES[section]}</h1>
+                <h1 className="text-2xl font-extrabold text-ink">{configSectionTitles(t)[section]}</h1>
             </div>
 
             {error && <p className="text-sm font-medium text-danger">{error}</p>}
@@ -501,25 +544,21 @@ export function ConfigView({
                 <section className="space-y-4 surface rounded-2xl p-5">
                     <div className="space-y-2 text-sm text-muted">
                         <p>
-                            Accounts are the wallets and bank accounts you track. Balances start from the{" "}
-                            <span className="font-semibold text-ink">initial balance</span>, then move with every
-                            income, expense, and transfer.
+                            {emphasize(
+                                t("accounts.intro", { initialBalance: "\0" }),
+                                t("accounts.initialBalance"),
+                            )}
                         </p>
                         <ul className="list-disc space-y-1.5 pl-5">
                             <li>
-                                <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> Default account —
-                                pre-selected when you add a transaction.
+                                <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> {t("accounts.bulletDefault")}
                             </li>
-                            <li>Icon — shown on Home and in lists.</li>
+                            <li>{t("accounts.bulletIcon")}</li>
                             <li>
-                                <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> Rename — updates
-                                everywhere automatically.
+                                <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> {t("accounts.bulletRename")}
                             </li>
-                            <li>
-                                Initial balance — set this if the account already had money when you started tracking
-                                it (instead of inventing an income transaction).
-                            </li>
-                            <li>Delete — removes the account and all transactions linked to it.</li>
+                            <li>{t("accounts.bulletBalance")}</li>
+                            <li>{t("accounts.bulletDelete")}</li>
                         </ul>
                     </div>
                     <AccountList
@@ -535,18 +574,18 @@ export function ConfigView({
                         <input
                             value={accountName}
                             onChange={(e) => setAccountName(e.target.value)}
-                            placeholder="New account name"
+                            placeholder={t("accounts.namePlaceholder")}
                             className={INPUT_CLS}
                         />
                         <input
                             value={accountInitialBalance}
                             onChange={(e) => setAccountInitialBalance(e.target.value)}
                             inputMode="decimal"
-                            placeholder="Initial balance (optional, default 0)"
+                            placeholder={t("accounts.balancePlaceholder")}
                             className={INPUT_CLS}
                         />
                         <button type="submit" disabled={savingAccount} className={`${PRIMARY_BTN} w-full`}>
-                            Add account
+                            {t("accounts.add")}
                         </button>
                     </form>
                 </section>
@@ -555,29 +594,23 @@ export function ConfigView({
             {section === "categories" && (
                 <section className="space-y-5 surface rounded-2xl p-5">
                     <div className="space-y-2 text-sm text-muted">
-                        <p>
-                            Categories label income and expenses (transfers go between accounts, not categories).
-                            Colour and icon appear on transactions and in Analytics.
-                        </p>
+                        <p>{t("categories.intro")}</p>
                         <ul className="list-disc space-y-1.5 pl-5">
                             <li>
-                                <IconGrip className="inline h-3.5 w-3.5 -translate-y-0.5" /> Drag to reorder — order is
-                                used in pickers.
+                                <IconGrip className="inline h-3.5 w-3.5 -translate-y-0.5" /> {t("categories.bulletReorder")}
                             </li>
                             <li>
-                                <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> Default for that type —
-                                pre-selected when adding a transaction.
+                                <IconRadioDot className="inline h-3.5 w-3.5 -translate-y-0.5" /> {t("categories.bulletDefault")}
                             </li>
-                            <li>Colour / icon — tap the swatch or icon to change.</li>
+                            <li>{t("categories.bulletStyle")}</li>
                             <li>
-                                <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> Rename — existing
-                                transactions keep the same category (name updates everywhere).
+                                <IconPencil className="inline h-3.5 w-3.5 -translate-y-0.5" /> {t("categories.bulletRename")}
                             </li>
-                            <li>Delete — removes the category and its transactions (with a short undo window).</li>
+                            <li>{t("categories.bulletDelete")}</li>
                         </ul>
                     </div>
                     <CategoryList
-                        title="Income"
+                        title={t("type.income")}
                         type="income"
                         items={categories.filter((c) => c.type === "income" && !pendingDeleteCategoryIds.has(c.id))}
                         onReorder={handleReorderCategories}
@@ -588,7 +621,7 @@ export function ConfigView({
                         onDelete={handleDeleteCategory}
                     />
                     <CategoryList
-                        title="Expense"
+                        title={t("type.expense")}
                         type="expense"
                         items={categories.filter((c) => c.type === "expense" && !pendingDeleteCategoryIds.has(c.id))}
                         onReorder={handleReorderCategories}
@@ -602,7 +635,7 @@ export function ConfigView({
                         <input
                             value={categoryName}
                             onChange={(e) => setCategoryName(e.target.value)}
-                            placeholder="New category name"
+                            placeholder={t("categories.namePlaceholder")}
                             className={INPUT_CLS}
                         />
                         <div className="flex gap-2">
@@ -613,7 +646,7 @@ export function ConfigView({
                                     categoryType === "income" ? "bg-brand text-white" : "bg-chip text-muted hover:bg-chip-hover"
                                 }`}
                             >
-                                Income
+                                {t("type.income")}
                             </button>
                             <button
                                 type="button"
@@ -622,11 +655,11 @@ export function ConfigView({
                                     categoryType === "expense" ? "bg-danger text-white" : "bg-chip text-muted hover:bg-chip-hover"
                                 }`}
                             >
-                                Expense
+                                {t("type.expense")}
                             </button>
                         </div>
                         <button type="submit" disabled={savingCategory} className={`${INK_BTN} w-full`}>
-                            Add category
+                            {t("categories.add")}
                         </button>
                     </form>
                 </section>
@@ -641,61 +674,75 @@ export function ConfigView({
             {section === "backup" && (
                 <section className="space-y-4 surface rounded-2xl p-5">
                     <div className="space-y-2 text-sm text-muted">
+                        <p>{t("backup.intro")}</p>
                         <p>
-                            Download a full JSON snapshot of your accounts, categories, transactions, to-dos, and
-                            appearance preferences.
-                        </p>
-                        <p>
-                            This is for your own safekeeping. It is not the same as{" "}
-                            <span className="font-semibold text-ink">Export</span> (spreadsheet/TSV for Excel). There is
-                            no one-click restore in the app yet — keep the file somewhere safe if you want a recoverable
-                            copy.
+                            {emphasize(t("backup.notExport", { export: "\0" }), t("backup.exportWord"))}
                         </p>
                     </div>
                     <a href="/api/backup" className={`${PRIMARY_BTN} block w-full text-center`}>
-                        Download backup
+                        {t("backup.download")}
                     </a>
                 </section>
             )}
 
             {section === "appearance" && (
                 <section className="space-y-6 surface rounded-2xl p-5">
-                    <p className="text-sm text-muted">
-                        These choices are saved to your account and apply on every device where you sign in.
-                    </p>
+                    <p className="text-sm text-muted">{t("appearance.intro")}</p>
 
                     <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Theme</p>
-                        <p className="text-xs text-muted">Light or dark. Not tied to your phone’s system setting.</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("appearance.language")}</p>
+                        <p className="text-xs text-muted">{t("appearance.languageHint")}</p>
+                        <div className="flex flex-col gap-2">
+                            {LANGUAGE_OPTIONS.map((opt) => (
+                                <button
+                                    key={opt.key}
+                                    type="button"
+                                    onClick={() => onPatchAppearance({ language: opt.key })}
+                                    className={`rounded-xl px-4 py-3 text-left font-bold transition-colors duration-150 select-none ${
+                                        appearance.language === opt.key
+                                            ? "bg-ink text-paper"
+                                            : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
+                                    }`}
+                                >
+                                    {opt.nativeName}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("appearance.theme")}</p>
+                        <p className="text-xs text-muted">{t("appearance.themeHint")}</p>
                         <div className="flex gap-2">
                             <SegmentedButton
                                 active={appearance.theme === "light"}
                                 onClick={() => onPatchAppearance({ theme: "light" })}
                             >
-                                Light
+                                {t("appearance.light")}
                             </SegmentedButton>
                             <SegmentedButton
                                 active={appearance.theme === "dark"}
                                 onClick={() => onPatchAppearance({ theme: "dark" })}
                             >
-                                Dark
+                                {t("appearance.dark")}
                             </SegmentedButton>
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Accent colour</p>
-                        <p className="text-xs text-muted">Primary buttons, highlights, and focus rings.</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("appearance.accent")}</p>
+                        <p className="text-xs text-muted">{t("appearance.accentHint")}</p>
                         <div className="flex flex-wrap gap-2.5">
                             {ACCENT_COLORS.map((c) => {
                                 const selected = appearance.accent === c.key;
+                                const label = accentLabel(c.key, t);
                                 return (
                                     <button
                                         key={c.key}
                                         type="button"
-                                        aria-label={c.label}
+                                        aria-label={label}
                                         aria-pressed={selected}
-                                        title={c.label}
+                                        title={label}
                                         onClick={() => onPatchAppearance({ accent: c.key })}
                                         className={`flex h-11 w-11 items-center justify-center rounded-full transition-transform duration-150 active:scale-95 ${
                                             selected ? "ring-2 ring-ink ring-offset-2 ring-offset-paper" : ""
@@ -708,10 +755,8 @@ export function ConfigView({
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Currency</p>
-                        <p className="text-xs text-muted">
-                            Display only — amounts are stored as numbers. Changing currency does not convert values.
-                        </p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("appearance.currency")}</p>
+                        <p className="text-xs text-muted">{t("appearance.currencyHint")}</p>
                         <div className="flex flex-col gap-2">
                             {CURRENCY_OPTIONS.map((c) => (
                                 <button
@@ -724,17 +769,15 @@ export function ConfigView({
                                             : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
                                     }`}
                                 >
-                                    {c.label}
+                                    {currencyLabel(c.key, t)}
                                 </button>
                             ))}
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Date format</p>
-                        <p className="text-xs text-muted">
-                            How dates appear in the app. Import still expects DD/MM/YYYY when pasting from a sheet.
-                        </p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("appearance.dateFormat")}</p>
+                        <p className="text-xs text-muted">{t("appearance.dateFormatHint")}</p>
                         <div className="flex flex-col gap-2">
                             {DATE_FORMAT_OPTIONS.map((d) => (
                                 <button
@@ -755,7 +798,7 @@ export function ConfigView({
                     </div>
 
                     <div className="space-y-2">
-                        <p className="text-xs font-bold uppercase tracking-wide text-muted">Privacy</p>
+                        <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("appearance.privacy")}</p>
                         <button
                             type="button"
                             onClick={() => onPatchAppearance({ privacyMode: !appearance.privacyMode })}
@@ -766,27 +809,23 @@ export function ConfigView({
                                     : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
                             }`}
                         >
-                            <span>Hide amounts</span>
+                            <span>{t("appearance.hideAmounts")}</span>
                             <span className="text-xs font-semibold opacity-80">
-                                {appearance.privacyMode ? "On" : "Off"}
+                                {appearance.privacyMode ? t("common.on") : t("common.off")}
                             </span>
                         </button>
-                        <p className="text-xs text-muted">
-                            Same as the eye in the header. Blurs balances and amounts; it does not lock the app.
-                        </p>
+                        <p className="text-xs text-muted">{t("appearance.privacyHint")}</p>
                     </div>
                 </section>
             )}
 
             {section === "support" && (
                 <section className="space-y-4 surface rounded-2xl p-5">
-                    <p className="text-sm text-muted">
-                        Need help, found a bug, or have an idea? Write to the developer and maintainer of MyFinance.
-                    </p>
+                    <p className="text-sm text-muted">{t("support.intro")}</p>
                     <form onSubmit={handleSupportSubmit} className="space-y-4">
                         <label className="block">
                             <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
-                                Your email
+                                {t("support.yourEmail")}
                             </span>
                             <input
                                 type="email"
@@ -799,7 +838,7 @@ export function ConfigView({
                             />
                         </label>
                         <div className="space-y-2">
-                            <p className="text-xs font-bold uppercase tracking-wide text-muted">Topic</p>
+                            <p className="text-xs font-bold uppercase tracking-wide text-muted">{t("support.topic")}</p>
                             <div className="flex gap-2">
                                 {SUPPORT_TOPICS.map((topic) => (
                                     <SegmentedButton
@@ -807,14 +846,14 @@ export function ConfigView({
                                         active={supportTopic === topic}
                                         onClick={() => setSupportTopic(topic)}
                                     >
-                                        {topic}
+                                        {supportTopicLabel(topic, t)}
                                     </SegmentedButton>
                                 ))}
                             </div>
                         </div>
                         <label className="block">
                             <span className="mb-1 block text-xs font-bold uppercase tracking-wide text-muted">
-                                Message
+                                {t("support.message")}
                             </span>
                             <textarea
                                 value={supportMessage}
@@ -822,7 +861,7 @@ export function ConfigView({
                                 required
                                 rows={5}
                                 maxLength={2000}
-                                placeholder="What were you doing, and roughly when?"
+                                placeholder={t("support.messagePlaceholder")}
                                 className={`${INPUT_CLS} resize-y`}
                             />
                         </label>
@@ -837,11 +876,11 @@ export function ConfigView({
                             </p>
                         )}
                         <button type="submit" disabled={supportSending} className={`${PRIMARY_BTN} w-full`}>
-                            {supportSending ? "Sending…" : "Send message"}
+                            {supportSending ? t("support.sending") : t("support.send")}
                         </button>
                     </form>
                     <p className="text-xs text-muted">
-                        Or email{" "}
+                        {t("support.orEmail")}{" "}
                         <a
                             href={`mailto:${SUPPORT_EMAIL}?subject=MyFinance%20support`}
                             className="font-medium text-brand transition-colors duration-150 hover:text-brand-dark"
@@ -855,8 +894,7 @@ export function ConfigView({
             {section === "danger" && (
                 <section className="space-y-4 surface rounded-2xl p-5">
                     <p className="text-sm text-muted">
-                        Destructive actions. Prefer a <span className="font-semibold text-ink">Backup</span> first if
-                        you might want the data later.
+                        {emphasize(t("danger.intro", { backup: "\0" }), t("danger.backupWord"))}
                     </p>
                     <div className="space-y-2">
                         <button
@@ -864,19 +902,15 @@ export function ConfigView({
                             onClick={handleDeleteAllTransactions}
                             className={`${DANGER_BTN} w-full`}
                         >
-                            Delete all transactions
+                            {t("danger.deleteAllTx")}
                         </button>
-                        <p className="text-xs text-muted">
-                            Clears every transaction and sets all initial balances to 0. Accounts and categories remain.
-                        </p>
+                        <p className="text-xs text-muted">{t("danger.deleteAllTxHint")}</p>
                     </div>
                     <div className="space-y-2">
                         <button type="button" onClick={handleDeleteMyAccount} className={`${DANGER_BTN} w-full`}>
-                            Delete my account
+                            {t("danger.deleteAccount")}
                         </button>
-                        <p className="text-xs text-muted">
-                            Removes your login and all personal data from this app. You will be signed out immediately.
-                        </p>
+                        <p className="text-xs text-muted">{t("danger.deleteAccountHint")}</p>
                     </div>
                 </section>
             )}

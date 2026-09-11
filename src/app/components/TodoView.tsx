@@ -17,6 +17,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { type Todo, INK_BTN } from "../shared";
+import { useT } from "@/i18n/I18nProvider";
 import { AddTodoModal } from "./AddTodoModal";
 import { SortableTodoRow, TodoRow } from "./SortableTodoRow";
 import { useUndoToast } from "./UndoToastProvider";
@@ -28,6 +29,7 @@ function bySortOrder(a: Todo, b: Todo) {
 }
 
 export function TodoView() {
+    const t = useT();
     const [todos, setTodos] = useState<Todo[]>([]);
     const [loading, setLoading] = useState(true);
     const [showAddModal, setShowAddModal] = useState(false);
@@ -80,7 +82,7 @@ export function TodoView() {
             return next;
         });
         requestDelete({
-            message: childIds.length > 0 ? "Task and subtasks deleted." : "Task deleted.",
+            message: childIds.length > 0 ? t("todos.deletedWithSubtasks") : t("todos.deleted"),
             onUndo: () => {
                 setPendingDeleteIds((prev) => {
                     const next = new Set(prev);
@@ -188,14 +190,14 @@ export function TodoView() {
     return (
         <div className="space-y-4 px-5 pt-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-extrabold text-ink">To-Do</h1>
+                <h1 className="text-2xl font-extrabold text-ink">{t("todos.title")}</h1>
                 <button type="button" onClick={() => openAdd()} className={`${INK_BTN} px-4 py-2 text-sm`}>
-                    + Add
+                    {t("todos.add")}
                 </button>
             </div>
 
             {loading ? (
-                <p className="pt-10 text-center text-muted">Loading…</p>
+                <p className="pt-10 text-center text-muted">{t("common.loading")}</p>
             ) : (
                 <>
                     {activeRoots.length === 0 ? (
@@ -204,15 +206,15 @@ export function TodoView() {
                                 <IconCheckSquare className="h-6 w-6" />
                             </div>
                             <div>
-                                <p className="font-bold text-ink">All caught up!</p>
-                                <p className="mt-0.5 text-xs text-muted">No pending financial tasks or reminders.</p>
+                                <p className="font-bold text-ink">{t("todos.allCaughtUp")}</p>
+                                <p className="mt-0.5 text-xs text-muted">{t("todos.noPending")}</p>
                             </div>
                             <button
                                 type="button"
                                 onClick={() => openAdd()}
                                 className="mt-2 rounded-xl bg-chip px-4 py-2 text-xs font-bold text-ink transition-colors hover:bg-chip-hover"
                             >
-                                + Create a task
+                                {t("todos.createTask")}
                             </button>
                         </div>
                     ) : (
@@ -273,7 +275,7 @@ export function TodoView() {
                     {completedRoots.length > 0 && (
                         <div className="space-y-2 pt-2">
                             <h2 className="text-xs font-bold uppercase tracking-wide text-muted">
-                                Completed · {completedRoots.length}
+                                {t("todos.completed", { count: completedRoots.length })}
                             </h2>
                             <div className="divide-y divide-line surface rounded-2xl">
                                 {completedRoots.map((root) => {

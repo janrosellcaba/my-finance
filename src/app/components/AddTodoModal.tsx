@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type FormEvent } from "react";
+import { useT } from "@/i18n/I18nProvider";
 import { type Todo, INPUT_CLS, PRIMARY_BTN } from "../shared";
 import { IconClose } from "./icons";
 import { enqueueOutbox } from "@/lib/offlineStore";
@@ -16,6 +17,7 @@ export function AddTodoModal({
     onClose: () => void;
     onSaved: () => void;
 }) {
+    const t = useT();
     const isEditing = !!todo;
     const isSubtask = !isEditing && !!parentId;
     const [text, setText] = useState(todo?.text ?? "");
@@ -36,7 +38,7 @@ export function AddTodoModal({
         setError("");
 
         if (!text.trim()) {
-            setError("Please enter a task.");
+            setError(t("todos.enterTask"));
             return;
         }
 
@@ -62,7 +64,7 @@ export function AddTodoModal({
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setError(data.error || "Could not save task.");
+                setError(data.error || t("todos.saveFailed"));
                 setSaving(false);
                 return;
             }
@@ -74,13 +76,19 @@ export function AddTodoModal({
                 onSaved();
                 return;
             }
-            setError("Network error. Please try again.");
+            setError(t("common.networkError"));
             setSaving(false);
         }
     }
 
-    const title = isEditing ? "Edit Task" : isSubtask ? "Add Subtask" : "Add Task";
-    const submitLabel = saving ? "Saving…" : isEditing ? "Save Changes" : isSubtask ? "Add Subtask" : "Add Task";
+    const title = isEditing ? t("todos.editTask") : isSubtask ? t("todos.addSubtask") : t("todos.addTask");
+    const submitLabel = saving
+        ? t("common.saving")
+        : isEditing
+          ? t("tx.saveChanges")
+          : isSubtask
+            ? t("todos.addSubtask")
+            : t("todos.addTask");
 
     return (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 sm:items-center" onClick={onClose}>
@@ -98,7 +106,7 @@ export function AddTodoModal({
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Close"
+                        aria-label={t("common.close")}
                         className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
                     >
                         <IconClose className="h-5 w-5" />
@@ -106,12 +114,14 @@ export function AddTodoModal({
                 </div>
 
                 <label className="mb-3 block">
-                    <span className="mb-1 block text-sm font-semibold text-ink">{isSubtask ? "Subtask" : "Task"}</span>
+                    <span className="mb-1 block text-sm font-semibold text-ink">
+                        {isSubtask ? t("todos.subtask") : t("todos.task")}
+                    </span>
                     <input
                         autoFocus
                         value={text}
                         onChange={(e) => setText(e.target.value)}
-                        placeholder={isSubtask ? "e.g. Gather documents" : "e.g. Pay the rent"}
+                        placeholder={isSubtask ? t("todos.subtaskPlaceholder") : t("todos.taskPlaceholder")}
                         className={INPUT_CLS}
                     />
                 </label>
@@ -119,7 +129,7 @@ export function AddTodoModal({
                 <div className="mb-4">
                     <div className="mb-1 flex items-center justify-between">
                         <label htmlFor="todo-due-date" className="text-sm font-semibold text-ink">
-                            Due date
+                            {t("todos.dueDate")}
                         </label>
                         {dueDate ? (
                             <button
@@ -127,10 +137,10 @@ export function AddTodoModal({
                                 onClick={() => setDueDate("")}
                                 className="text-xs font-semibold text-muted transition-colors hover:text-ink"
                             >
-                                Clear
+                                {t("common.clear")}
                             </button>
                         ) : (
-                            <span className="text-xs text-muted">optional</span>
+                            <span className="text-xs text-muted">{t("common.optional")}</span>
                         )}
                     </div>
                     <input

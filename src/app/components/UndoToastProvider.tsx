@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useRef, useState } from "react";
+import { useT } from "@/i18n/I18nProvider";
 
 const UNDO_WINDOW_MS = 5000;
 
@@ -24,6 +25,7 @@ type UndoToastContextValue = {
 const UndoToastContext = createContext<UndoToastContextValue | null>(null);
 
 export function UndoToastProvider({ children }: { children: React.ReactNode }) {
+    const t = useT();
     const [toasts, setToasts] = useState<PendingToast[]>([]);
     const timers = useRef(new Map<string, ReturnType<typeof setTimeout>>());
 
@@ -59,18 +61,18 @@ export function UndoToastProvider({ children }: { children: React.ReactNode }) {
         <UndoToastContext.Provider value={{ requestDelete }}>
             {children}
             <div className="pointer-events-none fixed inset-x-0 bottom-20 z-[60] flex flex-col items-center gap-2 px-4">
-                {toasts.map((t) => (
+                {toasts.map((toast) => (
                     <div
-                        key={t.id}
+                        key={toast.id}
                         className="pointer-events-auto flex w-full max-w-sm items-center justify-between gap-3 rounded-2xl bg-ink px-4 py-3 text-sm text-paper shadow-lg"
                     >
-                        <span>{t.message}</span>
+                        <span>{toast.message}</span>
                         <button
                             type="button"
-                            onClick={() => settle(t.id, false)}
+                            onClick={() => settle(toast.id, false)}
                             className="shrink-0 font-bold underline-offset-2 hover:underline"
                         >
-                            Undo
+                            {t("common.undo")}
                         </button>
                     </div>
                 ))}

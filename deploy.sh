@@ -83,6 +83,17 @@ if [ "$accent_cols" = "0" ]; then
     exit 1
 fi
 
+language_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('users') WHERE name='language';")"
+if [ "$language_cols" = "0" ]; then
+    echo "==> Adding missing users.language column..."
+    sqlite3 "$DATABASE_URL" "ALTER TABLE users ADD COLUMN language text;"
+fi
+language_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('users') WHERE name='language';")"
+if [ "$language_cols" = "0" ]; then
+    echo "❌ users.language is still missing"
+    exit 1
+fi
+
 todo_parent_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='parent_id';")"
 todo_sort_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='sort_order';")"
 if [ "$todo_parent_cols" = "0" ] || [ "$todo_sort_cols" = "0" ]; then

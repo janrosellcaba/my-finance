@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { ServiceWorkerRegister } from "./components/ServiceWorkerRegister";
 import { validateSession } from "@/lib/session";
+import { isLanguage, LANGUAGE_HTML, languageFromAcceptLanguage } from "@/i18n";
 import { DEFAULT_APPEARANCE } from "./shared";
 
 const outfit = Outfit({
@@ -40,9 +42,12 @@ export default async function RootLayout({
 	const user = await validateSession();
 	const theme = user?.themePreference ?? DEFAULT_APPEARANCE.theme;
 	const accent = user?.accentColor ?? DEFAULT_APPEARANCE.accent;
+	const language = isLanguage(user?.language)
+		? user.language
+		: languageFromAcceptLanguage((await headers()).get("accept-language"));
 
 	return (
-		<html lang="en-GB" data-theme={theme} data-accent={accent}>
+		<html lang={LANGUAGE_HTML[language]} data-theme={theme} data-accent={accent}>
 			<body className={`${outfit.variable} antialiased`}>
 				{children}
 				<ServiceWorkerRegister />

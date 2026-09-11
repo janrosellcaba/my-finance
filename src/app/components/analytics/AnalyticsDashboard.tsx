@@ -14,7 +14,9 @@ import {
     XAxis,
     YAxis,
 } from "recharts";
-import type { AnalyticsResult, CategoryRow } from "@/lib/analytics";
+import type { AnalyticsResult, CategoryRow, HealthLabelKey, HealthPart } from "@/lib/analytics";
+import { formatShortMonthYear, type TFunction } from "@/i18n";
+import { useLanguage, useT } from "@/i18n/I18nProvider";
 import { type Account, type Category, type Transaction, AMOUNT_MASK, categoryChipStyle, formatCurrency, formatDate } from "../../shared";
 import { TransactionCard } from "../TransactionCard";
 import { AccountIcon, CategoryIcon, IconClose } from "../icons";
@@ -26,6 +28,51 @@ const DANGER = "#a8402f";
 
 function moneyTick(v: number, privacyMode: boolean): string {
     return privacyMode ? AMOUNT_MASK : String(Math.round(v));
+}
+
+function healthLabel(key: HealthLabelKey, t: TFunction) {
+    switch (key) {
+        case "notEnough":
+            return t("analytics.healthNotEnough");
+        case "lookingStrong":
+            return t("analytics.healthLookingStrong");
+        case "trackingWell":
+            return t("analytics.healthTrackingWell");
+        case "worthALook":
+            return t("analytics.healthWorthALook");
+        case "needsALook":
+            return t("analytics.healthNeedsALook");
+    }
+}
+
+function healthPartLabel(key: HealthPart["key"], t: TFunction) {
+    switch (key) {
+        case "savings":
+            return t("analytics.healthSavings");
+        case "spending":
+            return t("analytics.healthSpending");
+        case "trend":
+            return t("analytics.healthNetWorth");
+        case "cushion":
+            return t("analytics.healthCushion");
+    }
+}
+
+function healthPartNote(p: HealthPart, t: TFunction) {
+    switch (p.noteKey) {
+        case "savingsRate":
+            return t("analytics.noteSavingsRate", p.noteParams);
+        case "spendLess":
+            return t("analytics.noteSpendLess", p.noteParams);
+        case "spendMore":
+            return t("analytics.noteSpendMore", p.noteParams);
+        case "nwUp":
+            return t("analytics.noteNwUp", p.noteParams);
+        case "nwDown":
+            return t("analytics.noteNwDown", p.noteParams);
+        case "cushion":
+            return t("analytics.noteCushion", p.noteParams);
+    }
 }
 
 type Drill = {
@@ -52,6 +99,7 @@ export function AnalyticsDashboard({
     focusName: string | null;
     onSelectAccount: (id: string) => void;
 }) {
+    const t = useT();
     const { summary, comparison, period, health } = data;
     const money = (n: number) => formatCurrency(n, privacyMode);
     const [scoreOpen, setScoreOpen] = useState(false);
@@ -61,6 +109,10 @@ export function AnalyticsDashboard({
         health.score === null ? "ink" : health.score >= 55 ? "brand" : health.score >= 35 ? "ink" : "danger";
 
     const focusNote = focusName ?? undefined;
+    const purchaseCountLabel = t(
+        summary.expenseCount === 1 ? "analytics.purchasesOne" : "analytics.purchasesMany",
+        { count: summary.expenseCount },
+    );
 
     return (
         <div className="space-y-6 lg:space-y-8">
@@ -74,7 +126,7 @@ export function AnalyticsDashboard({
                     aria-haspopup="dialog"
                     className="col-span-2 surface flex flex-col rounded-2xl p-4 text-left transition-colors duration-150 hover:brightness-[1.01] lg:col-span-1"
                 >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">Score</p>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t("analytics.score")}</p>
                     <p
                         className={`mt-1 text-3xl font-extrabold tabular-nums ${
                             scoreTone === "brand" ? "text-brand" : scoreTone === "danger" ? "text-danger" : "text-ink"
@@ -82,10 +134,10 @@ export function AnalyticsDashboard({
                     >
                         {health.score === null ? "—" : health.score}
                     </p>
-                    <p className="mt-1 truncate text-xs text-muted">{health.label}</p>
+                    <p className="mt-1 truncate text-xs text-muted">{healthLabel(health.labelKey, t)}</p>
                 </button>
                 <StatTile
-                    label="Spent"
+                    label={t("analytics.spent")}
                     value={money(summary.expenses)}
                     tone="danger"
                     delta={comparison.expensesDelta}
@@ -93,21 +145,21 @@ export function AnalyticsDashboard({
                     goodWhenUp={false}
                     footnote={
                         summary.expenseCount === 0
-                            ? "No purchases"
+                            ? t("analytics.noPurchases")
                             : privacyMode
-                              ? `${summary.expenseCount} purchase${summary.expenseCount === 1 ? "" : "s"}`
-                              : `${summary.expenseCount} purchase${summary.expenseCount === 1 ? "" : "s"} · ${money(data.dailySpend)}/day`
+                              ? purchaseCountLabel
+                              : t("analytics.perDay", { count: purchaseCountLabel, amount: money(data.dailySpend) })
                     }
                 />
                 <StatTile
-                    label="Earned"
+                    label={t("analytics.earned")}
                     value={money(summary.income)}
                     tone="brand"
                     delta={comparison.incomeDelta}
                     privacyMode={privacyMode}
                 />
                 <StatTile
-                    label={summary.netSavings >= 0 ? "Left over" : "Overspent"}
+                    label={summary.netSavings >= 0 ? t("analytics.leftOver") : t("analytics.overspent")}
                     value={money(Math.abs(summary.netSavings))}
                     tone={summary.netSavings >= 0 ? "brand" : "danger"}
                     delta={comparison.savingsDelta}
@@ -116,13 +168,13 @@ export function AnalyticsDashboard({
                     footnote={
                         summary.savingsRate === null || privacyMode
                             ? undefined
-                            : `${summary.savingsRate.toFixed(0)}% of income`
+                            : t("analytics.ofIncome", { pct: summary.savingsRate.toFixed(0) })
                     }
                 />
             </div>
 
             {data.accountActivity.length > 1 && (
-                <Section title="By account">
+                <Section title={t("analytics.byAccount")}>
                     <AccountCards
                         rows={data.accountActivity}
                         accounts={accounts}
@@ -134,14 +186,14 @@ export function AnalyticsDashboard({
             )}
 
             {data.transfers.length > 0 && (
-                <Section title="Transfers" subtitle={focusNote}>
+                <Section title={t("analytics.transfers")} subtitle={focusNote}>
                     <TransferRoutes rows={data.transfers} privacyMode={privacyMode} />
                 </Section>
             )}
 
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
                 <div className="lg:col-span-7">
-                    <Section title="Spending by category" subtitle={focusNote}>
+                    <Section title={t("analytics.spendingByCategory")} subtitle={focusNote}>
                         <CategoryBars
                             rows={data.spendingByCategory}
                             privacyMode={privacyMode}
@@ -154,7 +206,7 @@ export function AnalyticsDashboard({
                     </Section>
                 </div>
                 <div className="lg:col-span-5">
-                    <Section title="Biggest purchases" subtitle={focusNote}>
+                    <Section title={t("analytics.biggestPurchases")} subtitle={focusNote}>
                         <TopPurchases
                             rows={data.topExpenses}
                             privacyMode={privacyMode}
@@ -172,14 +224,14 @@ export function AnalyticsDashboard({
                 </div>
 
                 <div className="lg:col-span-12">
-                    <Section title="Month by month">
+                    <Section title={t("analytics.monthByMonth")}>
                         <MonthlyChart data={data} privacyMode={privacyMode} />
                     </Section>
                 </div>
 
                 {data.netWorthByAccount.length > 1 && (
                     <div className="lg:col-span-7">
-                        <Section title="Account balances">
+                        <Section title={t("analytics.accountBalances")}>
                             <AccountBalances
                                 rows={data.netWorthByAccount}
                                 accounts={accounts}
@@ -192,7 +244,7 @@ export function AnalyticsDashboard({
                 )}
                 {data.incomeBySource.length > 1 && (
                     <div className="lg:col-span-5">
-                        <Section title="Income by category" subtitle={focusNote}>
+                        <Section title={t("analytics.incomeByCategory")} subtitle={focusNote}>
                             <CategoryBars
                                 rows={data.incomeBySource}
                                 privacyMode={privacyMode}
@@ -207,12 +259,12 @@ export function AnalyticsDashboard({
                 )}
             </div>
 
-            <Section title="Net worth">
+            <Section title={t("analytics.netWorth")}>
                 <LifetimeNetWorth data={data} accounts={accounts} privacyMode={privacyMode} />
             </Section>
 
             {scoreOpen && (
-                <Sheet title="Score" subtitle={health.label} onClose={() => setScoreOpen(false)}>
+                <Sheet title={t("analytics.score")} subtitle={healthLabel(health.labelKey, t)} onClose={() => setScoreOpen(false)}>
                     <ScoreBreakdown health={health} privacyMode={privacyMode} />
                 </Sheet>
             )}
@@ -240,12 +292,9 @@ function ScoreBreakdown({
     health: AnalyticsResult["health"];
     privacyMode: boolean;
 }) {
+    const t = useT();
     if (health.parts.length === 0) {
-        return (
-            <p className="text-sm text-muted">
-                Add a payday and a few weeks of spending and a score will show up here.
-            </p>
-        );
+        return <p className="text-sm text-muted">{t("analytics.scoreEmpty")}</p>;
     }
 
     return (
@@ -256,7 +305,7 @@ function ScoreBreakdown({
             {health.parts.map((p) => (
                 <div key={p.key}>
                     <div className="flex items-baseline justify-between gap-3 text-sm">
-                        <span className="font-semibold text-ink">{p.label}</span>
+                        <span className="font-semibold text-ink">{healthPartLabel(p.key, t)}</span>
                         <span className="shrink-0 font-bold tabular-nums text-ink">{p.score}</span>
                     </div>
                     <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-chip">
@@ -265,10 +314,10 @@ function ScoreBreakdown({
                             style={{ width: `${Math.max(4, p.score)}%` }}
                         />
                     </div>
-                    <p className="mt-1 text-[11px] text-muted">{p.note}</p>
+                    <p className="mt-1 text-[11px] text-muted">{healthPartNote(p, t)}</p>
                 </div>
             ))}
-            <p className="text-xs text-muted">Scored against your own numbers, not a generic budget rule.</p>
+            <p className="text-xs text-muted">{t("analytics.scoreFootnote")}</p>
         </div>
     );
 }
@@ -284,7 +333,7 @@ type PieSlice = {
     row: CategoryRow | null;
 };
 
-function slicesFromRows(rows: CategoryRow[]): PieSlice[] {
+function slicesFromRows(rows: CategoryRow[], otherLabel: string): PieSlice[] {
     const colorOf = (r: CategoryRow, i: number) => r.color ?? PIE_FALLBACK[i % PIE_FALLBACK.length];
     const limit = 7;
     if (rows.length <= limit) {
@@ -309,7 +358,7 @@ function slicesFromRows(rows: CategoryRow[]): PieSlice[] {
             row: r,
         })),
         {
-            name: "Other",
+            name: otherLabel,
             amount: otherAmount,
             color: OTHER_FILL,
             share: total === 0 ? null : Math.round((otherAmount / total) * 100),
@@ -327,7 +376,8 @@ function CategoryPie({
     privacyMode: boolean;
     onSelect: (row: CategoryRow) => void;
 }) {
-    const slices = slicesFromRows(rows);
+    const t = useT();
+    const slices = slicesFromRows(rows, t("common.other"));
     const total = rows.reduce((s, r) => s + r.amount, 0);
 
     return (
@@ -386,7 +436,7 @@ function CategoryPie({
                 </PieChart>
             </ResponsiveContainer>
             <div className="pointer-events-none absolute left-1/2 top-1/2 flex w-[7.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Spent</p>
+                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{t("analytics.spent")}</p>
                 <p
                     className={`text-center text-base font-extrabold leading-tight tabular-nums text-ink ${
                         privacyMode ? "blur-[6px] select-none opacity-70" : ""
@@ -412,7 +462,8 @@ function CategoryBars({
     showPie?: boolean;
     onSelect: (row: CategoryRow) => void;
 }) {
-    if (rows.length === 0) return <EmptyNote>Nothing in this period.</EmptyNote>;
+    const t = useT();
+    if (rows.length === 0) return <EmptyNote>{t("analytics.nothingPeriod")}</EmptyNote>;
 
     const max = Math.max(...rows.map((r) => r.amount), 1);
     const fill = tone === "brand" ? "bg-brand" : "bg-danger";
@@ -488,7 +539,7 @@ function CategoryBars({
                             </div>
                         )}
                         <p className="mt-1 text-[11px] text-muted">
-                            {r.txCount} time{r.txCount === 1 ? "" : "s"}
+                            {t(r.txCount === 1 ? "analytics.timesOne" : "analytics.timesMany", { count: r.txCount })}
                             {r.share !== null && !privacyMode ? ` · ${r.share.toFixed(0)}%` : ""}
                         </p>
                     </button>
@@ -508,7 +559,8 @@ function TopPurchases({
     privacyMode: boolean;
     onSelect: (row: AnalyticsResult["topExpenses"][number]) => void;
 }) {
-    if (rows.length === 0) return <EmptyNote>No purchases this period.</EmptyNote>;
+    const t = useT();
+    if (rows.length === 0) return <EmptyNote>{t("analytics.noPurchasesPeriod")}</EmptyNote>;
 
     return (
         <Card className="divide-y divide-line !p-0">
@@ -545,14 +597,21 @@ function MonthlyChart({
     data: AnalyticsResult;
     privacyMode: boolean;
 }) {
+    const t = useT();
+    const language = useLanguage();
     if (data.monthlySeries.every((m) => m.income === 0 && m.expenses === 0)) {
-        return <EmptyNote>Not enough history for a trend yet.</EmptyNote>;
+        return <EmptyNote>{t("analytics.noTrend")}</EmptyNote>;
     }
+
+    const series = data.monthlySeries.map((m) => ({
+        ...m,
+        label: formatShortMonthYear(m.month, language),
+    }));
 
     return (
         <Card>
             <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={data.monthlySeries} barGap={2}>
+                <BarChart data={series} barGap={2}>
                     <XAxis dataKey="label" stroke={AXIS} tick={{ fontSize: 11 }} interval="preserveStartEnd" />
                     <YAxis
                         stroke={AXIS}
@@ -563,7 +622,7 @@ function MonthlyChart({
                     <Tooltip
                         formatter={(v, name) => [
                             typeof v === "number" ? formatCurrency(v, privacyMode) : String(v),
-                            name === "income" ? "Earned" : "Spent",
+                            name === "income" ? t("analytics.earned") : t("analytics.spent"),
                         ]}
                         isAnimationActive={false}
                     />
@@ -587,10 +646,10 @@ function MonthlyChart({
             </ResponsiveContainer>
             <div className="mt-2 flex gap-4 text-xs text-muted">
                 <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-sm bg-brand" /> Earned
+                    <span className="h-2 w-2 rounded-sm bg-brand" /> {t("analytics.earned")}
                 </span>
                 <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-sm bg-danger" /> Spent
+                    <span className="h-2 w-2 rounded-sm bg-danger" /> {t("analytics.spent")}
                 </span>
             </div>
         </Card>
@@ -621,6 +680,7 @@ function AccountBalances({
     selectedId: string;
     onSelect: (id: string) => void;
 }) {
+    const t = useT();
     const total = rows.reduce((s, r) => s + r.current, 0);
     const items: BalanceSlice[] = [...rows]
         .sort((a, b) => b.current - a.current)
@@ -637,7 +697,7 @@ function AccountBalances({
     const pieData = items.filter((r) => r.amount > 0);
 
     if (items.length === 0) {
-        return <EmptyNote>No accounts to show.</EmptyNote>;
+        return <EmptyNote>{t("analytics.noAccounts")}</EmptyNote>;
     }
 
     return (
@@ -697,7 +757,7 @@ function AccountBalances({
                                 </PieChart>
                             </ResponsiveContainer>
                             <div className="pointer-events-none absolute left-1/2 top-1/2 flex w-[7.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">Total</p>
+                                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{t("analytics.total")}</p>
                                 <p
                                     className={`text-center text-base font-extrabold leading-tight tabular-nums ${
                                         total >= 0 ? "text-ink" : "text-danger"
@@ -771,6 +831,7 @@ function LifetimeNetWorth({
     accounts: Account[];
     privacyMode: boolean;
 }) {
+    const t = useT();
     const [accountId, setAccountId] = useState("all");
 
     useEffect(() => {
@@ -788,7 +849,7 @@ function LifetimeNetWorth({
     if (series.length < 2) {
         return (
             <EmptyNote>
-                Not enough history yet. Current net worth:{" "}
+                {t("analytics.notEnoughHistory")}
                 <span className="font-semibold text-ink">{formatCurrency(current, privacyMode)}</span>.
             </EmptyNote>
         );
@@ -805,7 +866,7 @@ function LifetimeNetWorth({
                             accountId === "all" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                         }`}
                     >
-                        All accounts
+                        {t("analytics.allAccounts")}
                     </button>
                     {accounts.map((a) => (
                         <button
@@ -835,7 +896,7 @@ function LifetimeNetWorth({
                     } ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}
                 >
                     {change >= 0 ? "+" : ""}
-                    {formatCurrency(change, privacyMode)} since {formatDate(series[0].date)}
+                    {formatCurrency(change, privacyMode)} {t("analytics.since", { date: formatDate(series[0].date) })}
                 </p>
             )}
             <div className="mt-3">
@@ -881,6 +942,7 @@ function TransferRoutes({
     rows: AnalyticsResult["transfers"];
     privacyMode: boolean;
 }) {
+    const t = useT();
     return (
         <Card className="divide-y divide-line !p-0">
             {rows.map((r) => (
@@ -895,7 +957,7 @@ function TransferRoutes({
                             {r.toName}
                         </p>
                         <p className="mt-0.5 text-[11px] text-muted">
-                            {r.txCount} transfer{r.txCount === 1 ? "" : "s"}
+                            {t(r.txCount === 1 ? "analytics.transfersOne" : "analytics.transfersMany", { count: r.txCount })}
                         </p>
                     </div>
                     <p
@@ -924,6 +986,7 @@ function AccountCards({
     selectedId: string;
     onSelect: (id: string) => void;
 }) {
+    const t = useT();
     return (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {rows.map((r) => {
@@ -953,8 +1016,10 @@ function AccountCards({
                             {formatCurrency(r.net, privacyMode)}
                         </p>
                         <p className={`mt-1 text-xs text-muted ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}>
-                            in {formatCurrency(r.income + r.transfersIn, privacyMode)} · out{" "}
-                            {formatCurrency(r.expenses + r.transfersOut, privacyMode)}
+                            {t("analytics.inOut", {
+                                in: formatCurrency(r.income + r.transfersIn, privacyMode),
+                                out: formatCurrency(r.expenses + r.transfersOut, privacyMode),
+                            })}
                         </p>
                     </button>
                 );
@@ -974,6 +1039,7 @@ function Sheet({
     onClose: () => void;
     children: ReactNode;
 }) {
+    const t = useT();
     useEffect(() => {
         function onKey(e: KeyboardEvent) {
             if (e.key === "Escape") onClose();
@@ -999,7 +1065,7 @@ function Sheet({
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="Close"
+                        aria-label={t("common.close")}
                         className="rounded-full p-2 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
                     >
                         <IconClose className="h-5 w-5" />
@@ -1030,6 +1096,7 @@ function CategorySheet({
     privacyMode: boolean;
     onClose: () => void;
 }) {
+    const t = useT();
     const [txs, setTxs] = useState<Transaction[] | null>(null);
     const [truncated, setTruncated] = useState(false);
 
@@ -1064,7 +1131,7 @@ function CategorySheet({
     }, [drill.categoryId, drill.type, start, end, accountId]);
 
     return (
-        <Sheet title={drill.title} subtitle="This period" onClose={onClose}>
+        <Sheet title={drill.title} subtitle={t("analytics.thisPeriod")} onClose={onClose}>
             {txs === null ? (
                 <div className="animate-pulse space-y-2 py-2">
                     {Array.from({ length: 4 }).map((_, i) => (
@@ -1072,11 +1139,11 @@ function CategorySheet({
                     ))}
                 </div>
             ) : txs.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted">No transactions in this period.</p>
+                <p className="py-6 text-center text-sm text-muted">{t("analytics.noTxPeriod")}</p>
             ) : (
                 <>
                     {truncated && (
-                        <p className="mb-2 text-xs text-muted">Showing the latest 50.</p>
+                        <p className="mb-2 text-xs text-muted">{t("analytics.showingLatest")}</p>
                     )}
                     <div className="divide-y divide-line rounded-2xl border border-line">
                         {txs.map((tx) => (

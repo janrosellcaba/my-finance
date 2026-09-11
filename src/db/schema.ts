@@ -11,6 +11,7 @@ export const users = sqliteTable("users", {
     accentColor: text("accent_color").$type<"green" | "blue" | "terracotta" | "slate" | "rose">().notNull().default("green"),
     currency: text("currency").$type<"EUR" | "USD" | "GBP">().notNull().default("EUR"),
     dateFormat: text("date_format").$type<"DMY" | "MDY" | "YMD">().notNull().default("DMY"),
+    language: text("language").$type<"en" | "es" | "ca">(),
 });
 
 export const account = sqliteTable("account", {

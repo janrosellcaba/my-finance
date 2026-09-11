@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useT } from "@/i18n/I18nProvider";
 import { type Delta } from "../../shared";
 
 const TOOLTIP_WIDTH = 256;
 const TOOLTIP_MARGIN = 12;
 
 export function InfoTip({ text }: { text: string }) {
+    const t = useT();
     const [open, setOpen] = useState(false);
     const [pos, setPos] = useState<{ top: number; left: number } | null>(null);
     const btnRef = useRef<HTMLButtonElement>(null);
@@ -54,7 +56,7 @@ export function InfoTip({ text }: { text: string }) {
                 ref={btnRef}
                 type="button"
                 onClick={toggle}
-                aria-label="What is this?"
+                aria-label={t("analytics.whatIsThis")}
                 aria-expanded={open}
                 className="flex h-4 w-4 items-center justify-center rounded-full bg-chip text-[10px] font-bold normal-case text-muted transition-colors duration-150 select-none hover:bg-chip-hover hover:text-ink"
             >

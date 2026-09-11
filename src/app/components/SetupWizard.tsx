@@ -9,6 +9,7 @@ import {
     PRIMARY_BTN,
     parseAmountEs,
 } from "../shared";
+import { useT } from "@/i18n/I18nProvider";
 import { AccountList } from "./AccountList";
 import { CategoryList } from "./CategoryList";
 import { useUndoToast } from "./UndoToastProvider";
@@ -26,6 +27,7 @@ export function SetupWizard({
     onRefresh: () => Promise<void> | void;
     onFinished: () => void;
 }) {
+    const t = useT();
     const [accountName, setAccountName] = useState("");
     const [accountInitialBalance, setAccountInitialBalance] = useState("");
     const [categoryName, setCategoryName] = useState("");
@@ -42,7 +44,7 @@ export function SetupWizard({
         const trimmedBalance = accountInitialBalance.trim();
         const initialBalance = trimmedBalance ? parseAmountEs(trimmedBalance) : 0;
         if (initialBalance === null) {
-            setError("Invalid initial balance.");
+            setError(t("accounts.invalidBalance"));
             return;
         }
         setSavingAccount(true);
@@ -55,7 +57,7 @@ export function SetupWizard({
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setError(data.error || "Could not add account.");
+                setError(data.error || t("accounts.addFailed"));
                 return;
             }
             setAccountName("");
@@ -69,7 +71,7 @@ export function SetupWizard({
     async function handleSetInitialBalance(a: Account, rawValue: string) {
         const value = parseAmountEs(rawValue);
         if (value === null) {
-            setError("Invalid initial balance.");
+            setError(t("accounts.invalidBalance"));
             return;
         }
         setError("");
@@ -80,7 +82,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update initial balance.");
+            setError(data.error || t("accounts.updateBalanceFailed"));
             return;
         }
         await onRefresh();
@@ -95,7 +97,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not rename account.");
+            setError(data.error || t("accounts.renameFailed"));
             return;
         }
         await onRefresh();
@@ -103,9 +105,7 @@ export function SetupWizard({
 
     async function handleDeleteAccount(a: Account) {
         if (
-            !confirm(
-                `Delete “${a.name}”? This also deletes every transaction linked to it. This cannot be undone.`
-            )
+            !confirm(t("accounts.deleteConfirmShort", { name: a.name }))
         ) {
             return;
         }
@@ -117,7 +117,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not delete account.");
+            setError(data.error || t("accounts.deleteFailed"));
             return;
         }
         await onRefresh();
@@ -132,7 +132,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update default account.");
+            setError(data.error || t("accounts.defaultFailed"));
             return;
         }
         await onRefresh();
@@ -147,7 +147,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update account icon.");
+            setError(data.error || t("accounts.iconFailed"));
             return;
         }
         await onRefresh();
@@ -166,7 +166,7 @@ export function SetupWizard({
             });
             const data = (await res.json()) as { error?: string };
             if (!res.ok) {
-                setError(data.error || "Could not add category.");
+                setError(data.error || t("categories.addFailed"));
                 return;
             }
             setCategoryName("");
@@ -180,7 +180,7 @@ export function SetupWizard({
         setError("");
         setPendingDeleteCategoryIds((prev) => new Set(prev).add(c.id));
         requestDelete({
-            message: `“${c.name}” deleted.`,
+            message: t("categories.deleted", { name: c.name }),
             onUndo: () => {
                 setPendingDeleteCategoryIds((prev) => {
                     const next = new Set(prev);
@@ -195,7 +195,7 @@ export function SetupWizard({
                     body: JSON.stringify({ target: "category", id: c.id }),
                 });
                 const data = (await res.json()) as { error?: string };
-                if (!res.ok) setError(data.error || "Could not delete category.");
+                if (!res.ok) setError(data.error || t("categories.deleteFailed"));
                 setPendingDeleteCategoryIds((prev) => {
                     const next = new Set(prev);
                     next.delete(c.id);
@@ -215,7 +215,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not reorder categories.");
+            setError(data.error || t("categories.reorderFailed"));
             return false;
         }
         await onRefresh();
@@ -231,7 +231,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update default category.");
+            setError(data.error || t("categories.defaultFailed"));
             return;
         }
         await onRefresh();
@@ -246,7 +246,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update category color.");
+            setError(data.error || t("categories.colorFailed"));
             return;
         }
         await onRefresh();
@@ -261,7 +261,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not update category icon.");
+            setError(data.error || t("categories.iconFailed"));
             return;
         }
         await onRefresh();
@@ -276,7 +276,7 @@ export function SetupWizard({
         });
         const data = (await res.json()) as { error?: string };
         if (!res.ok) {
-            setError(data.error || "Could not rename category.");
+            setError(data.error || t("categories.renameFailed"));
             return;
         }
         await onRefresh();
@@ -288,12 +288,9 @@ export function SetupWizard({
     return (
         <div className="fixed inset-0 z-[70] flex flex-col bg-cream">
             <header className="surface-header shrink-0 border-b px-5 py-4">
-                <p className="text-xs font-bold uppercase tracking-wider text-brand">Quick setup</p>
-                <h1 className="mt-1 text-2xl font-extrabold text-ink">Make it yours</h1>
-                <p className="mt-1 text-sm text-muted">
-                    Starter accounts and categories are ready — rename them, set balances, add what you need, then
-                    continue.
-                </p>
+                <p className="text-xs font-bold uppercase tracking-wider text-brand">{t("setup.kicker")}</p>
+                <h1 className="mt-1 text-2xl font-extrabold text-ink">{t("setup.title")}</h1>
+                <p className="mt-1 text-sm text-muted">{t("setup.intro")}</p>
             </header>
 
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
@@ -302,11 +299,8 @@ export function SetupWizard({
 
                     <section className="space-y-3">
                         <div>
-                            <h2 className="text-sm font-bold uppercase tracking-wide text-muted">1 · Bank accounts</h2>
-                            <p className="mt-1 text-xs leading-relaxed text-muted">
-                                Set each account&apos;s initial balance to what it already holds. Tap the radio for
-                                your default account.
-                            </p>
+                            <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{t("setup.accounts")}</h2>
+                            <p className="mt-1 text-xs leading-relaxed text-muted">{t("setup.accountsHint")}</p>
                         </div>
                         <div className="surface overflow-hidden rounded-2xl">
                             <AccountList
@@ -323,32 +317,30 @@ export function SetupWizard({
                             <input
                                 value={accountName}
                                 onChange={(e) => setAccountName(e.target.value)}
-                                placeholder="New account name"
+                                placeholder={t("accounts.namePlaceholder")}
                                 className={INPUT_CLS}
                             />
                             <input
                                 value={accountInitialBalance}
                                 onChange={(e) => setAccountInitialBalance(e.target.value)}
                                 inputMode="decimal"
-                                placeholder="Initial balance (optional)"
+                                placeholder={t("setup.balancePlaceholder")}
                                 className={INPUT_CLS}
                             />
                             <button type="submit" disabled={savingAccount} className={`${INK_BTN} w-full`}>
-                                Add account
+                                {t("accounts.add")}
                             </button>
                         </form>
                     </section>
 
                     <section className="space-y-3">
                         <div>
-                            <h2 className="text-sm font-bold uppercase tracking-wide text-muted">2 · Categories</h2>
-                            <p className="mt-1 text-xs leading-relaxed text-muted">
-                                Add labels you actually use. Colour and icon show up on transactions and analytics.
-                            </p>
+                            <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{t("setup.categories")}</h2>
+                            <p className="mt-1 text-xs leading-relaxed text-muted">{t("setup.categoriesHint")}</p>
                         </div>
                         <div className="space-y-4 surface rounded-2xl p-4">
                             <CategoryList
-                                title="Income"
+                                title={t("type.income")}
                                 type="income"
                                 items={income}
                                 onReorder={handleReorderCategories}
@@ -359,7 +351,7 @@ export function SetupWizard({
                                 onDelete={handleDeleteCategory}
                             />
                             <CategoryList
-                                title="Expense"
+                                title={t("type.expense")}
                                 type="expense"
                                 items={expense}
                                 onReorder={handleReorderCategories}
@@ -374,7 +366,7 @@ export function SetupWizard({
                             <input
                                 value={categoryName}
                                 onChange={(e) => setCategoryName(e.target.value)}
-                                placeholder="New category name"
+                                placeholder={t("categories.namePlaceholder")}
                                 className={INPUT_CLS}
                             />
                             <div className="flex gap-2">
@@ -387,7 +379,7 @@ export function SetupWizard({
                                             : "bg-chip text-muted hover:bg-chip-hover"
                                     }`}
                                 >
-                                    Income
+                                    {t("type.income")}
                                 </button>
                                 <button
                                     type="button"
@@ -398,11 +390,11 @@ export function SetupWizard({
                                             : "bg-chip text-muted hover:bg-chip-hover"
                                     }`}
                                 >
-                                    Expense
+                                    {t("type.expense")}
                                 </button>
                             </div>
                             <button type="submit" disabled={savingCategory} className={`${INK_BTN} w-full`}>
-                                Add category
+                                {t("categories.add")}
                             </button>
                         </form>
                     </section>
@@ -416,10 +408,10 @@ export function SetupWizard({
                         onClick={onFinished}
                         className="rounded-2xl bg-chip px-4 py-3.5 text-sm font-bold text-muted select-none hover:bg-chip-hover hover:text-ink"
                     >
-                        Skip for now
+                        {t("setup.skip")}
                     </button>
                     <button type="button" onClick={onFinished} className={`${PRIMARY_BTN} min-w-0 flex-1 !py-3.5 !text-base`}>
-                        Done — go to Home
+                        {t("setup.done")}
                     </button>
                 </div>
             </div>

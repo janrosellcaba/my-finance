@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { type TFunction } from "@/i18n";
+import { useT } from "@/i18n/I18nProvider";
 import {
     type Account,
     type Category,
@@ -56,7 +58,12 @@ function isInitialBalanceRow(row: ImportRow): boolean {
     return isInitialBalanceRowShared(row.type, row.destinationName);
 }
 
-function parseImportText(text: string, existingAccounts: Account[], existingCategories: Category[]): ParseResult {
+function parseImportText(
+    text: string,
+    existingAccounts: Account[],
+    existingCategories: Category[],
+    t: TFunction
+): ParseResult {
     const errors: string[] = [];
     const rawRows: ParsedRaw[] = [];
 
@@ -66,9 +73,7 @@ function parseImportText(text: string, existingAccounts: Account[], existingCate
 
         const cols = line.split("\t");
         if (cols.length !== 6) {
-            errors.push(
-                `Row ${lineNum}: expected 6 columns (Date, Description, Category, Account, Amount, Type), got ${cols.length}.`
-            );
+            errors.push(t("import.errColumns", { line: lineNum, got: cols.length }));
             return;
         }
 
@@ -76,30 +81,35 @@ function parseImportText(text: string, existingAccounts: Account[], existingCate
 
         const date = parseDateDDMMYYYY(dateRaw);
         if (!date) {
-            errors.push(`Row ${lineNum}: invalid date "${dateRaw.trim()}" (expected DD/MM/YYYY).`);
+            errors.push(t("import.errDate", { line: lineNum, value: dateRaw.trim() }));
             return;
         }
 
         const amount = parseAmountEs(amountRaw);
         if (amount === null) {
-            errors.push(`Row ${lineNum}: invalid amount "${amountRaw.trim()}".`);
+            errors.push(t("import.errAmount", { line: lineNum, value: amountRaw.trim() }));
             return;
         }
 
         const type = TYPE_ALIASES[typeRaw.trim().toLowerCase()];
         if (!type) {
-            errors.push(`Row ${lineNum}: invalid type "${typeRaw.trim()}" (expected Income, Expense, or Transfer).`);
+            errors.push(t("import.errType", { line: lineNum, value: typeRaw.trim() }));
             return;
         }
 
         const account = accountRaw.trim();
         if (!account) {
-            errors.push(`Row ${lineNum}: missing account name.`);
+            errors.push(t("import.errAccount", { line: lineNum }));
             return;
         }
 
         if (type !== "transfer" && !categoryRaw.trim()) {
-            errors.push(`Row ${lineNum}: missing category for a ${type} transaction.`);
+            errors.push(
+                t("import.errCategory", {
+                    line: lineNum,
+                    type: type === "income" ? t("type.income") : t("type.expense"),
+                })
+            );
             return;
         }
 
@@ -138,9 +148,7 @@ function parseImportText(text: string, existingAccounts: Account[], existingCate
     for (const group of transferGroups.values()) {
         if (group.length !== 2) {
             const lineList = group.map((r) => r.lineNum).join(", ");
-            errors.push(
-                `Row(s) ${lineList}: could not pair ${group.length} Transfer row(s) with the same date and amount (need exactly 2, one negative and one positive).`
-            );
+            errors.push(t("import.errPair", { lines: lineList, count: group.length }));
             continue;
         }
 
@@ -149,9 +157,7 @@ function parseImportText(text: string, existingAccounts: Account[], existingCate
         const destination = a.amount > 0 ? a : b.amount > 0 ? b : null;
 
         if (!source || !destination || source === destination) {
-            errors.push(
-                `Rows ${a.lineNum}, ${b.lineNum}: paired Transfer rows must have opposite signs (one negative, one positive).`
-            );
+            errors.push(t("import.errSigns", { a: a.lineNum, b: b.lineNum }));
             continue;
         }
 
@@ -195,9 +201,7 @@ function parseImportText(text: string, existingAccounts: Account[], existingCate
     const dateRange = dates.length > 0 ? { from: dates[0], to: dates[dates.length - 1] } : null;
 
     if (rows.length > MAX_IMPORT_TRANSACTIONS) {
-        errors.unshift(
-            `Too many rows (${rows.length}). Import at most ${MAX_IMPORT_TRANSACTIONS} transactions at a time — split this into multiple imports.`
-        );
+        errors.unshift(t("import.errTooMany", { count: rows.length, max: MAX_IMPORT_TRANSACTIONS }));
     }
 
     return {
@@ -220,6 +224,7 @@ export function ImportView({
     categories: Category[];
     onImported: () => void;
 }) {
+    const t = useT();
     const [text, setText] = useState("");
     const [parsed, setParsed] = useState<ParseResult | null>(null);
     const [mode, setMode] = useState<"merge" | "replace">("merge");
@@ -235,16 +240,14 @@ export function ImportView({
     function handlePreview() {
         setError("");
         setResult(null);
-        setParsed(text.trim() ? parseImportText(text, accounts, categories) : null);
+        setParsed(text.trim() ? parseImportText(text, accounts, categories, t) : null);
     }
 
     async function handleImport() {
         if (!parsed || parsed.errors.length > 0 || parsed.rows.length === 0) return;
 
         if (mode === "replace") {
-            const confirmed = confirm(
-                "This will permanently delete ALL your existing accounts, categories, and transactions, then replace them with the pasted data. This cannot be undone. Continue?"
-            );
+            const confirmed = confirm(t("import.replaceConfirm"));
             if (!confirmed) return;
         }
 
@@ -264,7 +267,7 @@ export function ImportView({
                 initialBalanceRowsApplied?: number;
             };
             if (!res.ok) {
-                setError(data.error || "Could not import your data.");
+                setError(data.error || t("import.importFailed"));
                 return;
             }
             setResult({
@@ -277,7 +280,7 @@ export function ImportView({
             setParsed(null);
             onImported();
         } catch {
-            setError("Network error. Please try again.");
+            setError(t("common.networkError"));
         } finally {
             setImporting(false);
         }
@@ -289,40 +292,32 @@ export function ImportView({
     return (
         <div className="space-y-4">
             <section className="surface rounded-2xl p-5">
-                <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">How it works</h2>
+                <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-muted">{t("import.how")}</h2>
                 <ul className="list-disc space-y-1.5 pl-5 text-sm text-muted">
-                    <li>Paste data rows only — no header row.</li>
+                    <li>{t("import.noHeader")}</li>
+                    <li>{t("import.columnOrder", { cols: t("import.columnNames") })}</li>
                     <li>
-                        Exact column order:{" "}
-                        <span className="font-semibold text-ink">Date, Description, Category, Account, Amount, Type</span>
-                        (tab-separated, as from Excel).
+                        {t("import.datesAmounts", {
+                            date: t("import.dateFormat"),
+                            amount: t("import.amountExample"),
+                        })}
                     </li>
                     <li>
-                        Dates as <span className="font-semibold text-ink">DD/MM/YYYY</span>. Amounts like{" "}
-                        <span className="font-semibold text-ink">-68,99 €</span> (European style).
+                        {t("import.typeMustBe", {
+                            income: "Income",
+                            expense: "Expense",
+                            transfer: "Transfer",
+                        })}
                     </li>
-                    <li>
-                        Type must be <span className="font-semibold text-ink">Income</span>,{" "}
-                        <span className="font-semibold text-ink">Expense</span>, or{" "}
-                        <span className="font-semibold text-ink">Transfer</span>.
-                    </li>
-                    <li>
-                        Each transfer needs two rows: negative on the source account, positive on the destination.
-                    </li>
-                    <li>
-                        Unknown account or category names are created automatically.
-                    </li>
-                    <li>
-                        Category <span className="font-semibold text-ink">Initial Balance</span> (as Income) adds to an
-                        account&apos;s starting balance instead of creating a normal transaction. Importing the same
-                        row twice adds twice.
-                    </li>
-                    <li>Always tap Preview first — Import only runs after a clean preview.</li>
+                    <li>{t("import.transferRows")}</li>
+                    <li>{t("import.unknownNames")}</li>
+                    <li>{t("import.initialBalance", { name: t("import.initialBalanceName") })}</li>
+                    <li>{t("import.previewFirst")}</li>
                 </ul>
             </section>
 
             <section className="surface rounded-2xl p-5">
-                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Paste your data</h2>
+                <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{t("import.paste")}</h2>
                 <textarea
                     value={text}
                     onChange={(e) => {
@@ -335,7 +330,7 @@ export function ImportView({
                     className={`${INPUT_CLS} font-mono text-xs`}
                 />
                 <button type="button" onClick={handlePreview} disabled={!text.trim()} className={`${INK_BTN} mt-3 w-full`}>
-                    Preview
+                    {t("import.preview")}
                 </button>
             </section>
 
@@ -343,14 +338,22 @@ export function ImportView({
 
             {result && (
                 <section className="rounded-2xl border-2 border-brand/25 bg-brand-soft p-5 shadow-sm">
-                    <p className="font-bold text-brand-dark">Import complete!</p>
+                    <p className="font-bold text-brand-dark">{t("import.complete")}</p>
                     <p className="mt-1 text-sm text-brand-dark">
-                        {result.imported} transactions imported
-                        {result.accountsCreated > 0 ? `, ${result.accountsCreated} new account(s)` : ""}
-                        {result.categoriesCreated > 0 ? `, ${result.categoriesCreated} new category(ies)` : ""}
-                        {result.initialBalanceRowsApplied > 0
-                            ? `, ${result.initialBalanceRowsApplied} row(s) added to an account's initial balance`
-                            : ""}
+                        {[
+                            t("import.resultTx", { count: result.imported }),
+                            result.accountsCreated > 0
+                                ? t("import.resultAccounts", { count: result.accountsCreated })
+                                : null,
+                            result.categoriesCreated > 0
+                                ? t("import.resultCategories", { count: result.categoriesCreated })
+                                : null,
+                            result.initialBalanceRowsApplied > 0
+                                ? t("import.resultBalances", { count: result.initialBalanceRowsApplied })
+                                : null,
+                        ]
+                            .filter(Boolean)
+                            .join(", ")}
                         .
                     </p>
                 </section>
@@ -358,13 +361,12 @@ export function ImportView({
 
             {parsed && (
                 <section className="surface rounded-2xl p-5">
-                    <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">Preview</h2>
+                    <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-muted">{t("import.preview")}</h2>
 
                     {parsed.errors.length > 0 && (
                         <div className="mb-4 rounded-xl border-2 border-danger/25 bg-danger-soft p-3">
                             <p className="mb-1 text-sm font-bold text-danger">
-                                {parsed.errors.length} problem{parsed.errors.length === 1 ? "" : "s"} found — fix these in
-                                Excel and paste again:
+                                {t("import.problems", { count: parsed.errors.length })}
                             </p>
                             <ul className="list-disc space-y-1 pl-5 text-sm text-danger">
                                 {parsed.errors.map((e, i) => (
@@ -376,35 +378,37 @@ export function ImportView({
 
                     <div className="space-y-1.5 text-sm text-ink">
                         <p>
-                            <span className="font-semibold">{parsed.transactionCount}</span> transactions ready to import
+                            {t("import.ready", { count: parsed.transactionCount })}
                             {parsed.dateRange && (
                                 <>
                                     {" "}
-                                    (<span className="font-semibold">{formatDate(parsed.dateRange.from)}</span> to{" "}
-                                    <span className="font-semibold">{formatDate(parsed.dateRange.to)}</span>)
+                                    (
+                                    {t("import.dateTo", {
+                                        from: formatDate(parsed.dateRange.from),
+                                        to: formatDate(parsed.dateRange.to),
+                                    })}
+                                    )
                                 </>
                             )}
                             .
                         </p>
                         {parsed.newAccountNames.length > 0 && (
-                            <p>
-                                New accounts: <span className="font-semibold">{parsed.newAccountNames.join(", ")}</span>
-                            </p>
+                            <p>{t("import.newAccounts", { names: parsed.newAccountNames.join(", ") })}</p>
                         )}
                         {parsed.newCategoryNames.length > 0 && (
                             <p>
-                                New categories:{" "}
-                                <span className="font-semibold">
-                                    {parsed.newCategoryNames.map((c) => `${c.name} (${c.type})`).join(", ")}
-                                </span>
+                                {t("import.newCategories", {
+                                    names: parsed.newCategoryNames
+                                        .map(
+                                            (c) =>
+                                                `${c.name} (${c.type === "income" ? t("type.income") : t("type.expense")})`
+                                        )
+                                        .join(", "),
+                                })}
                             </p>
                         )}
                         {parsed.initialBalanceCount > 0 && (
-                            <p>
-                                <span className="font-semibold">{parsed.initialBalanceCount}</span> row
-                                {parsed.initialBalanceCount === 1 ? "" : "s"} will add to an account&apos;s initial
-                                balance instead of creating a transaction.
-                            </p>
+                            <p>{t("import.balanceRows", { count: parsed.initialBalanceCount })}</p>
                         )}
                     </div>
 
@@ -416,7 +420,7 @@ export function ImportView({
                                 mode === "merge" ? "bg-brand text-white" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
-                            Add to existing data
+                            {t("import.addToExisting")}
                         </button>
                         <button
                             type="button"
@@ -425,7 +429,7 @@ export function ImportView({
                                 mode === "replace" ? "bg-danger text-white" : "bg-chip text-muted hover:bg-chip-hover"
                             }`}
                         >
-                            Replace everything
+                            {t("import.replaceEverything")}
                         </button>
                     </div>
 
@@ -435,7 +439,11 @@ export function ImportView({
                         disabled={!canImport}
                         className={`${mode === "replace" ? DANGER_BTN : PRIMARY_BTN} mt-3 w-full`}
                     >
-                        {importing ? "Importing…" : mode === "replace" ? "Replace and Import" : "Import"}
+                        {importing
+                            ? t("import.importing")
+                            : mode === "replace"
+                              ? t("import.replaceAndImport")
+                              : t("import.importBtn")}
                     </button>
                 </section>
             )}
