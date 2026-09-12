@@ -1,6 +1,6 @@
 "use client";
 
-import { type Account, type Category, type Transaction, categoryChipStyle, formatCurrency, formatDate } from "../shared";
+import { type Account, type Category, type CurrencyCode, type Transaction, categoryChipStyle, formatCurrency, formatDate } from "../shared";
 import { useT } from "@/i18n/I18nProvider";
 import { CategoryIcon, IconArrowDownRight, IconArrowLeftRight, IconArrowUpRight } from "./icons";
 
@@ -16,6 +16,7 @@ export function TransactionCard({
     accountBalance,
     onClick,
     compact = false,
+    currency,
 }: {
     tx: Transaction;
     accounts: Account[];
@@ -24,6 +25,7 @@ export function TransactionCard({
     accountBalance?: number;
     onClick?: () => void;
     compact?: boolean;
+    currency?: CurrencyCode;
 }) {
     const t = useT();
     const sign = tx.type === "expense" ? "-" : tx.type === "income" ? "+" : "";
@@ -93,7 +95,7 @@ export function TransactionCard({
                     } ${color} ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
                 >
                     {sign}
-                    {formatCurrency(Math.abs(tx.amount))}
+                    {formatCurrency(Math.abs(tx.amount), privacyMode, currency)}
                 </p>
                 {accountBalance !== undefined && (
                     <p
@@ -101,7 +103,7 @@ export function TransactionCard({
                             privacyMode ? "blur-[5px] select-none opacity-70" : ""
                         }`}
                     >
-                        {formatCurrency(accountBalance)}
+                        {formatCurrency(accountBalance, privacyMode, currency)}
                     </p>
                 )}
             </div>

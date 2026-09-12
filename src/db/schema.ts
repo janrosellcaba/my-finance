@@ -12,6 +12,7 @@ export const users = sqliteTable("users", {
     currency: text("currency").$type<"EUR" | "USD" | "GBP">().notNull().default("EUR"),
     dateFormat: text("date_format").$type<"DMY" | "MDY" | "YMD">().notNull().default("DMY"),
     language: text("language").$type<"en" | "es" | "ca">(),
+    lastSeenAt: text("last_seen_at"),
 });
 
 export const account = sqliteTable("account", {

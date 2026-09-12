@@ -84,6 +84,7 @@ export async function POST(request: Request) {
                     username,
                     passwordHash,
                     language,
+                    lastSeenAt: new Date().toISOString(),
                 })
                 .run();
             tx.insert(account).values(accountsToInsert).run();

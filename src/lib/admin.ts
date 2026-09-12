@@ -7,10 +7,11 @@ export function isAdminUsername(username: string): boolean {
 export type AdminUserSummary = {
     username: string;
     createdAt: string;
+    lastSeenAt: string | null;
     language: string | null;
     currency: string;
     transactionCount: number;
     accountCount: number;
-    lastActivityAt: string | null;
+    balance: number;
     activeSessionCount: number;
 };

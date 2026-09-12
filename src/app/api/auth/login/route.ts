@@ -55,7 +55,11 @@ export async function POST(request: Request) {
 
         clearAttempts(rateLimitKey);
 
-        const { token, expiresAt } = await createSession(userRecord.id);
+        const lastSeenAt = new Date().toISOString();
+        const [{ token, expiresAt }] = await Promise.all([
+            createSession(userRecord.id),
+            db.update(users).set({ lastSeenAt }).where(eq(users.id, userRecord.id)),
+        ]);
 
         await setSessionCookie(token, expiresAt);
 

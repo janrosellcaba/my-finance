@@ -196,8 +196,23 @@ export const eur = {
 
 export const AMOUNT_MASK = "••••••";
 
-export function formatCurrency(value: number, _privacyMode?: boolean): string {
-    return currencyFormatter().format(value);
+export function formatCurrency(value: number, _privacyMode?: boolean, currency?: CurrencyCode): string {
+    return currencyFormatter(currency).format(value);
+}
+
+export function parseDateTime(raw: string): Date | null {
+    const iso = raw.includes("T") ? raw : `${raw.replace(" ", "T")}${raw.endsWith("Z") ? "" : "Z"}`;
+    const date = new Date(iso);
+    return Number.isNaN(date.getTime()) ? null : date;
+}
+
+export function formatDateTime(raw: string, format: DateFormat = formatPrefs.dateFormat): string {
+    const datePart = formatDate(raw, format);
+    const date = parseDateTime(raw);
+    if (!date) return datePart;
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    return `${datePart} ${hh}:${mm}`;
 }
 
 export function currencySymbol(currency: CurrencyCode = formatPrefs.currency): string {

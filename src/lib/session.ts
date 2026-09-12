@@ -7,6 +7,7 @@ import { session, users, type User } from "@/db/schema";
 const COOKIE_NAME = "finance_session";
 const SESSION_DURATION_MS = 1000 * 60 * 60 * 24 * 30;
 const PRUNE_INTERVAL_MS = 1000 * 60 * 60; // 1 hour
+const LAST_SEEN_THROTTLE_MS = 1000 * 60 * 5;
 
 let lastPruneAt = 0;
 
@@ -79,6 +80,13 @@ export const validateSession = cache(async (): Promise<User | null> => {
     if (Date.now() >= result.sessionRecord.expiresAt) {
         await db.delete(session).where(eq(session.id, sessionId));
         return null;
+    }
+
+    const lastSeenMs = result.user.lastSeenAt ? Date.parse(result.user.lastSeenAt) : 0;
+    if (!Number.isFinite(lastSeenMs) || Date.now() - lastSeenMs >= LAST_SEEN_THROTTLE_MS) {
+        const lastSeenAt = new Date().toISOString();
+        await db.update(users).set({ lastSeenAt }).where(eq(users.id, result.user.id));
+        result.user.lastSeenAt = lastSeenAt;
     }
 
     return result.user;
