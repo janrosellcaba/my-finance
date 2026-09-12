@@ -20,6 +20,19 @@ sqlite.pragma("temp_store = MEMORY");
 // 4 MB page cache — enough for this dataset, keeps RSS small on a 1 GB VPS.
 sqlite.pragma("cache_size = -4000");
 
+// drizzle-kit migrate has skipped new columns in production before; adding them here
+// keeps a logged-in session from 500ing the homepage if a deploy missed the ALTER.
+function ensureColumn(table: string, column: string, definition: string) {
+    try {
+        sqlite.exec(`ALTER TABLE "${table}" ADD COLUMN "${column}" ${definition}`);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (!/duplicate column name/i.test(message)) throw err;
+    }
+}
+
+ensureColumn("users", "last_seen_at", "text");
+
 const db = drizzle(sqlite, { schema });
 
 export function getSqlite() {

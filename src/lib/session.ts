@@ -82,11 +82,15 @@ export const validateSession = cache(async (): Promise<User | null> => {
         return null;
     }
 
-    const lastSeenMs = result.user.lastSeenAt ? Date.parse(result.user.lastSeenAt) : 0;
-    if (!Number.isFinite(lastSeenMs) || Date.now() - lastSeenMs >= LAST_SEEN_THROTTLE_MS) {
-        const lastSeenAt = new Date().toISOString();
-        await db.update(users).set({ lastSeenAt }).where(eq(users.id, result.user.id));
-        result.user.lastSeenAt = lastSeenAt;
+    try {
+        const lastSeenMs = result.user.lastSeenAt ? Date.parse(result.user.lastSeenAt) : 0;
+        if (!Number.isFinite(lastSeenMs) || Date.now() - lastSeenMs >= LAST_SEEN_THROTTLE_MS) {
+            const lastSeenAt = new Date().toISOString();
+            await db.update(users).set({ lastSeenAt }).where(eq(users.id, result.user.id));
+            result.user.lastSeenAt = lastSeenAt;
+        }
+    } catch (err) {
+        console.error("Last-seen update error:", err);
     }
 
     return result.user;

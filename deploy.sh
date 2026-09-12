@@ -94,6 +94,17 @@ if [ "$language_cols" = "0" ]; then
     exit 1
 fi
 
+last_seen_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('users') WHERE name='last_seen_at';")"
+if [ "$last_seen_cols" = "0" ]; then
+    echo "==> Adding missing users.last_seen_at column..."
+    sqlite3 "$DATABASE_URL" "ALTER TABLE users ADD COLUMN last_seen_at text;"
+fi
+last_seen_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('users') WHERE name='last_seen_at';")"
+if [ "$last_seen_cols" = "0" ]; then
+    echo "❌ users.last_seen_at is still missing"
+    exit 1
+fi
+
 todo_parent_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='parent_id';")"
 todo_sort_cols="$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM pragma_table_info('todo') WHERE name='sort_order';")"
 if [ "$todo_parent_cols" = "0" ] || [ "$todo_sort_cols" = "0" ]; then
