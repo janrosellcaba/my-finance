@@ -26,6 +26,7 @@ import { CategoryList } from "./CategoryList";
 import { ChangePasswordModal } from "./ChangePasswordModal";
 import { ExportView } from "./ExportView";
 import { ImportView } from "./ImportView";
+import { AdminView } from "./AdminView";
 import { MenuRow } from "./MenuRow";
 import { useUndoToast } from "./UndoToastProvider";
 import { IconArrowLeft, IconGrip, IconPencil, IconRadioDot } from "./icons";
@@ -39,6 +40,7 @@ type ConfigSection =
     | "backup"
     | "appearance"
     | "support"
+    | "admin"
     | "danger";
 
 function configSectionTitles(t: TFunction): Record<Exclude<ConfigSection, "menu">, string> {
@@ -50,6 +52,7 @@ function configSectionTitles(t: TFunction): Record<Exclude<ConfigSection, "menu"
         backup: t("settings.sectionBackup"),
         appearance: t("settings.sectionAppearance"),
         support: t("settings.sectionSupport"),
+        admin: t("settings.sectionAdmin"),
         danger: t("settings.sectionDanger"),
     };
 }
@@ -139,6 +142,8 @@ export function ConfigView({
     onOpenTour,
     showFinishSetup,
     onOpenSetup,
+    username,
+    isAdmin,
 }: {
     accounts: Account[];
     categories: Category[];
@@ -152,6 +157,8 @@ export function ConfigView({
     onOpenTour: () => void;
     showFinishSetup: boolean;
     onOpenSetup: () => void;
+    username: string;
+    isAdmin: boolean;
 }) {
     const t = useT();
     const [section, setSection] = useState<ConfigSection>("menu");
@@ -508,6 +515,12 @@ export function ConfigView({
                     <MenuRow label={t("settings.contactSupport")} onClick={() => setSection("support")} />
                     <MenuRow label={t("settings.changePassword")} chevron={false} last onClick={() => setShowChangePassword(true)} />
                 </div>
+
+                {isAdmin && (
+                    <div className="overflow-hidden surface rounded-2xl">
+                        <MenuRow label={t("settings.admin")} last onClick={() => setSection("admin")} />
+                    </div>
+                )}
 
                 <div className="overflow-hidden surface rounded-2xl">
                     <MenuRow label={t("settings.deleteData")} danger onClick={() => setSection("danger")} />
@@ -890,6 +903,8 @@ export function ConfigView({
                     </p>
                 </section>
             )}
+
+            {section === "admin" && isAdmin && <AdminView currentUsername={username} />}
 
             {section === "danger" && (
                 <section className="space-y-4 surface rounded-2xl p-5">

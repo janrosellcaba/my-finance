@@ -27,6 +27,7 @@ import {
     markTourSeen,
 } from "./GuidedTour";
 import { SetupWizard } from "./SetupWizard";
+import { isAdminUsername } from "@/lib/admin";
 import { getFromCache, getOutbox, saveToCache, syncOutbox } from "@/lib/offlineStore";
 import { LANGUAGE_HTML } from "@/i18n";
 import { I18nProvider, useT } from "@/i18n/I18nProvider";
@@ -491,6 +492,8 @@ function AppShellView({
                                 onImported={async () => {
                                     await Promise.all([loadConfig(), loadDashboard()]);
                                 }}
+                                username={username}
+                                isAdmin={isAdminUsername(username)}
                             />
                         )}
                     </div>
