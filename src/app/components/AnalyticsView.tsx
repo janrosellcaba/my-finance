@@ -147,10 +147,10 @@ export function AnalyticsView({
                         type="button"
                         onClick={handleCopyJson}
                         title={t("analytics.copyJson")}
-                        className="inline-flex items-center gap-1 rounded-full bg-chip px-2.5 py-1 text-xs font-bold leading-none text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
+                        aria-label={t("analytics.copyJson")}
+                        className="inline-flex size-[1.375rem] items-center justify-center rounded-full bg-chip text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
                     >
-                        <IconCopy className="h-3 w-3" />
-                        {t("analytics.copyJson")}
+                        <IconCopy className="h-3.5 w-3.5" />
                     </button>
                 </div>
             </div>
