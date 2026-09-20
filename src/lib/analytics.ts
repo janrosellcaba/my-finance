@@ -696,3 +696,149 @@ export function buildAnalytics(input: {
         health: { score: healthScore, labelKey: healthLabelKey, parts: healthParts },
     };
 }
+
+const HEALTH_LABEL: Record<HealthLabelKey, string> = {
+    notEnough: "Not enough yet",
+    lookingStrong: "Looking strong",
+    trackingWell: "Tracking well",
+    worthALook: "Worth a look",
+    needsALook: "Needs a look",
+};
+
+const HEALTH_PART_NAME: Record<HealthPartKey, string> = {
+    savings: "Savings rate",
+    spending: "Spending",
+    trend: "Net worth",
+    cushion: "Cushion",
+};
+
+function healthNote(p: HealthPart): string {
+    switch (p.noteKey) {
+        case "savingsRate":
+            return `${p.noteParams.pct}% of income kept`;
+        case "spendLess":
+            return `${p.noteParams.amount} less than last period`;
+        case "spendMore":
+            return `${p.noteParams.amount} more than last period`;
+        case "nwUp":
+            return `up ${p.noteParams.amount} over ${p.noteParams.months} months`;
+        case "nwDown":
+            return `down ${p.noteParams.amount} over ${p.noteParams.months} months`;
+        case "cushion":
+            return `${p.noteParams.cover} months of spending covered`;
+    }
+}
+
+function categorySnapshot(rows: CategoryRow[]) {
+    return rows.map((r) => ({
+        name: r.name,
+        amount: r.amount,
+        sharePct: r.share,
+        transactions: r.txCount,
+        previousAmount: r.prevAmount,
+        changePct: r.changePct,
+    }));
+}
+
+function deltaSnapshot(d: Delta | null) {
+    if (!d) return null;
+    return {
+        current: d.current,
+        previous: d.previous,
+        change: d.change,
+        changePct: d.changePct,
+    };
+}
+
+/** Numbers shown on the Analytics page, without chart series or UI chrome. */
+export function buildAnalyticsSnapshot(
+    data: AnalyticsResult,
+    opts: { accountName: string | null; currency: string; periodLabel: string },
+) {
+    const { period, summary, comparison, health, netWorth } = data;
+    const nwFirst = netWorth.series[0];
+    const nwLast = netWorth.series[netWorth.series.length - 1];
+    const nwChange =
+        nwFirst === undefined ? 0 : round2(netWorth.current - nwFirst.netWorth);
+
+    return {
+        currency: opts.currency,
+        period: {
+            mode: period.mode,
+            label: opts.periodLabel,
+            start: period.start,
+            end: period.end,
+            isPartial: period.isPartial,
+            elapsedDays: period.elapsedDays,
+            totalDays: period.totalDays,
+            account: opts.accountName ?? "all accounts",
+        },
+        score: {
+            value: health.score,
+            label: HEALTH_LABEL[health.labelKey],
+            parts: health.parts.map((p) => ({
+                name: HEALTH_PART_NAME[p.key],
+                score: p.score,
+                note: healthNote(p),
+            })),
+        },
+        summary: {
+            spent: summary.expenses,
+            earned: summary.income,
+            leftOver: summary.netSavings,
+            savingsRatePct: summary.savingsRate,
+            purchases: summary.expenseCount,
+            perDay: data.dailySpend,
+            vsPrevious: comparison.previous
+                ? {
+                      previousTruncatedToMatchPartialMonth: comparison.previousTruncated,
+                      spent: deltaSnapshot(comparison.expensesDelta),
+                      earned: deltaSnapshot(comparison.incomeDelta),
+                      leftOver: deltaSnapshot(comparison.savingsDelta),
+                  }
+                : null,
+        },
+        byAccount: data.accountActivity.map((r) => ({
+            name: r.name,
+            income: r.income,
+            expenses: r.expenses,
+            transfersIn: r.transfersIn,
+            transfersOut: r.transfersOut,
+            net: r.net,
+            balance: r.balance,
+        })),
+        transfers: data.transfers.map((r) => ({
+            from: r.fromName,
+            to: r.toName,
+            amount: r.amount,
+            transactions: r.txCount,
+        })),
+        spendingByCategory: categorySnapshot(data.spendingByCategory),
+        biggestPurchases: data.topExpenses.map((r) => ({
+            date: r.date,
+            description: r.description,
+            category: r.categoryName,
+            account: r.accountName,
+            amount: r.amount,
+        })),
+        monthByMonth: data.monthlySeries.map((p) => ({
+            month: p.month,
+            income: p.income,
+            expenses: p.expenses,
+            leftOver: p.netSavings,
+        })),
+        accountBalances: data.netWorthByAccount.map((r) => ({
+            name: r.name,
+            current: r.current,
+            atPeriodStart: r.prevAmount,
+            changePct: r.changePct,
+        })),
+        incomeByCategory: categorySnapshot(data.incomeBySource),
+        netWorth: {
+            current: netWorth.current,
+            asOf: nwLast?.date ?? null,
+            since: nwFirst?.date ?? null,
+            change: nwChange,
+        },
+    };
+}

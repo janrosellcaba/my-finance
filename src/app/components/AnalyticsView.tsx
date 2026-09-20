@@ -1,13 +1,35 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { AnalyticsResult, PeriodMode } from "@/lib/analytics";
+import { buildAnalyticsSnapshot, type AnalyticsResult, type PeriodMode } from "@/lib/analytics";
 import { formatMonthYear, formatShortMonthYear } from "@/i18n";
 import { useLanguage, useT } from "@/i18n/I18nProvider";
-import { type Account, type Category } from "../shared";
+import { getFormatPrefs, type Account, type Category } from "../shared";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
 import { PeriodSelector } from "./analytics/PeriodSelector";
+
+async function copyText(text: string) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return;
+    } catch {
+        // Some browsers reject clipboard.writeText; fall back to a hidden textarea.
+    }
+    const el = document.createElement("textarea");
+    el.value = text;
+    el.setAttribute("readonly", "");
+    el.style.position = "fixed";
+    el.style.top = "0";
+    el.style.left = "0";
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    el.focus();
+    el.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(el);
+    if (!ok) throw new Error("copy failed");
+}
 
 export function AnalyticsView({
     privacyMode,
@@ -26,6 +48,8 @@ export function AnalyticsView({
     const [accountId, setAccountId] = useState("all");
     const [data, setData] = useState<AnalyticsResult | null>(null);
     const [loading, setLoading] = useState(true);
+    const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
+    const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchData = useCallback(async () => {
         const params = new URLSearchParams({ mode });
@@ -56,6 +80,12 @@ export function AnalyticsView({
         setAnchor(nextAnchor);
     }
 
+    useEffect(() => {
+        return () => {
+            if (copyResetRef.current !== null) clearTimeout(copyResetRef.current);
+        };
+    }, []);
+
     if (loading && !data) {
         return (
             <div className="animate-pulse space-y-6 px-5 pt-6 lg:px-8">
@@ -77,10 +107,11 @@ export function AnalyticsView({
         return <p className="px-5 pt-10 text-center text-muted">{t("analytics.loadError")}</p>;
     }
 
-    const { period } = data;
+    const analytics = data;
+    const { period } = analytics;
     const focusName =
         accountId !== "all" ? (accounts.find((a) => a.id === accountId)?.name ?? null) : null;
-    const monthOptions = data.monthOptions.map((m) => ({
+    const monthOptions = analytics.monthOptions.map((m) => ({
         key: m.key,
         label: formatMonthYear(m.key, language),
     }));
@@ -93,15 +124,45 @@ export function AnalyticsView({
                 ? `${formatShortMonthYear(period.start.slice(0, 7), language)} – ${formatShortMonthYear(period.end.slice(0, 7), language)}`
                 : period.label;
 
+    async function handleCopyJson() {
+        const snapshot = buildAnalyticsSnapshot(analytics, {
+            accountName: focusName,
+            currency: getFormatPrefs().currency,
+            periodLabel,
+        });
+        try {
+            await copyText(JSON.stringify(snapshot, null, 2));
+            setCopyState("copied");
+        } catch {
+            setCopyState("failed");
+        }
+        if (copyResetRef.current !== null) clearTimeout(copyResetRef.current);
+        copyResetRef.current = setTimeout(() => setCopyState("idle"), 2000);
+    }
+
     return (
         <div className="space-y-6 px-5 pt-6 lg:px-8">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h1 className="text-2xl font-extrabold text-ink">{t("analytics.title")}</h1>
-                {period.isPartial && (
-                    <span className="rounded-full bg-chip px-3 py-1 text-xs font-bold text-muted">
-                        {t("analytics.dayOf", { elapsed: period.elapsedDays, total: period.totalDays })}
-                    </span>
-                )}
+                <div className="flex items-center gap-2">
+                    {period.isPartial && (
+                        <span className="rounded-full bg-chip px-3 py-1 text-xs font-bold text-muted">
+                            {t("analytics.dayOf", { elapsed: period.elapsedDays, total: period.totalDays })}
+                        </span>
+                    )}
+                    <button
+                        type="button"
+                        onClick={handleCopyJson}
+                        aria-live="polite"
+                        className="rounded-full bg-chip px-3 py-1.5 text-xs font-bold text-ink transition-colors duration-150 hover:bg-chip-hover"
+                    >
+                        {copyState === "copied"
+                            ? t("analytics.copied")
+                            : copyState === "failed"
+                              ? t("analytics.copyFailed")
+                              : t("analytics.copyJson")}
+                    </button>
+                </div>
             </div>
 
             <PeriodSelector
@@ -109,12 +170,12 @@ export function AnalyticsView({
                 anchor={anchor ?? period.anchor}
                 label={periodLabel}
                 monthOptions={monthOptions}
-                yearOptions={data.availableYears}
+                yearOptions={analytics.availableYears}
                 onChange={handlePeriodChange}
             />
 
             <AnalyticsDashboard
-                data={data}
+                data={analytics}
                 privacyMode={privacyMode}
                 accounts={accounts}
                 categories={categories}

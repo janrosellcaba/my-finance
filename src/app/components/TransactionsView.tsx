@@ -1,12 +1,44 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useT } from "@/i18n/I18nProvider";
-import { type Account, type Category, type Transaction, INPUT_CLS } from "../shared";
+import { type Account, type Category, type Transaction, INPUT_CLS, formatCurrency } from "../shared";
 import { AddTransactionModal } from "./AddTransactionModal";
 import { TransactionCard } from "./TransactionCard";
 import { useUndoToast } from "./UndoToastProvider";
 import { IconClose, IconFilter, IconSearch } from "./icons";
+
+function signedAmount(tx: Transaction): number | null {
+    if (tx.type === "transfer") return null;
+    const mag = Math.abs(tx.amount);
+    return tx.type === "expense" ? -mag : mag;
+}
+
+function formatSignedAmount(value: number, privacyMode: boolean): string {
+    const formatted = formatCurrency(Math.abs(value), privacyMode);
+    if (value > 0) return `+${formatted}`;
+    if (value < 0) return `-${formatted}`;
+    return formatted;
+}
+
+function amountTone(value: number): string {
+    if (value > 0) return "text-brand";
+    if (value < 0) return "text-danger";
+    return "text-ink";
+}
+
+function selectionStats(txs: Transaction[]) {
+    const money = txs.map(signedAmount).filter((n): n is number => n != null);
+    const sum = money.reduce((a, b) => a + b, 0);
+    const avg = money.length > 0 ? sum / money.length : null;
+    let max: number | null = null;
+    for (const n of money) {
+        if (max === null || Math.abs(n) > Math.abs(max) || (Math.abs(n) === Math.abs(max) && n > max)) {
+            max = n;
+        }
+    }
+    return { count: txs.length, moneyCount: money.length, sum, avg, max };
+}
 
 export function TransactionsView({
     accounts,
@@ -35,6 +67,8 @@ export function TransactionsView({
     const [hasMore, setHasMore] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
     const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+    const anchorIdRef = useRef<string | null>(null);
     const { requestDelete } = useUndoToast();
 
     const fetchPage = useCallback(
@@ -72,8 +106,48 @@ export function TransactionsView({
         fetchPage(null, true).finally(() => setLoading(false));
     }, [fetchPage]);
 
+    useEffect(() => {
+        setSelectedIds(new Set());
+        anchorIdRef.current = null;
+    }, [search, categoryFilter, accountFilter, typeFilter, dateFrom, dateTo]);
+
+    function clearSelection() {
+        setSelectedIds(new Set());
+        anchorIdRef.current = null;
+    }
+
+    useEffect(() => {
+        if (selectedIds.size === 0) return;
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "Escape") clearSelection();
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [selectedIds.size]);
+
+    function extendRange(prev: Set<string>, toId: string, ids: string[]): Set<string> {
+        const fromId = anchorIdRef.current ?? toId;
+        const a = ids.indexOf(fromId);
+        const b = ids.indexOf(toId);
+        const next = new Set(prev);
+        if (a < 0 || b < 0) {
+            next.add(toId);
+            return next;
+        }
+        const start = Math.min(a, b);
+        const end = Math.max(a, b);
+        for (let i = start; i <= end; i++) next.add(ids[i]!);
+        return next;
+    }
+
     function handleDeleteTransaction(tx: Transaction) {
         setEditingTransaction(null);
+        setSelectedIds((prev) => {
+            if (!prev.has(tx.id)) return prev;
+            const next = new Set(prev);
+            next.delete(tx.id);
+            return next;
+        });
         setPendingDeleteIds((prev) => new Set(prev).add(tx.id));
         requestDelete({
             message: t("tx.deleted"),
@@ -113,9 +187,52 @@ export function TransactionsView({
     }, [searchInput]);
 
     const visibleTransactions = transactions.filter((tx) => !pendingDeleteIds.has(tx.id));
+    const visibleIds = visibleTransactions.map((tx) => tx.id);
+    const selectedTxs = visibleTransactions.filter((tx) => selectedIds.has(tx.id));
+    const stats = selectionStats(selectedTxs);
+    const selecting = selectedIds.size > 0;
+
+    function handleCardClick(tx: Transaction, shiftKey: boolean) {
+        if (shiftKey) {
+            setSelectedIds((prev) => {
+                if (prev.size === 0) {
+                    anchorIdRef.current = tx.id;
+                    return new Set([tx.id]);
+                }
+                return extendRange(prev, tx.id, visibleIds);
+            });
+            return;
+        }
+        if (selecting) {
+            setSelectedIds((prev) => {
+                const next = new Set(prev);
+                if (next.has(tx.id)) next.delete(tx.id);
+                else next.add(tx.id);
+                return next;
+            });
+            anchorIdRef.current = tx.id;
+            return;
+        }
+        setEditingTransaction(tx);
+    }
+
+    function handleLongPress(tx: Transaction) {
+        try {
+            navigator.vibrate?.(12);
+        } catch {
+            /* ignore unsupported haptic */
+        }
+        setSelectedIds((prev) => {
+            if (prev.size === 0) {
+                anchorIdRef.current = tx.id;
+                return new Set([tx.id]);
+            }
+            return extendRange(prev, tx.id, visibleIds);
+        });
+    }
 
     return (
-        <div className="space-y-4 px-5 pt-6">
+        <div className={`space-y-4 px-5 pt-6 ${selecting ? "pb-16" : ""}`}>
             <h1 className="text-2xl font-extrabold text-ink">{t("tx.title")}</h1>
 
             <div className="flex gap-2">
@@ -282,7 +399,7 @@ export function TransactionsView({
                     <p className="text-sm text-muted">{t("tx.noneFoundHint")}</p>
                 </div>
             ) : (
-                <div className="divide-y divide-line surface rounded-2xl">
+                <div className="divide-y divide-line surface overflow-hidden rounded-2xl">
                     {visibleTransactions.map((tx) => (
                         <TransactionCard
                             key={tx.id}
@@ -291,11 +408,17 @@ export function TransactionsView({
                             categories={categories}
                             privacyMode={privacyMode}
                             accountBalance={tx.balanceAfter}
-                            onClick={() => setEditingTransaction(tx)}
+                            selected={selectedIds.has(tx.id)}
+                            onClick={({ shiftKey }) => handleCardClick(tx, shiftKey)}
+                            onLongPress={() => handleLongPress(tx)}
                             compact
                         />
                     ))}
                 </div>
+            )}
+
+            {selecting && stats.count > 0 && (
+                <SelectionStatsBar stats={stats} privacyMode={privacyMode} onClear={clearSelection} />
             )}
 
             {editingTransaction && (
@@ -324,5 +447,95 @@ export function TransactionsView({
                 </button>
             )}
         </div>
+    );
+}
+
+function SelectionStatsBar({
+    stats,
+    privacyMode,
+    onClear,
+}: {
+    stats: ReturnType<typeof selectionStats>;
+    privacyMode: boolean;
+    onClear: () => void;
+}) {
+    const t = useT();
+    const summaryParts = [
+        t("tx.selectedCount", { count: stats.count }),
+        stats.moneyCount > 0 && stats.avg != null && stats.max != null
+            ? `${t("tx.sum")} ${formatSignedAmount(stats.sum, privacyMode)}, ${t("tx.avg")} ${formatSignedAmount(stats.avg, privacyMode)}, ${t("tx.max")} ${formatSignedAmount(stats.max, privacyMode)}`
+            : null,
+    ].filter(Boolean);
+
+    return (
+        <div className="pointer-events-none fixed inset-x-0 bottom-20 z-50 flex justify-center px-4">
+            <div
+                role="status"
+                aria-live="polite"
+                aria-label={summaryParts.join(". ")}
+                className="pointer-events-auto flex w-full max-w-md items-center gap-2 rounded-2xl surface px-3 py-2.5 shadow-lg"
+            >
+                <div className="flex min-w-0 flex-1 items-center gap-x-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <span className="shrink-0 text-xs font-semibold text-muted">
+                        {t("tx.selectedCount", { count: stats.count })}
+                    </span>
+                    {stats.moneyCount > 0 && (
+                        <>
+                            <Stat label={t("tx.sum")} value={formatSignedAmount(stats.sum, privacyMode)} tone={amountTone(stats.sum)} privacyMode={privacyMode} />
+                            {stats.avg != null && (
+                                <Stat
+                                    label={t("tx.avg")}
+                                    value={formatSignedAmount(stats.avg, privacyMode)}
+                                    tone={amountTone(stats.avg)}
+                                    privacyMode={privacyMode}
+                                />
+                            )}
+                            {stats.max != null && (
+                                <Stat
+                                    label={t("tx.max")}
+                                    value={formatSignedAmount(stats.max, privacyMode)}
+                                    tone={amountTone(stats.max)}
+                                    privacyMode={privacyMode}
+                                />
+                            )}
+                        </>
+                    )}
+                </div>
+                <button
+                    type="button"
+                    onClick={onClear}
+                    aria-label={t("tx.clearSelection")}
+                    className="shrink-0 rounded-full p-1.5 text-muted transition-colors duration-150 hover:bg-chip hover:text-ink"
+                >
+                    <IconClose className="h-3.5 w-3.5" />
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function Stat({
+    label,
+    value,
+    tone,
+    privacyMode,
+}: {
+    label: string;
+    value: string;
+    tone: string;
+    privacyMode: boolean;
+}) {
+    return (
+        <>
+            <span className="shrink-0 text-muted/40">·</span>
+            <span className="shrink-0 text-xs text-muted">{label}</span>
+            <span
+                className={`shrink-0 text-xs font-bold tabular-nums ${tone} ${
+                    privacyMode ? "blur-[5px] select-none opacity-70" : ""
+                }`}
+            >
+                {value}
+            </span>
+        </>
     );
 }
