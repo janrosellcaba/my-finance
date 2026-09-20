@@ -208,7 +208,7 @@ export const en = {
         noteNwDown: "down {amount} over {months} months",
         noteCushion: "{cover} months of spending covered",
         copyJson: "Copy JSON",
-        copied: "Copied",
+        jsonCopied: "JSON copied.",
         copyFailed: "Could not copy",
     },
     settings: {

@@ -210,7 +210,7 @@ export const ca: Messages = {
         noteNwDown: "baixa {amount} en {months} mesos",
         noteCushion: "{cover} mesos de despesa coberts",
         copyJson: "Copia JSON",
-        copied: "Copiat",
+        jsonCopied: "JSON copiat.",
         copyFailed: "No s’ha pogut copiar",
     },
     settings: {

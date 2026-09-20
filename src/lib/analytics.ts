@@ -750,6 +750,41 @@ function deltaSnapshot(d: Delta | null) {
     };
 }
 
+function monthlyNetWorth(series: NetWorthPoint[]) {
+    const lastByMonth = new Map<string, number>();
+    for (const p of series) lastByMonth.set(p.date.slice(0, 7), p.netWorth);
+    return [...lastByMonth.entries()].map(([month, netWorth]) => ({ month, netWorth }));
+}
+
+function seriesExtrema(series: NetWorthPoint[]) {
+    if (series.length === 0) return { high: null, low: null };
+    let high = series[0];
+    let low = series[0];
+    for (const p of series) {
+        if (p.netWorth > high.netWorth) high = p;
+        if (p.netWorth < low.netWorth) low = p;
+    }
+    return {
+        high: { date: high.date, netWorth: high.netWorth },
+        low: { date: low.date, netWorth: low.netWorth },
+    };
+}
+
+function changeOverMonths(
+    monthly: { month: string; netWorth: number }[],
+    monthsAgo: number,
+) {
+    if (monthly.length < 2) return null;
+    const latest = monthly[monthly.length - 1];
+    const target = shiftMonth(latest.month, -monthsAgo);
+    let from: { month: string; netWorth: number } | null = null;
+    for (const p of monthly) {
+        if (p.month <= target) from = p;
+    }
+    if (!from || from.month === latest.month) return null;
+    return round2(latest.netWorth - from.netWorth);
+}
+
 /** Numbers shown on the Analytics page, without chart series or UI chrome. */
 export function buildAnalyticsSnapshot(
     data: AnalyticsResult,
@@ -758,8 +793,9 @@ export function buildAnalyticsSnapshot(
     const { period, summary, comparison, health, netWorth } = data;
     const nwFirst = netWorth.series[0];
     const nwLast = netWorth.series[netWorth.series.length - 1];
-    const nwChange =
-        nwFirst === undefined ? 0 : round2(netWorth.current - nwFirst.netWorth);
+    const atPeriodStart = round2(sum(data.netWorthByAccount.map((r) => r.prevAmount)));
+    const monthly = monthlyNetWorth(netWorth.series);
+    const { high, low } = seriesExtrema(netWorth.series);
 
     return {
         currency: opts.currency,
@@ -831,6 +867,7 @@ export function buildAnalyticsSnapshot(
             name: r.name,
             current: r.current,
             atPeriodStart: r.prevAmount,
+            change: round2(r.current - r.prevAmount),
             changePct: r.changePct,
         })),
         incomeByCategory: categorySnapshot(data.incomeBySource),
@@ -838,7 +875,17 @@ export function buildAnalyticsSnapshot(
             current: netWorth.current,
             asOf: nwLast?.date ?? null,
             since: nwFirst?.date ?? null,
-            change: nwChange,
+            atPeriodStart,
+            change: {
+                allTime: nwFirst === undefined ? 0 : round2(netWorth.current - nwFirst.netWorth),
+                thisPeriod: round2(netWorth.current - atPeriodStart),
+                last3Months: changeOverMonths(monthly, 3),
+                last6Months: changeOverMonths(monthly, 6),
+                last12Months: changeOverMonths(monthly, 12),
+            },
+            high,
+            low,
+            monthly,
         },
     };
 }

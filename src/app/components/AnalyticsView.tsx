@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildAnalyticsSnapshot, type AnalyticsResult, type PeriodMode } from "@/lib/analytics";
 import { formatMonthYear, formatShortMonthYear } from "@/i18n";
@@ -8,6 +8,8 @@ import { useLanguage, useT } from "@/i18n/I18nProvider";
 import { getFormatPrefs, type Account, type Category } from "../shared";
 import { AnalyticsDashboard } from "./analytics/AnalyticsDashboard";
 import { PeriodSelector } from "./analytics/PeriodSelector";
+import { useUndoToast } from "./UndoToastProvider";
+import { IconCopy } from "./icons";
 
 async function copyText(text: string) {
     try {
@@ -43,13 +45,12 @@ export function AnalyticsView({
     const t = useT();
     const language = useLanguage();
     const router = useRouter();
+    const { notify } = useUndoToast();
     const [mode, setMode] = useState<PeriodMode>("month");
     const [anchor, setAnchor] = useState<string | null>(null);
     const [accountId, setAccountId] = useState("all");
     const [data, setData] = useState<AnalyticsResult | null>(null);
     const [loading, setLoading] = useState(true);
-    const [copyState, setCopyState] = useState<"idle" | "copied" | "failed">("idle");
-    const copyResetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const fetchData = useCallback(async () => {
         const params = new URLSearchParams({ mode });
@@ -79,12 +80,6 @@ export function AnalyticsView({
         setMode(nextMode);
         setAnchor(nextAnchor);
     }
-
-    useEffect(() => {
-        return () => {
-            if (copyResetRef.current !== null) clearTimeout(copyResetRef.current);
-        };
-    }, []);
 
     if (loading && !data) {
         return (
@@ -132,12 +127,10 @@ export function AnalyticsView({
         });
         try {
             await copyText(JSON.stringify(snapshot, null, 2));
-            setCopyState("copied");
+            notify(t("analytics.jsonCopied"));
         } catch {
-            setCopyState("failed");
+            notify(t("analytics.copyFailed"));
         }
-        if (copyResetRef.current !== null) clearTimeout(copyResetRef.current);
-        copyResetRef.current = setTimeout(() => setCopyState("idle"), 2000);
     }
 
     return (
@@ -146,21 +139,18 @@ export function AnalyticsView({
                 <h1 className="text-2xl font-extrabold text-ink">{t("analytics.title")}</h1>
                 <div className="flex items-center gap-2">
                     {period.isPartial && (
-                        <span className="rounded-full bg-chip px-3 py-1 text-xs font-bold text-muted">
+                        <span className="rounded-full bg-chip px-3 py-1 text-xs font-bold leading-none text-muted">
                             {t("analytics.dayOf", { elapsed: period.elapsedDays, total: period.totalDays })}
                         </span>
                     )}
                     <button
                         type="button"
                         onClick={handleCopyJson}
-                        aria-live="polite"
-                        className="rounded-full bg-chip px-3 py-1.5 text-xs font-bold text-ink transition-colors duration-150 hover:bg-chip-hover"
+                        title={t("analytics.copyJson")}
+                        className="inline-flex items-center gap-1 rounded-full bg-chip px-2.5 py-1 text-xs font-bold leading-none text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
                     >
-                        {copyState === "copied"
-                            ? t("analytics.copied")
-                            : copyState === "failed"
-                              ? t("analytics.copyFailed")
-                              : t("analytics.copyJson")}
+                        <IconCopy className="h-3 w-3" />
+                        {t("analytics.copyJson")}
                     </button>
                 </div>
             </div>

@@ -109,6 +109,15 @@ export function IconArrowLeftRight({ className }: { className?: string }) {
     );
 }
 
+export function IconCopy({ className }: { className?: string }) {
+    return (
+        <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+            <rect x="8" y="8" width="12" height="12" rx="2" />
+            <path d="M4 16V6a2 2 0 0 1 2-2h10" />
+        </svg>
+    );
+}
+
 export function IconSearch({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
