@@ -78,6 +78,7 @@ export const es: Messages = {
         searchPlaceholder: "Buscar descripción…",
         clearSearch: "Borrar búsqueda",
         toggleFilters: "Mostrar filtros",
+        clearFilters: "Borrar filtros",
         allAccounts: "Todas las cuentas",
         allCategories: "Todas las categorías",
         from: "Desde",

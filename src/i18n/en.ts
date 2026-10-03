@@ -76,6 +76,7 @@ export const en = {
         searchPlaceholder: "Search description…",
         clearSearch: "Clear search",
         toggleFilters: "Toggle filters",
+        clearFilters: "Clear filters",
         allAccounts: "All accounts",
         allCategories: "All categories",
         from: "From",

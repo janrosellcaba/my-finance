@@ -1,10 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import { useT } from "@/i18n/I18nProvider";
-import { type Account, type Category, type DashboardSummary, formatCurrency, PRIMARY_BTN } from "../shared";
+import { type Account, type Category, type DashboardSummary, type Transaction, formatCurrency, PRIMARY_BTN } from "../shared";
+import { AddTransactionModal } from "./AddTransactionModal";
 import { DeltaPill, Sparkline } from "./analytics/primitives";
 import { AccountIcon } from "./icons";
 import { TransactionCard } from "./TransactionCard";
+import { useUndoToast } from "./UndoToastProvider";
 
 function HomeSkeleton() {
     return (
@@ -50,6 +53,8 @@ export function HomeView({
     categories,
     privacyMode,
     onAddClick,
+    onAccountClick,
+    onTransactionChanged,
 }: {
     dashboard: DashboardSummary | null;
     loading: boolean;
@@ -57,8 +62,13 @@ export function HomeView({
     categories: Category[];
     privacyMode: boolean;
     onAddClick: () => void;
+    onAccountClick: (accountId: string) => void;
+    onTransactionChanged: () => void;
 }) {
     const t = useT();
+    const { requestDelete } = useUndoToast();
+    const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
+    const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
 
     if (loading) {
         return <HomeSkeleton />;
@@ -69,8 +79,36 @@ export function HomeView({
     }
 
     const positive = dashboard.totalNetWorth >= 0;
-    const recent = dashboard.recentTransactions.slice(0, 5);
     const netWorthTone = positive ? "brand" : "danger";
+    const recent = dashboard.recentTransactions.filter((tx) => !pendingDeleteIds.has(tx.id)).slice(0, 5);
+
+    function handleDeleteTransaction(tx: Transaction) {
+        setEditingTransaction(null);
+        setPendingDeleteIds((prev) => new Set(prev).add(tx.id));
+        requestDelete({
+            message: t("tx.deleted"),
+            onUndo: () => {
+                setPendingDeleteIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(tx.id);
+                    return next;
+                });
+            },
+            onCommit: async () => {
+                await fetch("/api/transactions", {
+                    method: "DELETE",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ id: tx.id }),
+                });
+                setPendingDeleteIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(tx.id);
+                    return next;
+                });
+                onTransactionChanged();
+            },
+        });
+    }
 
     return (
         <div className="space-y-6 px-5 pt-6">
@@ -108,7 +146,12 @@ export function HomeView({
                 <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</h2>
                 <div className="grid grid-cols-2 gap-3">
                     {dashboard.accounts.map((acc) => (
-                        <div key={acc.id} className="group surface rounded-2xl p-4 transition-all duration-150 hover:brightness-[1.01]">
+                        <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => onAccountClick(acc.id)}
+                            className="group surface w-full rounded-2xl p-4 text-left transition-all duration-150 hover:brightness-[1.01]"
+                        >
                             <div className="flex items-center gap-2">
                                 <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted transition-colors group-hover:text-ink">
                                     <AccountIcon iconKey={acc.icon ?? "wallet"} className="h-3.5 w-3.5" />
@@ -125,7 +168,7 @@ export function HomeView({
                             <div className="mt-1">
                                 <DeltaPill delta={acc.delta} privacyMode={privacyMode} />
                             </div>
-                        </div>
+                        </button>
                     ))}
                 </div>
             </div>
@@ -142,10 +185,25 @@ export function HomeView({
                             categories={categories}
                             privacyMode={privacyMode}
                             accountBalance={tx.balanceAfter}
+                            onClick={() => setEditingTransaction(tx)}
                         />
                     ))}
                 </div>
             </div>
+
+            {editingTransaction && (
+                <AddTransactionModal
+                    accounts={accounts}
+                    categories={categories}
+                    transaction={editingTransaction}
+                    onClose={() => setEditingTransaction(null)}
+                    onSaved={() => {
+                        setEditingTransaction(null);
+                        onTransactionChanged();
+                    }}
+                    onDelete={handleDeleteTransaction}
+                />
+            )}
         </div>
     );
 }

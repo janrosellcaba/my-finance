@@ -57,7 +57,7 @@
 	--color-paper: #1d1c18;
 	--color-ink: #f4f0e6;
 	--color-muted: #999280;
-	--color-line: #2e2b24;
+	--color-line: #3a372e;
 
 	--color-brand: #3ec48e;
 	--color-brand-dark: #32a175;
@@ -175,13 +175,10 @@ body {
 :root[data-theme="dark"] .surface {
 	background: linear-gradient(
 		180deg,
-		color-mix(in srgb, var(--color-paper) 82%, white) 0%,
+		color-mix(in srgb, var(--color-paper) 93%, white) 0%,
 		var(--color-paper) 100%
 	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.055),
-		0 1px 2px rgba(0, 0, 0, 0.32),
-		0 1px 0 rgba(0, 0, 0, 0.18);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
 }
 
 .surface-nav {

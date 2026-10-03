@@ -62,6 +62,17 @@ export function AppShell({
 }) {
     const router = useRouter();
     const [tab, setTab] = useState<Tab>("home");
+    const [txAccountFilter, setTxAccountFilter] = useState<string | undefined>(undefined);
+
+    const selectTab = useCallback((next: Tab) => {
+        if (next === "transactions") setTxAccountFilter(undefined);
+        setTab(next);
+    }, []);
+
+    const openAccountTransactions = useCallback((accountId: string) => {
+        setTxAccountFilter(accountId);
+        setTab("transactions");
+    }, []);
     const [dashboard, setDashboard] = useState<DashboardSummary | null>(null);
     const [loadingDashboard, setLoadingDashboard] = useState(true);
     const [accounts, setAccounts] = useState<Account[]>([]);
@@ -228,21 +239,21 @@ export function AppShell({
                 e.preventDefault();
                 setShowAddModal(true);
             } else if (e.key === "1") {
-                setTab("home");
+                selectTab("home");
             } else if (e.key === "2") {
-                setTab("transactions");
+                selectTab("transactions");
             } else if (e.key === "3") {
-                setTab("todo");
+                selectTab("todo");
             } else if (e.key === "4") {
-                setTab("analytics");
+                selectTab("analytics");
             } else if (e.key === "5") {
-                setTab("config");
+                selectTab("config");
             }
         }
 
         window.addEventListener("keydown", handleKeyDown);
         return () => window.removeEventListener("keydown", handleKeyDown);
-    }, []);
+    }, [selectTab]);
 
     async function handleTransactionSaved() {
         setShowAddModal(false);
@@ -285,7 +296,9 @@ export function AppShell({
             <AppShellView
                 username={username}
                 tab={tab}
-                setTab={setTab}
+                setTab={selectTab}
+                txAccountFilter={txAccountFilter}
+                onAccountClick={openAccountTransactions}
                 dashboard={dashboard}
                 loadingDashboard={loadingDashboard}
                 accounts={accounts}
@@ -321,6 +334,8 @@ function AppShellView({
     username,
     tab,
     setTab,
+    txAccountFilter,
+    onAccountClick,
     dashboard,
     loadingDashboard,
     accounts,
@@ -351,6 +366,8 @@ function AppShellView({
     username: string;
     tab: Tab;
     setTab: (tab: Tab) => void;
+    txAccountFilter?: string;
+    onAccountClick: (accountId: string) => void;
     dashboard: DashboardSummary | null;
     loadingDashboard: boolean;
     accounts: Account[];
@@ -460,13 +477,17 @@ function AppShellView({
                                 categories={categories}
                                 privacyMode={privacyMode}
                                 onAddClick={() => setShowAddModal(true)}
+                                onAccountClick={onAccountClick}
+                                onTransactionChanged={loadDashboard}
                             />
                         )}
                         {tab === "transactions" && (
                             <TransactionsView
+                                key={txAccountFilter ?? "all"}
                                 accounts={accounts}
                                 categories={categories}
                                 privacyMode={privacyMode}
+                                initialAccountFilter={txAccountFilter}
                                 onTransactionChanged={loadDashboard}
                             />
                         )}

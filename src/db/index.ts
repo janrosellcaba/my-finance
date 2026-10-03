@@ -32,6 +32,18 @@ function ensureColumn(table: string, column: string, definition: string) {
 }
 
 ensureColumn("users", "last_seen_at", "text");
+ensureColumn("users", "accent_color", "text DEFAULT 'green' NOT NULL");
+ensureColumn("users", "currency", "text DEFAULT 'EUR' NOT NULL");
+ensureColumn("users", "date_format", "text DEFAULT 'DMY' NOT NULL");
+ensureColumn("users", "language", "text");
+ensureColumn("todo", "parent_id", "text");
+ensureColumn("todo", "sort_order", "integer DEFAULT 0 NOT NULL");
+ensureColumn("transaction", "created_at", "text NOT NULL DEFAULT ''");
+try {
+    sqlite.exec(`UPDATE "transaction" SET created_at = date || 'T00:00:00.000000Z' WHERE created_at = ''`);
+} catch {
+    /* empty or pre-migrate database */
+}
 
 const db = drizzle(sqlite, { schema });
 

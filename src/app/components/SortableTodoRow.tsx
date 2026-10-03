@@ -40,7 +40,7 @@ function TodoRowContent({
                 onClick={onToggle}
                 aria-label={todo.completed ? t("todos.markNotDone") : t("todos.markDone")}
                 className={`shrink-0 rounded-lg transition-colors duration-150 ${
-                    todo.completed ? "text-brand" : "text-line hover:text-muted"
+                    todo.completed ? "text-brand" : "text-muted/70 hover:text-ink"
                 }`}
             >
                 <IconCheckSquare className="h-5 w-5 sm:h-6 sm:w-6" checked={todo.completed} />

@@ -44,11 +44,13 @@ export function TransactionsView({
     accounts,
     categories,
     privacyMode,
+    initialAccountFilter,
     onTransactionChanged,
 }: {
     accounts: Account[];
     categories: Category[];
     privacyMode: boolean;
+    initialAccountFilter?: string;
     onTransactionChanged: () => void;
 }) {
     const t = useT();
@@ -57,7 +59,7 @@ export function TransactionsView({
     const [search, setSearch] = useState("");
     const [searchInput, setSearchInput] = useState("");
     const [categoryFilter, setCategoryFilter] = useState("");
-    const [accountFilter, setAccountFilter] = useState("");
+    const [accountFilter, setAccountFilter] = useState(initialAccountFilter ?? "");
     const [typeFilter, setTypeFilter] = useState<"" | "income" | "expense" | "transfer">("");
     const [dateFrom, setDateFrom] = useState("");
     const [dateTo, setDateTo] = useState("");
@@ -72,7 +74,11 @@ export function TransactionsView({
     const { requestDelete } = useUndoToast();
 
     const fetchPage = useCallback(
-        async (after: { date: string; createdAt: string; id: string } | null, replace: boolean) => {
+        async (
+            after: { date: string; createdAt: string; id: string } | null,
+            replace: boolean,
+            signal?: AbortSignal,
+        ) => {
             const params = new URLSearchParams();
             if (search) params.set("search", search);
             if (categoryFilter) params.set("category", categoryFilter);
@@ -86,24 +92,32 @@ export function TransactionsView({
                 params.set("cursorId", after.id);
             }
 
-            const res = await fetch(`/api/transactions?${params.toString()}`);
-            const data = (await res.json()) as {
-                success: boolean;
-                transactions?: Transaction[];
-                nextCursor?: { date: string; createdAt: string; id: string } | null;
-            };
-            if (data.success && data.transactions) {
-                setTransactions((prev) => (replace ? data.transactions! : [...prev, ...data.transactions!]));
-                setHasMore(Boolean(data.nextCursor));
-                setCursor(data.nextCursor ?? null);
+            try {
+                const res = await fetch(`/api/transactions?${params.toString()}`, { signal });
+                const data = (await res.json()) as {
+                    success: boolean;
+                    transactions?: Transaction[];
+                    nextCursor?: { date: string; createdAt: string; id: string } | null;
+                };
+                if (data.success && data.transactions) {
+                    setTransactions((prev) => (replace ? data.transactions! : [...prev, ...data.transactions!]));
+                    setHasMore(Boolean(data.nextCursor));
+                    setCursor(data.nextCursor ?? null);
+                }
+            } catch {
+                // Aborted on unmount/filter change, or a brief network drop — keep the current list.
             }
         },
         [search, categoryFilter, accountFilter, typeFilter, dateFrom, dateTo]
     );
 
     useEffect(() => {
+        const controller = new AbortController();
         setLoading(true);
-        fetchPage(null, true).finally(() => setLoading(false));
+        fetchPage(null, true, controller.signal).finally(() => {
+            if (!controller.signal.aborted) setLoading(false);
+        });
+        return () => controller.abort();
     }, [fetchPage]);
 
     useEffect(() => {
@@ -191,6 +205,7 @@ export function TransactionsView({
     const selectedTxs = visibleTransactions.filter((tx) => selectedIds.has(tx.id));
     const stats = selectionStats(selectedTxs);
     const selecting = selectedIds.size > 0;
+    const filtersActive = Boolean(categoryFilter || accountFilter || typeFilter || dateFrom || dateTo);
 
     function handleCardClick(tx: Transaction, shiftKey: boolean) {
         if (shiftKey) {
@@ -236,7 +251,7 @@ export function TransactionsView({
             <h1 className="text-2xl font-extrabold text-ink">{t("tx.title")}</h1>
 
             <div className="flex gap-2">
-                <div className="relative flex-1">
+                <div className="relative min-w-0 flex-1">
                     <IconSearch className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
                     <input
                         value={searchInput}
@@ -265,10 +280,27 @@ export function TransactionsView({
                     }`}
                 >
                     <IconFilter className="h-5 w-5" />
-                    {(categoryFilter || accountFilter || typeFilter || dateFrom || dateTo) && (
+                    {filtersActive && (
                         <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-brand" />
                     )}
                 </button>
+                {filtersActive && (
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setCategoryFilter("");
+                            setAccountFilter("");
+                            setTypeFilter("");
+                            setDateFrom("");
+                            setDateTo("");
+                            setShowFilters(false);
+                        }}
+                        aria-label={t("tx.clearFilters")}
+                        className="shrink-0 rounded-xl bg-chip p-3 text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
+                    >
+                        <IconClose className="h-5 w-5" />
+                    </button>
+                )}
             </div>
 
             {showFilters && (

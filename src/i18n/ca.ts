@@ -78,6 +78,7 @@ export const ca: Messages = {
         searchPlaceholder: "Cercar descripció…",
         clearSearch: "Esborrar la cerca",
         toggleFilters: "Mostrar filtres",
+        clearFilters: "Esborrar els filtres",
         allAccounts: "Tots els comptes",
         allCategories: "Totes les categories",
         from: "Des de",
