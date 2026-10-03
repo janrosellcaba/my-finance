@@ -57,7 +57,7 @@
 	--color-paper: #1d1c18;
 	--color-ink: #f4f0e6;
 	--color-muted: #999280;
-	--color-line: #3a372e;
+	--color-line: #2e2c26;
 
 	--color-brand: #4aa37c;
 	--color-brand-dark: #3a8664;
@@ -220,8 +220,37 @@ body {
 .btn-raised:active,
 .btn-raised-ink:active,
 .btn-raised-danger:active {
-	transform: translateY(1px);
 	filter: brightness(0.97);
+}
+
+@keyframes toast-in {
+	from {
+		opacity: 0;
+		transform: translateY(10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes toast-out {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+}
+
+.toast-enter {
+	animation: toast-in 220ms ease-out;
+}
+
+.toast-leave {
+	animation: toast-out 160ms ease-in forwards;
 }
 
 /* Soft recessed field — opposite of raised, keeps forms in the same family. */

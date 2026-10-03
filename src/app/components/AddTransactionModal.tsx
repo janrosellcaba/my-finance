@@ -428,7 +428,7 @@ export function AddTransactionModal({
                         type="button"
                         onClick={handleDelete}
                         disabled={saving}
-                        className="mt-3 w-full rounded-2xl border-2 border-danger/25 bg-danger-soft py-4 text-lg font-bold text-danger transition-all duration-150 ease-out hover:-translate-y-0.5 hover:border-danger/40 hover:shadow-md active:translate-y-0 disabled:opacity-60 select-none"
+                        className="mt-3 w-full rounded-2xl border border-danger/25 bg-danger-soft py-4 text-lg font-semibold text-danger transition-colors duration-150 hover:bg-danger/10 disabled:opacity-60 select-none"
                     >
                         {t("tx.deleteTransaction")}
                     </button>
