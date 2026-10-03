@@ -853,9 +853,25 @@ function NetWorthLine({
                     tickFormatter={(v: number) => moneyTick(v, privacyMode)}
                 />
                 <Tooltip
-                    formatter={(v) => (typeof v === "number" ? formatCurrency(v, privacyMode) : String(v))}
-                    labelFormatter={(l) => (typeof l === "string" ? formatDate(l) : String(l))}
                     isAnimationActive={false}
+                    content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        const v = payload[0].value;
+                        return (
+                            <div className="rounded-xl border border-line bg-paper px-3 py-2 text-xs shadow-sm">
+                                <p className="font-semibold text-ink">
+                                    {typeof label === "string" ? formatDate(label) : String(label ?? "")}
+                                </p>
+                                <p
+                                    className={`mt-0.5 tabular-nums text-muted ${
+                                        privacyMode ? "blur-[5px] select-none opacity-70" : ""
+                                    }`}
+                                >
+                                    {typeof v === "number" ? formatCurrency(v, privacyMode) : String(v)}
+                                </p>
+                            </div>
+                        );
+                    }}
                 />
                 <Line
                     type="monotone"
