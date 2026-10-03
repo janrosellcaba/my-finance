@@ -992,7 +992,9 @@ function LifetimeNetWorth({
         <>
             <p
                 className={`font-bold tabular-nums ${large ? "text-4xl sm:text-5xl" : "text-2xl"} ${
-                    privacyMode ? "blur-[6px] select-none opacity-70" : ""
+                    privacyMode
+                        ? `${large ? "blur-[20px]" : "blur-[6px]"} select-none opacity-70`
+                        : ""
                 } ${current >= 0 ? "text-ink" : "text-danger"}`}
             >
                 {formatCurrency(current, privacyMode)}
@@ -1001,7 +1003,11 @@ function LifetimeNetWorth({
                 <p
                     className={`font-semibold tabular-nums ${large ? "mt-1 text-sm" : "mt-0.5 text-xs"} ${
                         change >= 0 ? "text-brand" : "text-danger"
-                    } ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}
+                    } ${
+                        privacyMode
+                            ? `${large ? "blur-[10px]" : "blur-[5px]"} select-none opacity-70`
+                            : ""
+                    }`}
                 >
                     {change >= 0 ? "+" : ""}
                     {formatCurrency(change, privacyMode)} {t("analytics.since", { date: formatDate(series[0].date) })}
