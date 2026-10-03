@@ -187,6 +187,8 @@ export const es: Messages = {
         showingLatest: "Mostrando los 50 más recientes.",
         notEnoughHistory: "Aún no hay historial suficiente. Patrimonio actual: ",
         since: "desde {date}",
+        expandChart: "Pantalla completa",
+        collapseChart: "Salir de pantalla completa",
         transfersOne: "{count} transferencia",
         transfersMany: "{count} transferencias",
         timesOne: "{count} vez",

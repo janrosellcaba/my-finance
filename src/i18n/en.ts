@@ -185,6 +185,8 @@ export const en = {
         showingLatest: "Showing the latest 50.",
         notEnoughHistory: "Not enough history yet. Current net worth: ",
         since: "since {date}",
+        expandChart: "Full screen",
+        collapseChart: "Exit full screen",
         transfersOne: "{count} transfer",
         transfersMany: "{count} transfers",
         timesOne: "{count} time",

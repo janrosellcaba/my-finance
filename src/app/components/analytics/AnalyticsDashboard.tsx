@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 import {
     Bar,
     BarChart,
@@ -19,7 +20,7 @@ import { formatShortMonthYear, type TFunction } from "@/i18n";
 import { useLanguage, useT } from "@/i18n/I18nProvider";
 import { type Account, type Category, type Transaction, AMOUNT_MASK, categoryChipStyle, formatCurrency, formatDate } from "../../shared";
 import { TransactionCard } from "../TransactionCard";
-import { AccountIcon, CategoryIcon, IconClose } from "../icons";
+import { AccountIcon, CategoryIcon, IconClose, IconCollapse, IconExpand } from "../icons";
 import { Card, DeltaPill, EmptyNote, Section, StatTile } from "./primitives";
 
 const AXIS = "#918c7c";
@@ -826,6 +827,49 @@ function AccountBalances({
     );
 }
 
+function NetWorthLine({
+    series,
+    privacyMode,
+    tall,
+}: {
+    series: AnalyticsResult["netWorth"]["series"];
+    privacyMode: boolean;
+    tall: boolean;
+}) {
+    return (
+        <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={series} margin={{ top: 8, right: 8, left: 0, bottom: 4 }}>
+                <XAxis
+                    dataKey="date"
+                    stroke={AXIS}
+                    tick={{ fontSize: tall ? 12 : 11 }}
+                    minTickGap={tall ? 28 : 40}
+                    tickFormatter={(d: string) => formatDate(d).slice(3)}
+                />
+                <YAxis
+                    stroke={AXIS}
+                    tick={{ fontSize: tall ? 12 : 11 }}
+                    width={tall ? 64 : 56}
+                    tickFormatter={(v: number) => moneyTick(v, privacyMode)}
+                />
+                <Tooltip
+                    formatter={(v) => (typeof v === "number" ? formatCurrency(v, privacyMode) : String(v))}
+                    labelFormatter={(l) => (typeof l === "string" ? formatDate(l) : String(l))}
+                    isAnimationActive={false}
+                />
+                <Line
+                    type="monotone"
+                    dataKey="netWorth"
+                    stroke={BRAND}
+                    strokeWidth={tall ? 2.5 : 2}
+                    dot={false}
+                    isAnimationActive={false}
+                />
+            </LineChart>
+        </ResponsiveContainer>
+    );
+}
+
 function LifetimeNetWorth({
     data,
     accounts,
@@ -837,12 +881,30 @@ function LifetimeNetWorth({
 }) {
     const t = useT();
     const [accountId, setAccountId] = useState("all");
+    const [expanded, setExpanded] = useState(false);
+    const expandBtnRef = useRef<HTMLButtonElement>(null);
+    const collapseBtnRef = useRef<HTMLButtonElement>(null);
+    const hadExpanded = useRef(false);
 
     useEffect(() => {
         if (accountId !== "all" && !accounts.some((a) => a.id === accountId)) {
             setAccountId("all");
         }
     }, [accounts, accountId]);
+
+    useEffect(() => {
+        if (!expanded) {
+            if (hadExpanded.current) expandBtnRef.current?.focus();
+            return;
+        }
+        hadExpanded.current = true;
+        collapseBtnRef.current?.focus();
+        function onKey(e: KeyboardEvent) {
+            if (e.key === "Escape") setExpanded(false);
+        }
+        window.addEventListener("keydown", onKey);
+        return () => window.removeEventListener("keydown", onKey);
+    }, [expanded]);
 
     const selected = data.netWorthByAccount.find((a) => a.accountId === accountId);
     const series = selected ? selected.series : data.netWorth.series;
@@ -859,43 +921,49 @@ function LifetimeNetWorth({
         );
     }
 
-    return (
-        <Card>
-            {accounts.length > 1 && (
-                <div className="mb-3 flex gap-1.5 overflow-x-auto pb-0.5">
+    function accountChips() {
+        if (accounts.length < 2) return null;
+        return (
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+                <button
+                    type="button"
+                    onClick={() => setAccountId("all")}
+                    className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
+                        accountId === "all" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
+                    }`}
+                >
+                    {t("analytics.allAccounts")}
+                </button>
+                {accounts.map((a) => (
                     <button
+                        key={a.id}
                         type="button"
-                        onClick={() => setAccountId("all")}
+                        onClick={() => setAccountId(a.id)}
                         className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
-                            accountId === "all" ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
+                            accountId === a.id ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
                         }`}
                     >
-                        {t("analytics.allAccounts")}
+                        {a.name}
                     </button>
-                    {accounts.map((a) => (
-                        <button
-                            key={a.id}
-                            type="button"
-                            onClick={() => setAccountId(a.id)}
-                            className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors duration-150 select-none ${
-                                accountId === a.id ? "bg-ink text-paper" : "bg-chip text-muted hover:bg-chip-hover"
-                            }`}
-                        >
-                            {a.name}
-                        </button>
-                    ))}
-                </div>
-            )}
+                ))}
+            </div>
+        );
+    }
+
+    const hasChips = accounts.length > 1;
+
+    const stats = (large: boolean) => (
+        <>
             <p
-                className={`text-2xl font-bold tabular-nums ${privacyMode ? "blur-[6px] select-none opacity-70" : ""} ${
-                    current >= 0 ? "text-ink" : "text-danger"
-                }`}
+                className={`font-bold tabular-nums ${large ? "text-4xl sm:text-5xl" : "text-2xl"} ${
+                    privacyMode ? "blur-[6px] select-none opacity-70" : ""
+                } ${current >= 0 ? "text-ink" : "text-danger"}`}
             >
                 {formatCurrency(current, privacyMode)}
             </p>
             {change !== 0 && (
                 <p
-                    className={`mt-0.5 text-xs font-semibold tabular-nums ${
+                    className={`font-semibold tabular-nums ${large ? "mt-1 text-sm" : "mt-0.5 text-xs"} ${
                         change >= 0 ? "text-brand" : "text-danger"
                     } ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}
                 >
@@ -903,39 +971,60 @@ function LifetimeNetWorth({
                     {formatCurrency(change, privacyMode)} {t("analytics.since", { date: formatDate(series[0].date) })}
                 </p>
             )}
-            <div className="mt-3">
-                <ResponsiveContainer width="100%" height={240}>
-                    <LineChart data={series}>
-                        <XAxis
-                            dataKey="date"
-                            stroke={AXIS}
-                            tick={{ fontSize: 11 }}
-                            minTickGap={40}
-                            tickFormatter={(d: string) => formatDate(d).slice(3)}
-                        />
-                        <YAxis
-                            stroke={AXIS}
-                            tick={{ fontSize: 11 }}
-                            width={56}
-                            tickFormatter={(v: number) => moneyTick(v, privacyMode)}
-                        />
-                        <Tooltip
-                            formatter={(v) => (typeof v === "number" ? formatCurrency(v, privacyMode) : String(v))}
-                            labelFormatter={(l) => (typeof l === "string" ? formatDate(l) : String(l))}
-                            isAnimationActive={false}
-                        />
-                        <Line
-                            type="monotone"
-                            dataKey="netWorth"
-                            stroke={BRAND}
-                            strokeWidth={2}
-                            dot={false}
-                            isAnimationActive={false}
-                        />
-                    </LineChart>
-                </ResponsiveContainer>
-            </div>
-        </Card>
+        </>
+    );
+
+    return (
+        <>
+            <Card className="relative">
+                <button
+                    ref={expandBtnRef}
+                    type="button"
+                    onClick={() => setExpanded(true)}
+                    aria-label={t("analytics.expandChart")}
+                    title={t("analytics.expandChart")}
+                    className="absolute right-2 top-2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-chip text-muted transition-colors duration-150 select-none hover:bg-chip-hover hover:text-ink"
+                >
+                    <IconExpand className="h-5 w-5" />
+                </button>
+                {hasChips && <div className="mb-3 pr-10">{accountChips()}</div>}
+                <div className={hasChips ? undefined : "pr-10"}>{stats(false)}</div>
+                <div className="mt-3 h-[240px]">
+                    <NetWorthLine series={series} privacyMode={privacyMode} tall={false} />
+                </div>
+            </Card>
+            {expanded &&
+                createPortal(
+                    <div
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label={t("analytics.netWorth")}
+                        className="fixed inset-0 z-[60] flex flex-col overscroll-none bg-cream pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:p-8"
+                    >
+                        <div className="relative shrink-0">
+                            <button
+                                ref={collapseBtnRef}
+                                type="button"
+                                onClick={() => setExpanded(false)}
+                                aria-label={t("analytics.collapseChart")}
+                                title={t("analytics.collapseChart")}
+                                className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-chip text-muted transition-colors duration-150 select-none hover:bg-chip-hover hover:text-ink"
+                            >
+                                <IconCollapse className="h-5 w-5" />
+                            </button>
+                            <p className="pr-12 text-xs font-semibold uppercase tracking-wider text-muted">
+                                {t("analytics.netWorth")}
+                            </p>
+                            {hasChips && <div className="mt-3 pr-12">{accountChips()}</div>}
+                            <div className="mt-3 pr-12">{stats(true)}</div>
+                        </div>
+                        <div className="relative mt-4 min-h-0 w-full flex-1">
+                            <NetWorthLine series={series} privacyMode={privacyMode} tall />
+                        </div>
+                    </div>,
+                    document.body,
+                )}
+        </>
     );
 }
 

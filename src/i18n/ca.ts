@@ -187,6 +187,8 @@ export const ca: Messages = {
         showingLatest: "Es mostren els 50 més recents.",
         notEnoughHistory: "Encara no hi ha historial suficient. Patrimoni actual: ",
         since: "des de {date}",
+        expandChart: "Pantalla completa",
+        collapseChart: "Surt de la pantalla completa",
         transfersOne: "{count} transferència",
         transfersMany: "{count} transferències",
         timesOne: "{count} vegada",
