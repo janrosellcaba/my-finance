@@ -190,7 +190,7 @@ export function TodoView() {
     return (
         <div className="space-y-4 px-5 pt-6">
             <div className="flex items-center justify-between">
-                <h1 className="text-2xl font-extrabold text-ink">{t("todos.title")}</h1>
+                <h1 className="text-2xl font-semibold text-ink">{t("todos.title")}</h1>
                 <button type="button" onClick={() => openAdd()} className={`${INK_BTN} px-4 py-2 text-sm`}>
                     {t("todos.add")}
                 </button>

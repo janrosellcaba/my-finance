@@ -52,7 +52,7 @@ export function AuthGate() {
                 <div className="mb-3 flex justify-center">
                     <Image src="/logo.png" alt="" width={52} height={52} priority className="theme-logo opacity-90" />
                 </div>
-                <h1 className="text-center text-3xl font-extrabold tracking-tight text-ink">MyFinance</h1>
+                <h1 className="text-center text-3xl font-semibold tracking-tight text-ink">MyFinance</h1>
                 <p className="mb-6 text-center text-sm text-muted">
                     {mode === "login" ? t("auth.welcomeBack") : t("auth.createAccount")}
                 </p>

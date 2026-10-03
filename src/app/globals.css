@@ -59,9 +59,9 @@
 	--color-muted: #999280;
 	--color-line: #3a372e;
 
-	--color-brand: #3ec48e;
-	--color-brand-dark: #32a175;
-	--color-brand-soft: #173224;
+	--color-brand: #4aa37c;
+	--color-brand-dark: #3a8664;
+	--color-brand-soft: #1a2c22;
 
 	--color-danger: #e06d60;
 	--color-danger-dark: #cc5446;
@@ -72,23 +72,23 @@
 }
 
 :root[data-theme="dark"][data-accent="blue"] {
-	--color-brand: #5b9fd4;
-	--color-brand-dark: #3d7fb0;
+	--color-brand: #6a9bc4;
+	--color-brand-dark: #4d7fa6;
 	--color-brand-soft: #1a2838;
 }
 :root[data-theme="dark"][data-accent="terracotta"] {
-	--color-brand: #e08a6e;
-	--color-brand-dark: #c46d52;
+	--color-brand: #c98a72;
+	--color-brand-dark: #a86e58;
 	--color-brand-soft: #3a221c;
 }
 :root[data-theme="dark"][data-accent="slate"] {
-	--color-brand: #a0aec0;
-	--color-brand-dark: #718096;
+	--color-brand: #8f9aab;
+	--color-brand-dark: #6d7888;
 	--color-brand-soft: #252830;
 }
 :root[data-theme="dark"][data-accent="rose"] {
-	--color-brand: #e08aa6;
-	--color-brand-dark: #c46d8a;
+	--color-brand: #c98ea3;
+	--color-brand-dark: #a86d84;
 	--color-brand-soft: #3a1f28;
 }
 
@@ -127,6 +127,10 @@ body {
 	letter-spacing: -0.01em;
 }
 
+.tabular-nums {
+	letter-spacing: -0.03em;
+}
+
 /* Custom sleek minimalist scrollbars */
 ::-webkit-scrollbar {
 	width: 5px;
@@ -155,196 +159,69 @@ body {
 	filter: invert(1) brightness(1.15);
 }
 
-/* ── Raised surfaces (Linear-inspired, kept quiet) ─────────────────────────
-   Cards/panels use .surface; chrome bars use .surface-nav; primary actions
-   use .btn-raised* — same language, different intensity. */
+/* Cards stay matte. Header/nav are the only glassy surfaces. Buttons are
+   a solid fill with a 1px rim and a 2% top sheen. */
 
 .surface {
 	border: 1px solid var(--color-line);
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-paper) 70%, white) 0%,
-		var(--color-paper) 100%
-	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.7),
-		0 1px 2px rgba(35, 34, 29, 0.045),
-		0 1px 0 rgba(35, 34, 29, 0.03);
+	background: var(--color-paper);
+	box-shadow: none;
 }
 
-:root[data-theme="dark"] .surface {
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-paper) 93%, white) 0%,
-		var(--color-paper) 100%
-	);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-}
-
-.surface-nav {
-	border-color: var(--color-line);
-	background: color-mix(in srgb, var(--color-paper) 88%, transparent);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.55),
-		0 -1px 0 rgba(35, 34, 29, 0.04);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
-}
-
-:root[data-theme="dark"] .surface-nav {
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.04),
-		0 -1px 0 rgba(0, 0, 0, 0.35);
-}
-
+.surface-nav,
 .surface-header {
-	border-color: var(--color-line);
-	background: color-mix(in srgb, var(--color-paper) 88%, transparent);
-	box-shadow:
-		inset 0 -1px 0 transparent,
-		inset 0 1px 0 rgba(255, 255, 255, 0.55),
-		0 1px 0 rgba(35, 34, 29, 0.04);
-	backdrop-filter: blur(12px);
-	-webkit-backdrop-filter: blur(12px);
+	border-color: color-mix(in srgb, var(--color-line) 60%, transparent);
+	background: color-mix(in srgb, var(--color-paper) 58%, transparent);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.4);
+	backdrop-filter: blur(22px) saturate(1.35);
+	-webkit-backdrop-filter: blur(22px) saturate(1.35);
 }
 
+:root[data-theme="dark"] .surface-nav,
 :root[data-theme="dark"] .surface-header {
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.04),
-		0 1px 0 rgba(0, 0, 0, 0.35);
+	background: color-mix(in srgb, var(--color-paper) 46%, transparent);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
-/* Subtle Linear-style raised primary — soft top highlight, same-hue rim, short depth. */
+.btn-raised,
+.btn-raised-ink,
+.btn-raised-danger {
+	box-shadow: none;
+	transition: filter 150ms ease-out, transform 150ms ease-out;
+}
+
 .btn-raised {
-	border: 1px solid color-mix(in srgb, var(--color-brand-dark) 70%, var(--color-brand));
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-brand) 78%, white) 0%,
-		var(--color-brand) 48%,
-		var(--color-brand-dark) 100%
-	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.28),
-		inset 0 -1px 0 color-mix(in srgb, var(--color-brand-dark) 28%, transparent),
-		0 1px 2px color-mix(in srgb, var(--color-brand-dark) 22%, transparent);
-	transition:
-		transform 150ms ease-out,
-		box-shadow 150ms ease-out,
-		filter 150ms ease-out;
-}
-
-.btn-raised:hover {
-	filter: brightness(1.04);
-}
-
-.btn-raised:active {
-	transform: translateY(1px);
-	box-shadow:
-		inset 0 1px 2px rgba(0, 0, 0, 0.18),
-		inset 0 0 0 1px rgba(0, 0, 0, 0.06),
-		0 0 0 transparent;
-	filter: brightness(0.98);
-}
-
-:root[data-theme="dark"] .btn-raised {
-	border-color: color-mix(in srgb, var(--color-brand) 55%, var(--color-brand-dark));
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-brand) 55%, white) 0%,
-		var(--color-brand) 52%,
-		var(--color-brand-dark) 100%
-	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.22),
-		inset 0 -1px 0 color-mix(in srgb, var(--color-brand-dark) 40%, transparent),
-		0 1px 2px rgba(0, 0, 0, 0.28);
+	border: 1px solid color-mix(in srgb, var(--color-brand-dark) 45%, var(--color-brand));
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 42%),
+		var(--color-brand);
 }
 
 .btn-raised-ink {
 	border: 1px solid color-mix(in srgb, var(--color-ink) 82%, black);
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-ink) 72%, white) 0%,
-		var(--color-ink) 55%,
-		color-mix(in srgb, var(--color-ink) 88%, black) 100%
-	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.14),
-		inset 0 -1px 0 rgba(0, 0, 0, 0.22),
-		0 1px 2px rgba(0, 0, 0, 0.16);
-	transition:
-		transform 150ms ease-out,
-		box-shadow 150ms ease-out,
-		filter 150ms ease-out;
-}
-
-.btn-raised-ink:hover {
-	filter: brightness(1.06);
-}
-
-.btn-raised-ink:active {
-	transform: translateY(1px);
-	box-shadow:
-		inset 0 1px 2px rgba(0, 0, 0, 0.28),
-		0 0 0 transparent;
-	filter: brightness(0.97);
-}
-
-:root[data-theme="dark"] .btn-raised-ink {
-	border-color: color-mix(in srgb, var(--color-ink) 70%, black);
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-ink) 90%, white) 0%,
-		var(--color-ink) 100%
-	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.12),
-		inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-		0 1px 2px rgba(0, 0, 0, 0.35);
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 42%),
+		var(--color-ink);
 }
 
 .btn-raised-danger {
-	border: 1px solid color-mix(in srgb, var(--color-danger-dark) 70%, black);
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-danger) 78%, white) 0%,
-		var(--color-danger) 48%,
-		var(--color-danger-dark) 100%
-	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.26),
-		inset 0 -1px 0 rgba(0, 0, 0, 0.14),
-		0 1px 2px rgba(0, 0, 0, 0.14);
-	transition:
-		transform 150ms ease-out,
-		box-shadow 150ms ease-out,
-		filter 150ms ease-out;
+	border: 1px solid color-mix(in srgb, var(--color-danger-dark) 50%, var(--color-danger));
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0) 42%),
+		var(--color-danger);
 }
 
+.btn-raised:hover,
+.btn-raised-ink:hover,
 .btn-raised-danger:hover {
 	filter: brightness(1.04);
 }
 
+.btn-raised:active,
+.btn-raised-ink:active,
 .btn-raised-danger:active {
 	transform: translateY(1px);
-	box-shadow:
-		inset 0 1px 2px rgba(0, 0, 0, 0.2),
-		0 0 0 transparent;
-	filter: brightness(0.98);
-}
-
-:root[data-theme="dark"] .btn-raised-danger {
-	border-color: color-mix(in srgb, var(--color-danger-dark) 55%, black);
-	background: linear-gradient(
-		180deg,
-		color-mix(in srgb, var(--color-danger) 55%, white) 0%,
-		var(--color-danger) 52%,
-		var(--color-danger-dark) 100%
-	);
-	box-shadow:
-		inset 0 1px 0 rgba(255, 255, 255, 0.18),
-		inset 0 -1px 0 rgba(0, 0, 0, 0.28),
-		0 1px 2px rgba(0, 0, 0, 0.35);
+	filter: brightness(0.97);
 }
 
 /* Soft recessed field — opposite of raised, keeps forms in the same family. */

@@ -289,7 +289,7 @@ export function SetupWizard({
         <div className="fixed inset-0 z-[70] flex flex-col bg-cream">
             <header className="surface-header shrink-0 border-b px-5 py-4">
                 <p className="text-xs font-bold uppercase tracking-wider text-brand">{t("setup.kicker")}</p>
-                <h1 className="mt-1 text-2xl font-extrabold text-ink">{t("setup.title")}</h1>
+                <h1 className="mt-1 text-2xl font-semibold text-ink">{t("setup.title")}</h1>
                 <p className="mt-1 text-sm text-muted">{t("setup.intro")}</p>
             </header>
 

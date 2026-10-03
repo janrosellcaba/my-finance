@@ -19,13 +19,15 @@ function HomeSkeleton() {
             <div className="h-14 w-full rounded-2xl bg-chip" />
             <div>
                 <div className="mb-3 h-3 w-28 rounded-full bg-chip" />
-                <div className="grid grid-cols-2 gap-3">
-                    {Array.from({ length: 2 }).map((_, i) => (
-                        <div key={i} className="space-y-2 surface rounded-2xl p-4">
-                            <div className="h-3 w-16 rounded-full bg-chip" />
-                            <div className="h-5 w-20 rounded-full bg-chip" />
-                        </div>
-                    ))}
+                <div className="surface overflow-hidden rounded-2xl">
+                    <div className="grid grid-cols-2">
+                        {Array.from({ length: 2 }).map((_, i) => (
+                            <div key={i} className={`space-y-2 p-4 ${i === 1 ? "border-l border-line" : ""}`}>
+                                <div className="h-3 w-16 rounded-full bg-chip" />
+                                <div className="h-5 w-20 rounded-full bg-chip" />
+                            </div>
+                        ))}
+                    </div>
                 </div>
             </div>
             <div>
@@ -112,11 +114,10 @@ export function HomeView({
 
     return (
         <div className="space-y-6 px-5 pt-6">
-            <div className="relative overflow-hidden surface rounded-3xl p-6 text-center">
-                <div className="absolute inset-0 bg-gradient-to-b from-brand/5 via-transparent to-transparent pointer-events-none" />
-                <p className="relative text-xs font-bold uppercase tracking-wider text-muted">{t("home.totalNetWorth")}</p>
+            <div className="surface rounded-3xl px-6 pb-7 pt-7 text-center">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted">{t("home.totalNetWorth")}</p>
                 <p
-                    className={`relative mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl tabular-nums transition-[filter,opacity] duration-250 ${
+                    className={`mt-3.5 text-4xl font-extrabold tracking-tighter sm:text-5xl tabular-nums transition-[filter,opacity] duration-250 ${
                         positive ? "text-brand" : "text-danger"
                     } ${privacyMode ? "blur-[9px] select-none opacity-70" : ""}`}
                 >
@@ -124,12 +125,12 @@ export function HomeView({
                 </p>
                 {dashboard.netWorthHistory.length > 1 && (
                     <div
-                        className={`relative mx-auto mt-4 max-w-[180px] transition-[filter,opacity] duration-250 ${
+                        className={`mx-auto mt-5 max-w-[180px] transition-[filter,opacity] duration-250 ${
                             privacyMode ? "blur-[5px] select-none opacity-40" : ""
                         }`}
                     >
                         <Sparkline values={dashboard.netWorthHistory} tone={netWorthTone} />
-                        <p className="mt-1 text-[11px] font-medium text-muted">{t("home.past30Days")}</p>
+                        <p className="mt-1.5 text-[11px] font-medium text-muted">{t("home.past30Days")}</p>
                     </div>
                 )}
             </div>
@@ -143,52 +144,60 @@ export function HomeView({
             </button>
 
             <div>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</h2>
-                <div className="grid grid-cols-2 gap-3">
-                    {dashboard.accounts.map((acc) => (
-                        <button
-                            key={acc.id}
-                            type="button"
-                            onClick={() => onAccountClick(acc.id)}
-                            className="group surface w-full rounded-2xl p-4 text-left transition-all duration-150 hover:brightness-[1.01]"
-                        >
-                            <div className="flex items-center gap-2">
-                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted transition-colors group-hover:text-ink">
-                                    <AccountIcon iconKey={acc.icon ?? "wallet"} className="h-3.5 w-3.5" />
-                                </span>
-                                <p className="truncate text-xs font-semibold text-muted">{acc.name}</p>
-                            </div>
-                            <p
-                                className={`mt-2 text-xl font-bold tracking-tight tabular-nums transition-[filter,opacity] duration-250 ${
-                                    acc.balance >= 0 ? "text-brand" : "text-danger"
-                                } ${privacyMode ? "blur-[7px] select-none opacity-70" : ""}`}
+                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</h2>
+                <div className="surface overflow-hidden rounded-2xl">
+                    <div className="grid grid-cols-2">
+                        {dashboard.accounts.map((acc, index) => (
+                            <button
+                                key={acc.id}
+                                type="button"
+                                onClick={() => onAccountClick(acc.id)}
+                                className={`group w-full p-4 text-left transition-colors duration-150 hover:bg-chip/50 ${
+                                    index % 2 === 1 ? "border-l border-line" : ""
+                                } ${index >= 2 ? "border-t border-line" : ""}`}
                             >
-                                {formatCurrency(acc.balance)}
-                            </p>
-                            <div className="mt-1">
-                                <DeltaPill delta={acc.delta} privacyMode={privacyMode} />
-                            </div>
-                        </button>
-                    ))}
+                                <div className="flex items-center gap-2">
+                                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted transition-colors group-hover:text-ink">
+                                        <AccountIcon iconKey={acc.icon ?? "wallet"} className="h-3.5 w-3.5" />
+                                    </span>
+                                    <p className="truncate text-xs font-semibold text-muted">{acc.name}</p>
+                                </div>
+                                <p
+                                    className={`mt-2 text-xl font-bold tabular-nums transition-[filter,opacity] duration-250 ${
+                                        acc.balance >= 0 ? "text-brand" : "text-danger"
+                                    } ${privacyMode ? "blur-[7px] select-none opacity-70" : ""}`}
+                                >
+                                    {formatCurrency(acc.balance)}
+                                </p>
+                                <div className="mt-1">
+                                    <DeltaPill delta={acc.delta} privacyMode={privacyMode} />
+                                </div>
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
             <div>
-                <h2 className="mb-3 text-xs font-bold uppercase tracking-wider text-muted">{t("home.recentActivity")}</h2>
-                <div className="space-y-2">
-                    {recent.length === 0 && <p className="text-sm text-muted">{t("home.noTransactions")}</p>}
-                    {recent.map((tx) => (
-                        <TransactionCard
-                            key={tx.id}
-                            tx={tx}
-                            accounts={accounts}
-                            categories={categories}
-                            privacyMode={privacyMode}
-                            accountBalance={tx.balanceAfter}
-                            onClick={() => setEditingTransaction(tx)}
-                        />
-                    ))}
-                </div>
+                <h2 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted">{t("home.recentActivity")}</h2>
+                {recent.length === 0 ? (
+                    <p className="text-sm text-muted">{t("home.noTransactions")}</p>
+                ) : (
+                    <div className="divide-y divide-line overflow-hidden surface rounded-2xl">
+                        {recent.map((tx) => (
+                            <TransactionCard
+                                key={tx.id}
+                                tx={tx}
+                                accounts={accounts}
+                                categories={categories}
+                                privacyMode={privacyMode}
+                                accountBalance={tx.balanceAfter}
+                                onClick={() => setEditingTransaction(tx)}
+                                compact
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {editingTransaction && (

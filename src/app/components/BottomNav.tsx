@@ -25,15 +25,13 @@ export function BottomNav({ active, onChange }: { active: Tab; onChange: (tab: T
                             key={key}
                             type="button"
                             onClick={() => onChange(key)}
-                            className={`group relative flex flex-1 flex-col items-center gap-1 py-2 text-xs font-bold transition-all duration-150 select-none ${
+                            className={`group relative flex flex-1 flex-col items-center gap-1 py-2 text-xs font-semibold transition-all duration-150 select-none ${
                                 isActive ? "text-brand" : "text-muted hover:text-ink"
                             }`}
                         >
                             <span
-                                className={`flex h-7 w-12 items-center justify-center rounded-full transition-all duration-200 ${
-                                    isActive
-                                        ? "bg-brand/12 scale-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_1px_2px_rgba(31,122,84,0.12)]"
-                                        : "group-hover:bg-chip/60"
+                                className={`flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-200 ${
+                                    isActive ? "bg-brand/10" : "group-hover:bg-chip/60"
                                 }`}
                             >
                                 <Icon className="h-5 w-5" />

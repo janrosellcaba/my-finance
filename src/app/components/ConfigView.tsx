@@ -492,7 +492,7 @@ export function ConfigView({
         return (
             <div className="space-y-6 px-5 pt-6">
                 <div>
-                    <h1 className="text-2xl font-extrabold text-ink">{t("settings.title")}</h1>
+                    <h1 className="text-2xl font-semibold text-ink">{t("settings.title")}</h1>
                     {/* <p className="mt-1 text-sm text-muted">Accounts, data, look &amp; feel, and account safety.</p> */}
                 </div>
 
@@ -548,7 +548,7 @@ export function ConfigView({
                 >
                     <IconArrowLeft className="h-5 w-5" />
                 </button>
-                <h1 className="text-2xl font-extrabold text-ink">{configSectionTitles(t)[section]}</h1>
+                <h1 className="text-2xl font-semibold text-ink">{configSectionTitles(t)[section]}</h1>
             </div>
 
             {error && <p className="text-sm font-medium text-danger">{error}</p>}

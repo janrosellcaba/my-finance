@@ -128,7 +128,7 @@ export function AnalyticsDashboard({
                 >
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t("analytics.score")}</p>
                     <p
-                        className={`mt-1 text-3xl font-extrabold tabular-nums ${
+                        className={`mt-1 text-3xl font-bold tabular-nums ${
                             scoreTone === "brand" ? "text-brand" : scoreTone === "danger" ? "text-danger" : "text-ink"
                         } ${privacyMode ? "blur-[7px] select-none opacity-70" : ""}`}
                     >
@@ -299,7 +299,7 @@ function ScoreBreakdown({
 
     return (
         <div className={`space-y-4 ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}>
-            <p className="text-4xl font-extrabold tabular-nums text-ink">
+            <p className="text-4xl font-bold tabular-nums text-ink">
                 {health.score === null ? "—" : health.score}
             </p>
             {health.parts.map((p) => (
@@ -438,7 +438,7 @@ function CategoryPie({
             <div className="pointer-events-none absolute left-1/2 top-1/2 flex w-[7.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{t("analytics.spent")}</p>
                 <p
-                    className={`text-center text-base font-extrabold leading-tight tabular-nums text-ink ${
+                    className={`text-center text-base font-bold leading-tight tabular-nums text-ink ${
                         privacyMode ? "blur-[6px] select-none opacity-70" : ""
                     }`}
                 >
@@ -759,7 +759,7 @@ function AccountBalances({
                             <div className="pointer-events-none absolute left-1/2 top-1/2 flex w-[7.25rem] -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center">
                                 <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">{t("analytics.total")}</p>
                                 <p
-                                    className={`text-center text-base font-extrabold leading-tight tabular-nums ${
+                                    className={`text-center text-base font-bold leading-tight tabular-nums ${
                                         total >= 0 ? "text-ink" : "text-danger"
                                     } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
                                 >
@@ -883,7 +883,7 @@ function LifetimeNetWorth({
                 </div>
             )}
             <p
-                className={`text-2xl font-extrabold tabular-nums ${privacyMode ? "blur-[6px] select-none opacity-70" : ""} ${
+                className={`text-2xl font-bold tabular-nums ${privacyMode ? "blur-[6px] select-none opacity-70" : ""} ${
                     current >= 0 ? "text-ink" : "text-danger"
                 }`}
             >
@@ -1008,7 +1008,7 @@ function AccountCards({
                             <p className="truncate text-sm font-bold text-ink">{r.name}</p>
                         </div>
                         <p
-                            className={`mt-1 text-lg font-extrabold tabular-nums ${
+                            className={`mt-1 text-lg font-bold tabular-nums ${
                                 r.net >= 0 ? "text-brand" : "text-danger"
                             } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
                         >

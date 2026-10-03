@@ -248,7 +248,7 @@ export function TransactionsView({
 
     return (
         <div className={`space-y-4 px-5 pt-6 ${selecting ? "pb-16" : ""}`}>
-            <h1 className="text-2xl font-extrabold text-ink">{t("tx.title")}</h1>
+            <h1 className="text-2xl font-semibold text-ink">{t("tx.title")}</h1>
 
             <div className="flex gap-2">
                 <div className="relative min-w-0 flex-1">

@@ -405,7 +405,7 @@ function AppShellView({
                     <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2">
                             <Image src="/logo.png" alt="" width={20} height={20} className="theme-logo opacity-80" />
-                            <p className="text-lg font-extrabold text-ink">{t("header.hi", { name: username })}</p>
+                            <p className="text-lg font-semibold text-ink">{t("header.hi", { name: username })}</p>
                         </div>
                         <button
                             type="button"

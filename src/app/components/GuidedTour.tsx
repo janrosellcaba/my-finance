@@ -211,7 +211,7 @@ function PhoneFrame({
     return (
         <div className="flex h-full flex-col overflow-hidden rounded-[1.35rem] border border-line bg-cream shadow-[0_12px_40px_rgba(0,0,0,0.28)]">
             <div className="flex items-center justify-between border-b border-line bg-paper/90 px-3 py-2">
-                <p className="text-[11px] font-extrabold text-ink">{title}</p>
+                <p className="text-[11px] font-semibold text-ink">{title}</p>
                 <span className={`rounded-full p-1 text-muted ${privacyBlur ? "bg-brand/10 text-brand" : ""}`}>
                     <IconEye className="h-3.5 w-3.5" />
                 </span>
@@ -251,30 +251,32 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
                     <div className="rounded-xl bg-brand py-2.5 text-center text-[11px] font-bold text-white shadow-sm">
                         {t("home.addTransaction")}
                     </div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                        <Surface className="p-2.5">
-                            <div className="flex items-center gap-1">
-                                <IconBank className="h-3 w-3 text-muted" />
-                                <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.checking")}</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</p>
+                    <Surface className="overflow-hidden p-0">
+                        <div className="grid grid-cols-2">
+                            <div className="p-2.5">
+                                <div className="flex items-center gap-1">
+                                    <IconBank className="h-3 w-3 text-muted" />
+                                    <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.checking")}</p>
+                                </div>
+                                <p className="mt-1 text-sm font-bold tabular-nums text-brand">€280,50</p>
                             </div>
-                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€280,50</p>
-                        </Surface>
-                        <Surface className="p-2.5">
-                            <div className="flex items-center gap-1">
-                                <IconWallet className="h-3 w-3 text-muted" />
-                                <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.cash")}</p>
+                            <div className="border-l border-line p-2.5">
+                                <div className="flex items-center gap-1">
+                                    <IconWallet className="h-3 w-3 text-muted" />
+                                    <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.cash")}</p>
+                                </div>
+                                <p className="mt-1 text-sm font-bold tabular-nums text-brand">€42,28</p>
                             </div>
-                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€42,28</p>
-                        </Surface>
-                        <Surface className="p-2.5">
-                            <div className="flex items-center gap-1">
-                                <IconBank className="h-3 w-3 text-muted" />
-                                <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.savings")}</p>
+                            <div className="border-t border-line p-2.5">
+                                <div className="flex items-center gap-1">
+                                    <IconBank className="h-3 w-3 text-muted" />
+                                    <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.savings")}</p>
+                                </div>
+                                <p className="mt-1 text-sm font-bold tabular-nums text-brand">€30,00</p>
                             </div>
-                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€30,00</p>
-                        </Surface>
-                    </div>
+                        </div>
+                    </Surface>
                 </div>
             </PhoneFrame>
         );
@@ -284,7 +286,7 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
         return (
             <PhoneFrame title={title} nav={nav}>
                 <div className="space-y-2 px-3 pt-3">
-                    <p className="text-sm font-extrabold text-ink">{t("settings.bankAccounts")}</p>
+                    <p className="text-sm font-semibold text-ink">{t("settings.bankAccounts")}</p>
                     <p className="text-[10px] leading-snug text-muted">{t("tour.visual.bankAccountsHint")}</p>
                     <Surface className="divide-y divide-line overflow-hidden">
                         {[
@@ -316,7 +318,7 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
         return (
             <PhoneFrame title={title} nav={nav}>
                 <div className="space-y-2 px-3 pt-3">
-                    <p className="text-sm font-extrabold text-ink">{t("settings.categories")}</p>
+                    <p className="text-sm font-semibold text-ink">{t("settings.categories")}</p>
                     <p className="text-[10px] font-bold uppercase tracking-wide text-muted">{t("type.expense")}</p>
                     <Surface className="divide-y divide-line overflow-hidden">
                         {[
@@ -366,23 +368,25 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
                     <div className="rounded-xl bg-brand py-2.5 text-center text-[11px] font-bold text-white shadow-sm">
                         {t("home.addTransaction")}
                     </div>
-                    <p className="text-[9px] font-bold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</p>
-                    <div className="grid grid-cols-2 gap-1.5">
-                        <Surface className="p-2.5">
-                            <div className="flex items-center gap-1">
-                                <IconBank className="h-3 w-3 text-muted" />
-                                <p className="truncate text-[9px] font-semibold text-muted">Imagin</p>
+                    <p className="text-[9px] font-semibold uppercase tracking-wider text-muted">{t("home.yourAccounts")}</p>
+                    <Surface className="overflow-hidden p-0">
+                        <div className="grid grid-cols-2">
+                            <div className="p-2.5">
+                                <div className="flex items-center gap-1">
+                                    <IconBank className="h-3 w-3 text-muted" />
+                                    <p className="truncate text-[9px] font-semibold text-muted">Imagin</p>
+                                </div>
+                                <p className="mt-1 text-sm font-bold tabular-nums text-brand">€2.450</p>
                             </div>
-                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€2.450</p>
-                        </Surface>
-                        <Surface className="p-2.5">
-                            <div className="flex items-center gap-1">
-                                <IconWallet className="h-3 w-3 text-muted" />
-                                <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.cash")}</p>
+                            <div className="border-l border-line p-2.5">
+                                <div className="flex items-center gap-1">
+                                    <IconWallet className="h-3 w-3 text-muted" />
+                                    <p className="truncate text-[9px] font-semibold text-muted">{t("tour.visual.cash")}</p>
+                                </div>
+                                <p className="mt-1 text-sm font-bold tabular-nums text-brand">€85</p>
                             </div>
-                            <p className="mt-1 text-sm font-bold tabular-nums text-brand">€85</p>
-                        </Surface>
-                    </div>
+                        </div>
+                    </Surface>
                     <Surface className="flex items-center gap-2 px-2.5 py-2">
                         <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#bff3d4]/40 text-ink">
                             <IconUtensils className="h-3.5 w-3.5" />
@@ -443,7 +447,7 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
         return (
             <PhoneFrame title={title} nav={nav}>
                 <div className="space-y-2 px-3 pt-3">
-                    <p className="text-sm font-extrabold text-ink">{t("tx.title")}</p>
+                    <p className="text-sm font-semibold text-ink">{t("tx.title")}</p>
                     <div className="flex gap-1 overflow-hidden">
                         {[t("tour.visual.all"), t("type.expense"), t("type.income")].map((f, i) => (
                             <div
@@ -481,7 +485,7 @@ function TourVisual({ kind, nav }: { kind: VisualKind; nav: NonNullable<TourSlid
         return (
             <PhoneFrame title={title} nav={nav}>
                 <div className="space-y-2 px-3 pt-3">
-                    <p className="text-sm font-extrabold text-ink">{t("analytics.title")}</p>
+                    <p className="text-sm font-semibold text-ink">{t("analytics.title")}</p>
                     <div className="flex gap-1">
                         {[t("analytics.periodMonth"), t("analytics.period3m"), t("analytics.periodYear")].map((p, i) => (
                             <div
@@ -691,7 +695,7 @@ export function GuidedTour({
 
                 <div className="space-y-3 border-t border-line bg-paper px-5 pb-5 pt-4">
                     <div>
-                        <h2 className="text-xl font-extrabold tracking-tight text-ink">{slide.title}</h2>
+                        <h2 className="text-xl font-semibold tracking-tight text-ink">{slide.title}</h2>
                         <p className="mt-1.5 text-sm leading-relaxed text-muted">{slide.body}</p>
                     </div>
                     <div className="flex gap-2">

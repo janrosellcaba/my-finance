@@ -223,10 +223,10 @@ export const INPUT_CLS =
     "field-recessed w-full rounded-xl border border-line bg-paper px-4 py-3 text-base text-ink transition-colors duration-150 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10";
 
 export const PRIMARY_BTN =
-    "btn-raised rounded-2xl py-4 text-lg font-bold text-white select-none disabled:opacity-60";
+    "btn-raised rounded-2xl py-4 text-lg font-semibold text-white select-none disabled:opacity-60";
 
 export const DANGER_BTN =
-    "btn-raised-danger rounded-2xl py-4 text-lg font-bold text-white select-none disabled:opacity-60";
+    "btn-raised-danger rounded-2xl py-4 text-lg font-semibold text-white select-none disabled:opacity-60";
 
 export const INK_BTN =
     "btn-raised-ink rounded-xl px-5 py-3 font-semibold text-paper select-none disabled:opacity-60";

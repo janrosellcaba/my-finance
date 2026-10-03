@@ -180,14 +180,14 @@ export function AdminView({ currentUsername }: { currentUsername: string }) {
 
                 <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                        <h2 className="text-xl font-extrabold text-ink">{selected.username}</h2>
+                        <h2 className="text-xl font-semibold text-ink">{selected.username}</h2>
                         {isSelf && (
                             <span className="rounded-full bg-chip px-2 py-0.5 text-xs font-semibold text-muted">
                                 {t("admin.you")}
                             </span>
                         )}
                     </div>
-                    <p className={`text-2xl font-extrabold tabular-nums ${selected.balance >= 0 ? "text-brand" : "text-danger"}`}>
+                    <p className={`text-2xl font-bold tabular-nums ${selected.balance >= 0 ? "text-brand" : "text-danger"}`}>
                         {formatCurrency(selected.balance, false, currency)}
                     </p>
                     <p className="text-sm text-muted">{lastSeenLabel(selected.lastSeenAt, t)}</p>

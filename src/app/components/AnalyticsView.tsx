@@ -136,7 +136,7 @@ export function AnalyticsView({
     return (
         <div className="space-y-6 px-5 pt-6 lg:px-8">
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <h1 className="text-2xl font-extrabold text-ink">{t("analytics.title")}</h1>
+                <h1 className="text-2xl font-semibold text-ink">{t("analytics.title")}</h1>
                 <div className="flex items-center gap-2">
                     {period.isPartial && (
                         <span className="rounded-full bg-chip px-3 py-1 text-xs font-bold leading-none text-muted">
