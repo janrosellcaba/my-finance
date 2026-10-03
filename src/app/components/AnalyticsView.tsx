@@ -184,13 +184,25 @@ export function AnalyticsView({
             <div className="animate-pulse space-y-6 px-5 pt-6 lg:px-8">
                 <div className="h-7 w-28 rounded-full bg-chip" />
                 <div className="h-11 w-full rounded-xl bg-chip" />
-                <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                    {Array.from({ length: 4 }).map((_, i) => (
-                        <div key={i} className="space-y-2 surface rounded-2xl p-4">
+                <div className="surface overflow-hidden rounded-2xl">
+                    <div className="grid grid-cols-2 lg:grid-cols-4">
+                        <div className="col-span-2 space-y-2 border-b border-line p-4 lg:col-span-1 lg:border-b-0">
                             <div className="h-3 w-16 rounded-full bg-chip" />
                             <div className="h-6 w-20 rounded-full bg-chip" />
                         </div>
-                    ))}
+                        <div className="space-y-2 border-b border-line p-4 lg:border-b-0 lg:border-l">
+                            <div className="h-3 w-16 rounded-full bg-chip" />
+                            <div className="h-6 w-20 rounded-full bg-chip" />
+                        </div>
+                        <div className="space-y-2 border-b border-l border-line p-4 lg:border-b-0">
+                            <div className="h-3 w-16 rounded-full bg-chip" />
+                            <div className="h-6 w-20 rounded-full bg-chip" />
+                        </div>
+                        <div className="col-span-2 space-y-2 p-4 lg:col-span-1 lg:border-l lg:border-line">
+                            <div className="h-3 w-16 rounded-full bg-chip" />
+                            <div className="h-6 w-20 rounded-full bg-chip" />
+                        </div>
+                    </div>
                 </div>
                 <div className="h-48 w-full surface rounded-2xl p-4" />
             </div>
@@ -253,7 +265,7 @@ export function AnalyticsView({
                 <h1 className="text-2xl font-semibold text-ink">{t("analytics.title")}</h1>
                 <div className="flex items-center gap-2">
                     {period.isPartial && (
-                        <span className="rounded-full bg-chip px-3 py-1 text-xs font-bold leading-none text-muted">
+                        <span className="rounded-full bg-chip px-3 py-1 text-xs font-semibold leading-none text-muted">
                             {t("analytics.dayOf", { elapsed: period.elapsedDays, total: period.totalDays })}
                         </span>
                     )}

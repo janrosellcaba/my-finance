@@ -47,18 +47,17 @@ export function PeriodSelector({
     }
 
     return (
-        <div className="space-y-2">
-            <div className="grid grid-cols-4 gap-1 rounded-xl bg-chip/80 p-1 shadow-[inset_0_1px_2px_rgba(35,34,29,0.06)]">
+        <div className="space-y-3">
+            <div className="grid grid-cols-4 gap-1 rounded-xl bg-chip p-1">
                 {modes.map((m) => (
                     <button
                         key={m.key}
                         type="button"
                         title={m.title}
                         onClick={() => switchMode(m.key)}
-                        className={`rounded-lg py-2 text-xs font-bold transition-all duration-150 select-none ${
-                            mode === m.key
-                                ? "surface text-ink"
-                                : "text-muted hover:text-ink"
+                        onPointerUp={(e) => e.currentTarget.blur()}
+                        className={`rounded-lg py-2 text-xs font-semibold outline-none transition-colors duration-150 select-none focus:outline-none focus-visible:outline-none ${
+                            mode === m.key ? "bg-paper text-ink" : "text-muted hover:text-ink"
                         }`}
                     >
                         {m.label}
@@ -66,23 +65,24 @@ export function PeriodSelector({
                 ))}
             </div>
 
-            {steppable ? (
-                <div className="flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => step(-1)}
-                        disabled={!canPrev}
-                        aria-label={t("analytics.prevPeriod")}
-                        className="shrink-0 rounded-xl bg-chip px-3 py-2.5 text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink disabled:opacity-30"
-                    >
-                        ‹
-                    </button>
-                    {/* A native select so mobile gets the system wheel picker — jumping back
-                        several months is one gesture instead of many taps on the arrows. */}
+            <div className="flex items-center gap-2">
+                <button
+                    type="button"
+                    onClick={() => step(-1)}
+                    disabled={!steppable || !canPrev}
+                    aria-label={t("analytics.prevPeriod")}
+                    onPointerUp={(e) => e.currentTarget.blur()}
+                    className="shrink-0 rounded-xl bg-chip px-3 py-2.5 text-muted outline-none transition-colors duration-150 hover:bg-chip-hover hover:text-ink focus:outline-none disabled:opacity-30"
+                >
+                    ‹
+                </button>
+                {/* A native select so mobile gets the system wheel picker — jumping back
+                    several months is one gesture instead of many taps on the arrows. */}
+                {steppable ? (
                     <select
                         value={anchor ?? ""}
                         onChange={(e) => onChange(mode, e.target.value)}
-                        className="field-recessed min-w-0 flex-1 rounded-xl border border-line bg-paper px-4 py-2.5 text-center text-base font-bold text-ink transition-colors duration-150 focus:border-brand focus:outline-none focus:ring-4 focus:ring-brand/10"
+                        className="min-w-0 flex-1 rounded-xl border border-line bg-paper px-4 py-2.5 text-center text-base font-semibold text-ink outline-none focus:border-line focus:outline-none"
                     >
                         {mode === "month"
                             ? monthOptions.map((m) => (
@@ -96,21 +96,22 @@ export function PeriodSelector({
                                   </option>
                               ))}
                     </select>
-                    <button
-                        type="button"
-                        onClick={() => step(1)}
-                        disabled={!canNext}
-                        aria-label={t("analytics.nextPeriod")}
-                        className="shrink-0 rounded-xl bg-chip px-3 py-2.5 text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink disabled:opacity-30"
-                    >
-                        ›
-                    </button>
-                </div>
-            ) : (
-                <p className="surface rounded-xl px-4 py-2.5 text-center text-base font-bold text-ink">
-                    {label}
-                </p>
-            )}
+                ) : (
+                    <p className="min-w-0 flex-1 rounded-xl border border-line bg-paper px-4 py-2.5 text-center text-base font-semibold text-ink">
+                        {label}
+                    </p>
+                )}
+                <button
+                    type="button"
+                    onClick={() => step(1)}
+                    disabled={!steppable || !canNext}
+                    aria-label={t("analytics.nextPeriod")}
+                    onPointerUp={(e) => e.currentTarget.blur()}
+                    className="shrink-0 rounded-xl bg-chip px-3 py-2.5 text-muted outline-none transition-colors duration-150 hover:bg-chip-hover hover:text-ink focus:outline-none disabled:opacity-30"
+                >
+                    ›
+                </button>
+            </div>
         </div>
     );
 }

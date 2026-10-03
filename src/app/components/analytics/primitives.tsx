@@ -92,7 +92,7 @@ export function Section({
         <div>
             <div className="mb-3 flex items-baseline justify-between gap-2">
                 <span className="flex items-center gap-1.5">
-                    <h2 className="text-sm font-bold uppercase tracking-wide text-muted">{title}</h2>
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-muted">{title}</h2>
                     {info && <InfoTip text={info} />}
                 </span>
                 {action}
@@ -157,8 +157,8 @@ export function StatTile({
 }) {
     const toneClass = tone === "brand" ? "text-brand" : tone === "danger" ? "text-danger" : "text-ink";
     return (
-        <div className={`surface flex h-full flex-col rounded-2xl p-4 ${className}`}>
-            <p className="truncate text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+        <div className={`flex h-full flex-col p-4 ${className}`}>
+            <p className="truncate text-xs font-semibold uppercase tracking-wider text-muted">{label}</p>
             <p
                 className={`mt-1 text-xl font-bold tabular-nums transition-[filter,opacity] duration-250 lg:text-2xl ${toneClass} ${
                     privacyMode ? "blur-[7px] select-none opacity-70" : ""

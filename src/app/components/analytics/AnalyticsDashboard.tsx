@@ -115,62 +115,66 @@ export function AnalyticsDashboard({
     );
 
     return (
-        <div className="space-y-6 lg:space-y-8">
-            <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-                <button
-                    type="button"
-                    onClick={() => {
-                        setDrill(null);
-                        setScoreOpen(true);
-                    }}
-                    aria-haspopup="dialog"
-                    className="col-span-2 surface flex flex-col rounded-2xl p-4 text-left transition-colors duration-150 hover:brightness-[1.01] lg:col-span-1"
-                >
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">{t("analytics.score")}</p>
-                    <p
-                        className={`mt-1 text-3xl font-bold tabular-nums ${
-                            scoreTone === "brand" ? "text-brand" : scoreTone === "danger" ? "text-danger" : "text-ink"
-                        } ${privacyMode ? "blur-[7px] select-none opacity-70" : ""}`}
+        <div className="space-y-6">
+            <div className="surface overflow-hidden rounded-2xl">
+                <div className="grid grid-cols-2 lg:grid-cols-4">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setDrill(null);
+                            setScoreOpen(true);
+                        }}
+                        aria-haspopup="dialog"
+                        className="col-span-2 flex flex-col border-b border-line p-4 text-left outline-none transition-colors duration-150 hover:bg-chip/50 focus:outline-none lg:col-span-1 lg:border-b-0"
                     >
-                        {health.score === null ? "—" : health.score}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-muted">{healthLabel(health.labelKey, t)}</p>
-                </button>
-                <StatTile
-                    label={t("analytics.spent")}
-                    value={money(summary.expenses)}
-                    tone="danger"
-                    delta={comparison.expensesDelta}
-                    privacyMode={privacyMode}
-                    goodWhenUp={false}
-                    footnote={
-                        summary.expenseCount === 0
-                            ? t("analytics.noPurchases")
-                            : privacyMode
-                              ? purchaseCountLabel
-                              : t("analytics.perDay", { count: purchaseCountLabel, amount: money(data.dailySpend) })
-                    }
-                />
-                <StatTile
-                    label={t("analytics.earned")}
-                    value={money(summary.income)}
-                    tone="brand"
-                    delta={comparison.incomeDelta}
-                    privacyMode={privacyMode}
-                />
-                <StatTile
-                    label={summary.netSavings >= 0 ? t("analytics.leftOver") : t("analytics.overspent")}
-                    value={money(Math.abs(summary.netSavings))}
-                    tone={summary.netSavings >= 0 ? "brand" : "danger"}
-                    delta={comparison.savingsDelta}
-                    privacyMode={privacyMode}
-                    className="col-span-2 lg:col-span-1"
-                    footnote={
-                        summary.savingsRate === null || privacyMode
-                            ? undefined
-                            : t("analytics.ofIncome", { pct: summary.savingsRate.toFixed(0) })
-                    }
-                />
+                        <p className="text-xs font-semibold uppercase tracking-wider text-muted">{t("analytics.score")}</p>
+                        <p
+                            className={`mt-1 text-3xl font-bold tabular-nums ${
+                                scoreTone === "brand" ? "text-brand" : scoreTone === "danger" ? "text-danger" : "text-ink"
+                            } ${privacyMode ? "blur-[7px] select-none opacity-70" : ""}`}
+                        >
+                            {health.score === null ? "—" : health.score}
+                        </p>
+                        <p className="mt-1 truncate text-xs text-muted">{healthLabel(health.labelKey, t)}</p>
+                    </button>
+                    <StatTile
+                        label={t("analytics.spent")}
+                        value={money(summary.expenses)}
+                        tone="danger"
+                        delta={comparison.expensesDelta}
+                        privacyMode={privacyMode}
+                        goodWhenUp={false}
+                        className="border-b border-line lg:border-b-0 lg:border-l"
+                        footnote={
+                            summary.expenseCount === 0
+                                ? t("analytics.noPurchases")
+                                : privacyMode
+                                  ? purchaseCountLabel
+                                  : t("analytics.perDay", { count: purchaseCountLabel, amount: money(data.dailySpend) })
+                        }
+                    />
+                    <StatTile
+                        label={t("analytics.earned")}
+                        value={money(summary.income)}
+                        tone="brand"
+                        delta={comparison.incomeDelta}
+                        privacyMode={privacyMode}
+                        className="border-b border-l border-line lg:border-b-0"
+                    />
+                    <StatTile
+                        label={summary.netSavings >= 0 ? t("analytics.leftOver") : t("analytics.overspent")}
+                        value={money(Math.abs(summary.netSavings))}
+                        tone={summary.netSavings >= 0 ? "brand" : "danger"}
+                        delta={comparison.savingsDelta}
+                        privacyMode={privacyMode}
+                        className="col-span-2 lg:col-span-1 lg:border-l lg:border-line"
+                        footnote={
+                            summary.savingsRate === null || privacyMode
+                                ? undefined
+                                : t("analytics.ofIncome", { pct: summary.savingsRate.toFixed(0) })
+                        }
+                    />
+                </div>
             </div>
 
             {data.accountActivity.length > 1 && (
@@ -191,7 +195,7 @@ export function AnalyticsDashboard({
                 </Section>
             )}
 
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12 lg:gap-8">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
                 <div className="lg:col-span-7">
                     <Section title={t("analytics.spendingByCategory")} subtitle={focusNote}>
                         <CategoryBars
@@ -485,7 +489,7 @@ function CategoryBars({
                             key={r.categoryId}
                             type="button"
                             onClick={() => onSelect(r)}
-                            className="w-full rounded-xl px-2 py-2.5 text-left transition-colors duration-150 hover:bg-chip/70"
+                            className="w-full rounded-xl px-2 py-2.5 text-left transition-colors duration-150 hover:bg-chip/50"
                         >
                         <div className="flex items-baseline justify-between gap-3 text-sm">
                             <span className="flex min-w-0 items-center gap-2">
@@ -563,13 +567,13 @@ function TopPurchases({
     if (rows.length === 0) return <EmptyNote>{t("analytics.noPurchasesPeriod")}</EmptyNote>;
 
     return (
-        <Card className="divide-y divide-line !p-0">
+        <div className="divide-y divide-line overflow-hidden surface rounded-2xl">
             {rows.map((r) => (
                 <button
                     key={r.id}
                     type="button"
                     onClick={() => onSelect(r)}
-                    className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-chip/70"
+                    className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition-colors duration-150 hover:bg-chip/50"
                 >
                     <div className="min-w-0">
                         <p className="truncate font-semibold text-ink">{r.description}</p>
@@ -586,7 +590,7 @@ function TopPurchases({
                     </p>
                 </button>
             ))}
-        </Card>
+        </div>
     );
 }
 
@@ -944,7 +948,7 @@ function TransferRoutes({
 }) {
     const t = useT();
     return (
-        <Card className="divide-y divide-line !p-0">
+        <div className="divide-y divide-line overflow-hidden surface rounded-2xl">
             {rows.map((r) => (
                 <div
                     key={`${r.fromAccountId}>${r.toAccountId}`}
@@ -969,7 +973,7 @@ function TransferRoutes({
                     </p>
                 </div>
             ))}
-        </Card>
+        </div>
     );
 }
 
@@ -988,42 +992,46 @@ function AccountCards({
 }) {
     const t = useT();
     return (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {rows.map((r) => {
-                const active = selectedId === r.accountId;
-                const icon = accounts.find((a) => a.id === r.accountId)?.icon ?? "wallet";
-                return (
-                    <button
-                        key={r.accountId}
-                        type="button"
-                        onClick={() => onSelect(active ? "all" : r.accountId)}
-                        className={`surface rounded-2xl p-4 text-left transition-colors duration-150 ${
-                            active ? "ring-1 ring-ink/20 brightness-[0.99]" : "hover:brightness-[1.01]"
-                        }`}
-                    >
-                        <div className="flex items-center gap-2">
-                            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted">
-                                <AccountIcon iconKey={icon} className="h-3.5 w-3.5" />
-                            </span>
-                            <p className="truncate text-sm font-bold text-ink">{r.name}</p>
-                        </div>
-                        <p
-                            className={`mt-1 text-lg font-bold tabular-nums ${
-                                r.net >= 0 ? "text-brand" : "text-danger"
-                            } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
+        <div className="surface overflow-hidden rounded-2xl">
+            <div className="grid grid-cols-2">
+                {rows.map((r, index) => {
+                    const active = selectedId === r.accountId;
+                    const icon = accounts.find((a) => a.id === r.accountId)?.icon ?? "wallet";
+                    return (
+                        <button
+                            key={r.accountId}
+                            type="button"
+                            onClick={() => onSelect(active ? "all" : r.accountId)}
+                            className={`w-full p-4 text-left transition-colors duration-150 ${
+                                index % 2 === 1 ? "border-l border-line" : ""
+                            } ${index >= 2 ? "border-t border-line" : ""} ${
+                                active ? "bg-chip/80" : "hover:bg-chip/50"
+                            }`}
                         >
-                            {r.net >= 0 ? "+" : ""}
-                            {formatCurrency(r.net, privacyMode)}
-                        </p>
-                        <p className={`mt-1 text-xs text-muted ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}>
-                            {t("analytics.inOut", {
-                                in: formatCurrency(r.income + r.transfersIn, privacyMode),
-                                out: formatCurrency(r.expenses + r.transfersOut, privacyMode),
-                            })}
-                        </p>
-                    </button>
-                );
-            })}
+                            <div className="flex items-center gap-2">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg bg-chip text-muted">
+                                    <AccountIcon iconKey={icon} className="h-3.5 w-3.5" />
+                                </span>
+                                <p className="truncate text-xs font-semibold text-muted">{r.name}</p>
+                            </div>
+                            <p
+                                className={`mt-2 text-xl font-bold tabular-nums ${
+                                    r.net >= 0 ? "text-brand" : "text-danger"
+                                } ${privacyMode ? "blur-[6px] select-none opacity-70" : ""}`}
+                            >
+                                {r.net >= 0 ? "+" : ""}
+                                {formatCurrency(r.net, privacyMode)}
+                            </p>
+                            <p className={`mt-1 text-xs text-muted ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}>
+                                {t("analytics.inOut", {
+                                    in: formatCurrency(r.income + r.transfersIn, privacyMode),
+                                    out: formatCurrency(r.expenses + r.transfersOut, privacyMode),
+                                })}
+                            </p>
+                        </button>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -1059,7 +1067,7 @@ function Sheet({
             >
                 <div className="mb-4 flex items-center justify-between gap-3">
                     <div className="min-w-0">
-                        <p className="truncate text-lg font-bold text-ink">{title}</p>
+                        <p className="truncate text-lg font-semibold text-ink">{title}</p>
                         {subtitle && <p className="text-xs text-muted">{subtitle}</p>}
                     </div>
                     <button
