@@ -625,11 +625,31 @@ function MonthlyChart({
                         tickFormatter={(v: number) => moneyTick(v, privacyMode)}
                     />
                     <Tooltip
-                        formatter={(v, name) => [
-                            typeof v === "number" ? formatCurrency(v, privacyMode) : String(v),
-                            name === "income" ? t("analytics.earned") : t("analytics.spent"),
-                        ]}
                         isAnimationActive={false}
+                        cursor={{ fill: "var(--color-chip)", stroke: "none" }}
+                        content={({ active, payload, label }) => {
+                            if (!active || !payload?.length) return null;
+                            return (
+                                <div className="rounded-xl border border-line bg-paper px-3 py-2 text-xs shadow-sm">
+                                    <p className="font-semibold text-ink">{String(label ?? "")}</p>
+                                    {payload.map((entry) => {
+                                        const v = entry.value;
+                                        const income = entry.dataKey === "income";
+                                        return (
+                                            <p
+                                                key={String(entry.dataKey)}
+                                                className={`mt-0.5 tabular-nums ${
+                                                    income ? "text-brand" : "text-danger"
+                                                } ${privacyMode ? "blur-[5px] select-none opacity-70" : ""}`}
+                                            >
+                                                {income ? t("analytics.earned") : t("analytics.spent")}{" "}
+                                                {typeof v === "number" ? formatCurrency(v, privacyMode) : String(v)}
+                                            </p>
+                                        );
+                                    })}
+                                </div>
+                            );
+                        }}
                     />
                     <Bar
                         dataKey="income"
