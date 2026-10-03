@@ -785,10 +785,22 @@ function changeOverMonths(
     return round2(latest.netWorth - from.netWorth);
 }
 
+export type AnalyticsSnapshotLabels = {
+    healthLabel: Record<HealthLabelKey, string>;
+    healthPart: Record<HealthPartKey, string>;
+    healthNote: (p: HealthPart) => string;
+};
+
 /** Numbers shown on the Analytics page, without chart series or UI chrome. */
 export function buildAnalyticsSnapshot(
     data: AnalyticsResult,
-    opts: { accountName: string | null; currency: string; periodLabel: string },
+    opts: {
+        accountName: string | null;
+        currency: string;
+        periodLabel: string;
+        labels?: AnalyticsSnapshotLabels;
+        allAccountsLabel?: string;
+    },
 ) {
     const { period, summary, comparison, health, netWorth } = data;
     const nwFirst = netWorth.series[0];
@@ -796,6 +808,9 @@ export function buildAnalyticsSnapshot(
     const atPeriodStart = round2(sum(data.netWorthByAccount.map((r) => r.prevAmount)));
     const monthly = monthlyNetWorth(netWorth.series);
     const { high, low } = seriesExtrema(netWorth.series);
+    const healthLabel = opts.labels?.healthLabel ?? HEALTH_LABEL;
+    const healthPart = opts.labels?.healthPart ?? HEALTH_PART_NAME;
+    const noteFor = opts.labels?.healthNote ?? healthNote;
 
     return {
         currency: opts.currency,
@@ -807,15 +822,15 @@ export function buildAnalyticsSnapshot(
             isPartial: period.isPartial,
             elapsedDays: period.elapsedDays,
             totalDays: period.totalDays,
-            account: opts.accountName ?? "all accounts",
+            account: opts.accountName ?? opts.allAccountsLabel ?? "all accounts",
         },
         score: {
             value: health.score,
-            label: HEALTH_LABEL[health.labelKey],
+            label: healthLabel[health.labelKey],
             parts: health.parts.map((p) => ({
-                name: HEALTH_PART_NAME[p.key],
+                name: healthPart[p.key],
                 score: p.score,
-                note: healthNote(p),
+                note: noteFor(p),
             })),
         },
         summary: {
@@ -889,3 +904,5 @@ export function buildAnalyticsSnapshot(
         },
     };
 }
+
+export type AnalyticsSnapshot = ReturnType<typeof buildAnalyticsSnapshot>;

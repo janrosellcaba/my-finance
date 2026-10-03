@@ -1,8 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildAnalyticsSnapshot, type AnalyticsResult, type PeriodMode } from "@/lib/analytics";
+import { buildAnalyticsAiBrief } from "@/lib/analyticsAiBrief";
 import { formatMonthYear, formatShortMonthYear } from "@/i18n";
 import { useLanguage, useT } from "@/i18n/I18nProvider";
 import { getFormatPrefs, type Account, type Category } from "../shared";
@@ -31,6 +32,103 @@ async function copyText(text: string) {
     const ok = document.execCommand("copy");
     document.body.removeChild(el);
     if (!ok) throw new Error("copy failed");
+}
+
+function AnalyticsCopyMenu({
+    onCopyJson,
+    onCopyAi,
+}: {
+    onCopyJson: () => Promise<void>;
+    onCopyAi: () => Promise<void>;
+}) {
+    const t = useT();
+    const [open, setOpen] = useState(false);
+    const [pos, setPos] = useState<{ top: number; right: number } | null>(null);
+    const wrapRef = useRef<HTMLDivElement>(null);
+    const btnRef = useRef<HTMLButtonElement>(null);
+
+    function toggle() {
+        if (open) {
+            setOpen(false);
+            return;
+        }
+        const rect = btnRef.current?.getBoundingClientRect();
+        if (rect) {
+            setPos({
+                top: rect.bottom + 6,
+                right: Math.max(12, window.innerWidth - rect.right),
+            });
+        }
+        setOpen(true);
+    }
+
+    useEffect(() => {
+        if (!open) return;
+        function onPointerDown(e: PointerEvent) {
+            if (wrapRef.current?.contains(e.target as Node)) return;
+            setOpen(false);
+        }
+        function onKeyDown(e: KeyboardEvent) {
+            if (e.key === "Escape") setOpen(false);
+        }
+        function onScroll() {
+            setOpen(false);
+        }
+        document.addEventListener("pointerdown", onPointerDown);
+        document.addEventListener("keydown", onKeyDown);
+        window.addEventListener("scroll", onScroll, true);
+        return () => {
+            document.removeEventListener("pointerdown", onPointerDown);
+            document.removeEventListener("keydown", onKeyDown);
+            window.removeEventListener("scroll", onScroll, true);
+        };
+    }, [open]);
+
+    async function choose(action: () => Promise<void>) {
+        setOpen(false);
+        await action();
+    }
+
+    return (
+        <div ref={wrapRef} className="relative">
+            <button
+                ref={btnRef}
+                type="button"
+                onClick={toggle}
+                title={t("analytics.copyMenu")}
+                aria-label={t("analytics.copyMenu")}
+                aria-haspopup="menu"
+                aria-expanded={open}
+                className="inline-flex size-[1.375rem] items-center justify-center rounded-full bg-chip text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
+            >
+                <IconCopy className="h-3.5 w-3.5" />
+            </button>
+            {open && pos && (
+                <div
+                    role="menu"
+                    style={{ top: pos.top, right: pos.right }}
+                    className="toast-enter fixed z-30 min-w-[11.5rem] overflow-hidden rounded-xl border border-line bg-paper py-1 shadow-md"
+                >
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void choose(onCopyJson)}
+                        className="flex w-full px-3 py-2 text-left text-sm font-medium text-ink transition-colors duration-150 hover:bg-chip"
+                    >
+                        {t("analytics.copyJson")}
+                    </button>
+                    <button
+                        type="button"
+                        role="menuitem"
+                        onClick={() => void choose(onCopyAi)}
+                        className="flex w-full px-3 py-2 text-left text-sm font-medium text-ink transition-colors duration-150 hover:bg-chip"
+                    >
+                        {t("analytics.copyAiPrompt")}
+                    </button>
+                </div>
+            )}
+        </div>
+    );
 }
 
 export function AnalyticsView({
@@ -119,15 +217,31 @@ export function AnalyticsView({
                 ? `${formatShortMonthYear(period.start.slice(0, 7), language)} – ${formatShortMonthYear(period.end.slice(0, 7), language)}`
                 : period.label;
 
+    const snapshotOpts = {
+        accountName: focusName,
+        currency: getFormatPrefs().currency,
+        periodLabel,
+    };
+
     async function handleCopyJson() {
-        const snapshot = buildAnalyticsSnapshot(analytics, {
-            accountName: focusName,
-            currency: getFormatPrefs().currency,
-            periodLabel,
-        });
         try {
-            await copyText(JSON.stringify(snapshot, null, 2));
+            await copyText(JSON.stringify(buildAnalyticsSnapshot(analytics, snapshotOpts), null, 2));
             notify(t("analytics.jsonCopied"));
+        } catch {
+            notify(t("analytics.copyFailed"));
+        }
+    }
+
+    async function handleCopyAi() {
+        try {
+            await copyText(
+                buildAnalyticsAiBrief(analytics, {
+                    t,
+                    language,
+                    ...snapshotOpts,
+                }),
+            );
+            notify(t("analytics.aiCopied"));
         } catch {
             notify(t("analytics.copyFailed"));
         }
@@ -143,15 +257,7 @@ export function AnalyticsView({
                             {t("analytics.dayOf", { elapsed: period.elapsedDays, total: period.totalDays })}
                         </span>
                     )}
-                    <button
-                        type="button"
-                        onClick={handleCopyJson}
-                        title={t("analytics.copyJson")}
-                        aria-label={t("analytics.copyJson")}
-                        className="inline-flex size-[1.375rem] items-center justify-center rounded-full bg-chip text-muted transition-colors duration-150 hover:bg-chip-hover hover:text-ink"
-                    >
-                        <IconCopy className="h-3.5 w-3.5" />
-                    </button>
+                    <AnalyticsCopyMenu onCopyJson={handleCopyJson} onCopyAi={handleCopyAi} />
                 </div>
             </div>
 
