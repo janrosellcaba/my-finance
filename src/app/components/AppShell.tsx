@@ -493,7 +493,12 @@ function AppShellView({
                         )}
                         {tab === "todo" && <TodoView />}
                         {tab === "analytics" && (
-                            <AnalyticsView privacyMode={privacyMode} accounts={accounts} categories={categories} />
+                            <AnalyticsView
+                                privacyMode={privacyMode}
+                                accounts={accounts}
+                                categories={categories}
+                                onTogglePrivacy={handleTogglePrivacy}
+                            />
                         )}
                         {tab === "config" && (
                             <ConfigView

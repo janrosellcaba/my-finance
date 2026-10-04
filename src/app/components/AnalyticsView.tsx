@@ -135,10 +135,12 @@ export function AnalyticsView({
     privacyMode,
     accounts,
     categories,
+    onTogglePrivacy,
 }: {
     privacyMode: boolean;
     accounts: Account[];
     categories: Category[];
+    onTogglePrivacy: () => void;
 }) {
     const t = useT();
     const language = useLanguage();
@@ -290,6 +292,7 @@ export function AnalyticsView({
                 selectedAccountId={accountId}
                 focusName={focusName}
                 onSelectAccount={setAccountId}
+                onTogglePrivacy={onTogglePrivacy}
             />
         </div>
     );

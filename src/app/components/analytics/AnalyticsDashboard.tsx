@@ -20,7 +20,7 @@ import { formatShortMonthYear, type TFunction } from "@/i18n";
 import { useLanguage, useT } from "@/i18n/I18nProvider";
 import { type Account, type Category, type Transaction, AMOUNT_MASK, categoryChipStyle, formatCurrency, formatDate } from "../../shared";
 import { TransactionCard } from "../TransactionCard";
-import { AccountIcon, CategoryIcon, IconClose, IconCollapse, IconExpand } from "../icons";
+import { AccountIcon, CategoryIcon, IconClose, IconCollapse, IconExpand, IconEye, IconEyeOff } from "../icons";
 import { Card, DeltaPill, EmptyNote, Section, StatTile } from "./primitives";
 
 const AXIS = "#918c7c";
@@ -91,6 +91,7 @@ export function AnalyticsDashboard({
     selectedAccountId,
     focusName,
     onSelectAccount,
+    onTogglePrivacy,
 }: {
     data: AnalyticsResult;
     privacyMode: boolean;
@@ -99,6 +100,7 @@ export function AnalyticsDashboard({
     selectedAccountId: string;
     focusName: string | null;
     onSelectAccount: (id: string) => void;
+    onTogglePrivacy: () => void;
 }) {
     const t = useT();
     const { summary, comparison, period, health } = data;
@@ -265,7 +267,12 @@ export function AnalyticsDashboard({
             </div>
 
             <Section title={t("analytics.netWorth")}>
-                <LifetimeNetWorth data={data} accounts={accounts} privacyMode={privacyMode} />
+                <LifetimeNetWorth
+                    data={data}
+                    accounts={accounts}
+                    privacyMode={privacyMode}
+                    onTogglePrivacy={onTogglePrivacy}
+                />
             </Section>
 
             {scoreOpen && (
@@ -910,10 +917,12 @@ function LifetimeNetWorth({
     data,
     accounts,
     privacyMode,
+    onTogglePrivacy,
 }: {
     data: AnalyticsResult;
     accounts: Account[];
     privacyMode: boolean;
+    onTogglePrivacy: () => void;
 }) {
     const t = useT();
     const [accountId, setAccountId] = useState("all");
@@ -1044,21 +1053,39 @@ function LifetimeNetWorth({
                         className="fixed inset-0 z-[60] flex flex-col overscroll-none bg-cream pt-[max(1rem,env(safe-area-inset-top))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(1rem,env(safe-area-inset-bottom))] pl-[max(1rem,env(safe-area-inset-left))] sm:p-8"
                     >
                         <div className="relative shrink-0">
-                            <button
-                                ref={collapseBtnRef}
-                                type="button"
-                                onClick={() => setExpanded(false)}
-                                aria-label={t("analytics.collapseChart")}
-                                title={t("analytics.collapseChart")}
-                                className="absolute right-0 top-0 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-chip text-muted transition-colors duration-150 select-none hover:bg-chip-hover hover:text-ink"
-                            >
-                                <IconCollapse className="h-5 w-5" />
-                            </button>
-                            <p className="pr-12 text-xs font-semibold uppercase tracking-wider text-muted">
-                                {t("analytics.netWorth")}
-                            </p>
-                            {hasChips && <div className="mt-3 pr-12">{accountChips()}</div>}
-                            <div className="mt-3 pr-12">{stats(true)}</div>
+                            <div className="flex items-center justify-between gap-3">
+                                <p className="min-w-0 text-xs font-semibold uppercase tracking-wider text-muted">
+                                    {t("analytics.netWorth")}
+                                </p>
+                                <div className="flex shrink-0 items-center gap-1">
+                                    <button
+                                        type="button"
+                                        onClick={onTogglePrivacy}
+                                        aria-label={privacyMode ? t("header.showAmounts") : t("header.hideAmounts")}
+                                        aria-pressed={privacyMode}
+                                        title={privacyMode ? t("header.showAmounts") : t("header.hideAmounts")}
+                                        className={`flex h-10 w-10 items-center justify-center rounded-full transition-all duration-150 select-none active:scale-90 ${
+                                            privacyMode
+                                                ? "bg-brand/10 text-brand hover:bg-brand/15"
+                                                : "bg-chip text-muted hover:bg-chip-hover hover:text-ink"
+                                        }`}
+                                    >
+                                        {privacyMode ? <IconEyeOff className="h-5 w-5" /> : <IconEye className="h-5 w-5" />}
+                                    </button>
+                                    <button
+                                        ref={collapseBtnRef}
+                                        type="button"
+                                        onClick={() => setExpanded(false)}
+                                        aria-label={t("analytics.collapseChart")}
+                                        title={t("analytics.collapseChart")}
+                                        className="flex h-10 w-10 items-center justify-center rounded-full bg-chip text-muted transition-colors duration-150 select-none hover:bg-chip-hover hover:text-ink"
+                                    >
+                                        <IconCollapse className="h-5 w-5" />
+                                    </button>
+                                </div>
+                            </div>
+                            {hasChips && <div className="mt-3">{accountChips()}</div>}
+                            <div className="mt-3">{stats(true)}</div>
                         </div>
                         <div className="relative mt-4 min-h-0 w-full flex-1">
                             <NetWorthLine series={series} privacyMode={privacyMode} tall />
