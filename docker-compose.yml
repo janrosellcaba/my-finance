@@ -1,0 +1,17 @@
+services:
+  fin:
+    image: ghcr.io/janrosellcaba/my-finance:latest
+    container_name: fin
+    restart: unless-stopped
+    volumes:
+      - fin_data:/app/data
+    networks:
+      - vps_network
+
+networks:
+  vps_network:
+    external: true
+    name: ion_network
+
+volumes:
+  fin_data:
