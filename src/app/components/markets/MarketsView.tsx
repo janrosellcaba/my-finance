@@ -1,6 +1,23 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+    DndContext,
+    KeyboardSensor,
+    PointerSensor,
+    closestCenter,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    SortableContext,
+    arrayMove,
+    rectSortingStrategy,
+    sortableKeyboardCoordinates,
+    useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { useRouter } from "next/navigation";
 import { INK_BTN, formatDate } from "../../shared";
 import { type TFunction } from "@/i18n";
@@ -12,7 +29,7 @@ import {
     type MarketsPayload,
 } from "@/lib/marketsTypes";
 import { useUndoToast } from "../UndoToastProvider";
-import { IconTrash, IconTrendingUp } from "../icons";
+import { IconGrip, IconTrash, IconTrendingUp } from "../icons";
 import { AddAssetModal } from "./AddAssetModal";
 import { assetTypeLabel } from "./labels";
 import { ChartStyleToggle } from "./ChartStyleToggle";
@@ -24,7 +41,7 @@ const PERIODS: MarketPeriod[] = ["1W", "1M", "3M", "1Y"];
 const PERIOD_STORAGE_KEY = "markets-period";
 const CURRENCY_STORAGE_KEY = "markets-currency";
 const CHART_STORAGE_KEY = "markets-chart";
-const CHART_MODES: readonly ChartMode[] = ["line", "area", "candles"];
+const CHART_MODES: readonly ChartMode[] = ["line", "candles"];
 
 function readStored<T extends string>(key: string, allowed: readonly T[]): T | null {
     try {
@@ -93,6 +110,25 @@ export function MarketsView() {
         };
     }, []);
 
+    const refresh = useCallback(async (force: boolean) => {
+        setRefreshing(true);
+        try {
+            const res = await fetch("/api/markets/refresh", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ force }),
+            });
+            if (res.ok) {
+                const next = (await res.json()) as MarketsPayload;
+                if (aliveRef.current) setPayload(next);
+            }
+        } catch {
+            /* offline or provider down: keep showing what is cached */
+        } finally {
+            if (aliveRef.current) setRefreshing(false);
+        }
+    }, []);
+
     // Show what is cached right away, then refresh whatever has gone stale.
     const load = useCallback(async () => {
         try {
@@ -109,25 +145,14 @@ export function MarketsView() {
             setLoading(false);
 
             const needsData = data.assets.some((a) => a.history.length === 0);
-            if (!data.stale && !needsData) return;
-
-            setRefreshing(true);
-            try {
-                const refreshed = await fetch("/api/markets/refresh", { method: "POST" });
-                if (refreshed.ok) {
-                    const next = (await refreshed.json()) as MarketsPayload;
-                    if (aliveRef.current) setPayload(next);
-                }
-            } finally {
-                if (aliveRef.current) setRefreshing(false);
-            }
+            if (data.stale || needsData) await refresh(false);
         } catch {
             if (!aliveRef.current) return;
             setLoading(false);
             setRefreshing(false);
             setLoadFailed(true);
         }
-    }, [router]);
+    }, [router, refresh]);
 
     useEffect(() => {
         void load();
@@ -174,10 +199,42 @@ export function MarketsView() {
         });
     }
 
+    const sensors = useSensors(
+        useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+        useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+    );
+
     const visibleAssets = useMemo(
         () => (payload?.assets ?? []).filter((a) => !pendingDeleteIds.has(a.id)),
         [payload, pendingDeleteIds],
     );
+    function handleDragEnd(event: DragEndEvent) {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+        const ids = visibleAssets.map((a) => a.id);
+        const from = ids.indexOf(String(active.id));
+        const to = ids.indexOf(String(over.id));
+        if (from < 0 || to < 0) return;
+
+        const nextIds = arrayMove(ids, from, to);
+        setPayload((prev) => {
+            if (!prev) return prev;
+            const byId = new Map(prev.assets.map((a) => [a.id, a]));
+            const reordered = nextIds.map((id) => byId.get(id)).filter((a): a is MarketAssetDTO => !!a);
+            // Assets hidden while their undo toast is open keep their place at the end.
+            return { ...prev, assets: [...reordered, ...prev.assets.filter((a) => !nextIds.includes(a.id))] };
+        });
+        void fetch("/api/markets/assets", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: nextIds }),
+        })
+            .then((res) => {
+                if (!res.ok) void load();
+            })
+            .catch(() => void load());
+    }
+
     const existingSymbols = useMemo(() => new Set((payload?.assets ?? []).map((a) => a.symbol)), [payload]);
 
     const lastUpdate = useMemo(() => {
@@ -239,7 +296,7 @@ export function MarketsView() {
                         ))}
                     </div>
                 </div>
-                <p className="flex h-4 items-center gap-1.5 text-xs text-muted">
+                <p className="flex h-5 items-center gap-1.5 text-xs text-muted">
                     {refreshing ? (
                         <>
                             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-brand" />
@@ -248,6 +305,29 @@ export function MarketsView() {
                     ) : lastUpdate !== null ? (
                         t("markets.updated", { time: relativeTime(t, lastUpdate) })
                     ) : null}
+                    {visibleAssets.length > 0 && (
+                        <button
+                            type="button"
+                            onClick={() => void refresh(true)}
+                            disabled={refreshing}
+                            title={t("markets.refreshAria")}
+                            aria-label={t("markets.refreshAria")}
+                            className="rounded-full p-1 text-muted outline-none transition-colors duration-150 hover:bg-chip hover:text-ink focus:outline-none disabled:opacity-50"
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`}
+                            >
+                                <path d="M20 12a8 8 0 1 1-2.5-5.8" />
+                                <path d="M20 4v5h-5" />
+                            </svg>
+                        </button>
+                    )}
                 </p>
             </div>
 
@@ -270,21 +350,25 @@ export function MarketsView() {
                     </div>
                 </div>
             ) : (
-                <div className="grid gap-3 lg:grid-cols-2">
-                    {visibleAssets.map((asset) => (
-                        <AssetCard
-                            key={asset.id}
-                            asset={asset}
-                            fx={payload?.fx ?? {}}
-                            period={period}
-                            currency={currency}
-                            chartMode={chartMode}
-                            language={language}
-                            refreshing={refreshing}
-                            onRemove={() => handleRemove(asset)}
-                        />
-                    ))}
-                </div>
+                <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <SortableContext items={visibleAssets.map((a) => a.id)} strategy={rectSortingStrategy}>
+                        <div className="grid gap-3 lg:grid-cols-2">
+                            {visibleAssets.map((asset) => (
+                                <SortableAssetCard
+                                    key={asset.id}
+                                    asset={asset}
+                                    fx={payload?.fx ?? {}}
+                                    period={period}
+                                    currency={currency}
+                                    chartMode={chartMode}
+                                    language={language}
+                                    refreshing={refreshing}
+                                    onRemove={() => handleRemove(asset)}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
             )}
 
             <p className="pb-2 text-center text-[11px] text-muted">{t("markets.disclaimer")}</p>
@@ -303,16 +387,7 @@ export function MarketsView() {
     );
 }
 
-function AssetCard({
-    asset,
-    fx,
-    period,
-    currency,
-    chartMode,
-    language,
-    refreshing,
-    onRemove,
-}: {
+type AssetCardProps = {
     asset: MarketAssetDTO;
     fx: MarketsPayload["fx"];
     period: MarketPeriod;
@@ -321,7 +396,38 @@ function AssetCard({
     language: AppLanguage;
     refreshing: boolean;
     onRemove: () => void;
-}) {
+    dragHandle?: ReactNode;
+};
+
+function SortableAssetCard(props: Omit<AssetCardProps, "dragHandle">) {
+    const t = useT();
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.asset.id });
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={{ transform: CSS.Transform.toString(transform), transition, zIndex: isDragging ? 10 : undefined }}
+            className={`relative min-w-0 rounded-2xl ${isDragging ? "shadow-xl ring-1 ring-brand/30" : ""}`}
+        >
+            <AssetCard
+                {...props}
+                dragHandle={
+                    <button
+                        type="button"
+                        {...attributes}
+                        {...listeners}
+                        aria-label={t("markets.reorderAria", { name: props.asset.name })}
+                        className="-ml-1 mt-px shrink-0 cursor-grab touch-none rounded-full p-1 text-muted transition-colors duration-150 hover:text-ink active:cursor-grabbing"
+                    >
+                        <IconGrip className="h-4 w-4" />
+                    </button>
+                }
+            />
+        </div>
+    );
+}
+
+function AssetCard({ asset, fx, period, currency, chartMode, language, refreshing, onRemove, dragHandle }: AssetCardProps) {
     const t = useT();
     const converted = useMemo(() => convertAsset(asset, currency, fx), [asset, currency, fx]);
     const view = useMemo(
@@ -340,7 +446,9 @@ function AssetCard({
     return (
         <article className="surface rounded-2xl p-4">
             <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
+                <div className="flex min-w-0 items-start gap-1.5">
+                    {dragHandle}
+                    <div className="min-w-0">
                     <h2 className="truncate text-sm font-semibold text-ink">{asset.name}</h2>
                     <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-muted">
                         <span>{asset.symbol}</span>
@@ -352,6 +460,7 @@ function AssetCard({
                             </span>
                         )}
                     </p>
+                    </div>
                 </div>
                 <button
                     type="button"
@@ -404,7 +513,6 @@ function AssetCard({
                                     currency={converted!.currency}
                                     language={language}
                                     period={period}
-                                    gradientId={`mk-grad-${asset.id}`}
                                 />
                             </div>
                             <div className="mt-2 flex justify-between text-[11px] tabular-nums text-muted">

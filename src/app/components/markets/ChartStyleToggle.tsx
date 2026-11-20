@@ -20,12 +20,6 @@ const ICONS: Record<ChartMode, ReactElement> = {
             <path d="m4 16 4.5-5 4 3L20 6" />
         </svg>
     ),
-    area: (
-        <svg {...common}>
-            <path d="m4 15 4.5-4.5 4 3L20 7v11H4Z" fill="currentColor" fillOpacity={0.18} />
-            <path d="m4 15 4.5-4.5 4 3L20 7" />
-        </svg>
-    ),
     candles: (
         <svg {...common}>
             <path d="M8 4v3M8 15v4M16 6v2M16 17v3" />
@@ -39,7 +33,6 @@ export function ChartStyleToggle({ mode, onChange }: { mode: ChartMode; onChange
     const t = useT();
     const items: { key: ChartMode; title: string }[] = [
         { key: "line", title: t("markets.styleLine") },
-        { key: "area", title: t("markets.styleArea") },
         { key: "candles", title: t("markets.styleCandles") },
     ];
 

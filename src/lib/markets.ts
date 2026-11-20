@@ -20,15 +20,16 @@ const FETCH_TIMEOUT_MS = 8000;
 const CACHE_TTL_MS = 15 * 60 * 1000;
 /** After a failed attempt, wait a bit before hitting the provider again. */
 const RETRY_AFTER_FAILURE_MS = 2 * 60 * 1000;
+/** A manual refresh still skips symbols fetched this recently, so the button can't hammer the provider. */
+const FORCE_MIN_INTERVAL_MS = 30 * 1000;
 /** How much history is served to the client. */
 const HISTORY_DAYS = 370;
 
 export const MAX_ASSETS_PER_USER = 20;
 export const SYMBOL_PATTERN = /^[A-Za-z0-9.^=\-]{1,24}$/;
 
+// What every new account starts with: two universally known assets, enough to explain the tab.
 export const DEFAULT_ASSETS: { symbol: string; name: string; type: MarketAssetType }[] = [
-    { symbol: "0P0001CLDK.F", name: "Fidelity MSCI World Index (EUR, Acc)", type: "fund" },
-    { symbol: "VSMAX", name: "Vanguard Small-Cap Index Admiral (VSMAX)", type: "fund" },
     { symbol: "^GSPC", name: "S&P 500", type: "index" },
     { symbol: "BTC-EUR", name: "Bitcoin (BTC-EUR)", type: "crypto" },
 ];
@@ -208,8 +209,9 @@ export function syncSymbol(db: Db, symbol: string): Promise<boolean> {
 
 type SyncRow = typeof marketSync.$inferSelect;
 
-function needsRefresh(row: SyncRow | undefined, now: number): boolean {
+function needsRefresh(row: SyncRow | undefined, now: number, force = false): boolean {
     if (!row) return true;
+    if (force) return now - row.attemptedAt > FORCE_MIN_INTERVAL_MS;
     return now - row.attemptedAt > (row.ok ? CACHE_TTL_MS : RETRY_AFTER_FAILURE_MS);
 }
 
@@ -236,19 +238,19 @@ async function loadSync(db: Db, symbols: string[]): Promise<Map<string, SyncRow>
     return new Map(rows.map((r) => [r.symbol, r]));
 }
 
-/** Refreshes every stale symbol (assets first, then the FX pairs their currencies need). */
-export async function refreshStale(db: Db, userId: string): Promise<void> {
+/** Refreshes every stale symbol (assets first, then the FX pairs their currencies need). `force` ignores the 15 min cache window. */
+export async function refreshStale(db: Db, userId: string, force = false): Promise<void> {
     const assets = await db.select({ symbol: marketAsset.symbol }).from(marketAsset).where(eq(marketAsset.userId, userId)).all();
     const symbols = [...new Set(assets.map((a) => a.symbol))];
     const now = Date.now();
 
     const syncMap = await loadSync(db, symbols);
-    await Promise.all(symbols.filter((s) => needsRefresh(syncMap.get(s), now)).map((s) => syncSymbol(db, s)));
+    await Promise.all(symbols.filter((s) => needsRefresh(syncMap.get(s), now, force)).map((s) => syncSymbol(db, s)));
 
     const afterAssets = await loadSync(db, symbols);
     const pairs = neededFxPairs([...afterAssets.values()].map((r) => r.currency));
     const fxMap = await loadSync(db, pairs.map((p) => p.symbol));
-    await Promise.all(pairs.filter((p) => needsRefresh(fxMap.get(p.symbol), now)).map((p) => syncSymbol(db, p.symbol)));
+    await Promise.all(pairs.filter((p) => needsRefresh(fxMap.get(p.symbol), now, force)).map((p) => syncSymbol(db, p.symbol)));
 }
 
 // --- Watchlist ----------------------------------------------------------------------------
@@ -274,6 +276,18 @@ export async function ensureSeeded(db: Db, userId: string): Promise<void> {
                 .run();
         }
         tx.insert(marketSeed).values({ userId }).onConflictDoNothing().run();
+    });
+}
+
+/** Persists a new watchlist order. Ids that don't belong to the user are ignored. */
+export function saveAssetOrder(db: Db, userId: string, ids: string[]): void {
+    db.transaction((tx) => {
+        ids.forEach((id, index) => {
+            tx.update(marketAsset)
+                .set({ sortOrder: index })
+                .where(and(eq(marketAsset.id, id), eq(marketAsset.userId, userId)))
+                .run();
+        });
     });
 }
 

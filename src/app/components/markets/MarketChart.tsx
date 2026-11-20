@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import {
-    Area,
     Bar,
     CartesianGrid,
     ComposedChart,
@@ -18,7 +17,7 @@ import { useT } from "@/i18n/I18nProvider";
 import { DOWN_COLOR, UP_COLOR, formatAxisDate, formatAxisValue, formatMoney, type AppLanguage } from "./format";
 import type { MarketPeriod, PeriodView } from "./marketsMath";
 
-export type ChartMode = "line" | "area" | "candles";
+export type ChartMode = "line" | "candles";
 
 type Row = {
     date: string;
@@ -62,7 +61,6 @@ export function MarketChart({
     currency,
     language,
     period,
-    gradientId,
 }: {
     view: PeriodView;
     mode: ChartMode;
@@ -70,7 +68,6 @@ export function MarketChart({
     currency: string;
     language: AppLanguage;
     period: MarketPeriod;
-    gradientId: string;
 }) {
     const t = useT();
     // Funds publish a single price per day: a candle would be a flat tick, so draw a line instead.
@@ -93,12 +90,6 @@ export function MarketChart({
             <div className="h-[260px]">
                 <ResponsiveContainer width="100%" height="100%">
                     <ComposedChart data={data} margin={{ top: 8, right: 4, left: 0, bottom: 0 }}>
-                        <defs>
-                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={color} stopOpacity={0.25} />
-                                <stop offset="100%" stopColor={color} stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
                         <CartesianGrid stroke="var(--color-line)" strokeDasharray="2 4" />
                         <XAxis
                             dataKey="date"
@@ -167,18 +158,6 @@ export function MarketChart({
                                     fontSize: 10,
                                     fontWeight: 700,
                                 }}
-                            />
-                        )}
-                        {effective === "area" && (
-                            <Area
-                                type="monotone"
-                                dataKey="value"
-                                stroke={color}
-                                strokeWidth={1.75}
-                                fill={`url(#${gradientId})`}
-                                dot={false}
-                                activeDot={{ r: 3.5, strokeWidth: 0, fill: color }}
-                                isAnimationActive={false}
                             />
                         )}
                         {effective === "line" && (

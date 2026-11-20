@@ -8,6 +8,7 @@ import {
     ensureSeeded,
     nextAssetSortOrder,
     pruneSymbolIfUnused,
+    saveAssetOrder,
     syncSymbol,
 } from "@/lib/markets";
 import { validateSession } from "@/lib/session";
@@ -81,6 +82,32 @@ export async function DELETE(request: Request) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error("Markets delete error:", error);
+        return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    }
+}
+
+export async function PATCH(request: Request) {
+    try {
+        const user = await validateSession();
+        if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+        const body = (await request.json().catch(() => null)) as { ids?: unknown } | null;
+        const ids = body?.ids;
+        if (
+            !Array.isArray(ids) ||
+            ids.length === 0 ||
+            ids.length > MAX_ASSETS_PER_USER ||
+            !ids.every((id) => typeof id === "string" && id.length > 0 && id.length <= 64) ||
+            new Set(ids).size !== ids.length
+        ) {
+            return NextResponse.json({ error: "Invalid order." }, { status: 400 });
+        }
+
+        const db = await getDb();
+        saveAssetOrder(db, user.id, ids as string[]);
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error("Markets reorder error:", error);
         return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
 }
