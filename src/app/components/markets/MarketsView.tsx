@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Area, AreaChart, ResponsiveContainer, Tooltip, YAxis } from "recharts";
-import { INK_BTN, formatDate, getFormatPrefs } from "../../shared";
+import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { INK_BTN, formatDate } from "../../shared";
 import { LANGUAGE_INTL, type TFunction } from "@/i18n";
 import { useLanguage, useT } from "@/i18n/I18nProvider";
 import {
@@ -40,10 +40,7 @@ function writeStored(key: string, value: string) {
 }
 
 function initialCurrency(): MarketCurrency {
-    const stored = readStored(CURRENCY_STORAGE_KEY, MARKET_TARGET_CURRENCIES);
-    if (stored) return stored;
-    const appCurrency = getFormatPrefs().currency;
-    return appCurrency === "USD" ? "USD" : "EUR";
+    return readStored(CURRENCY_STORAGE_KEY, MARKET_TARGET_CURRENCIES) ?? "EUR";
 }
 
 function periodLabel(t: TFunction, p: MarketPeriod): { label: string; title: string } {
@@ -80,7 +77,7 @@ export function MarketsView() {
     const [loadFailed, setLoadFailed] = useState(false);
     const [showAdd, setShowAdd] = useState(false);
     const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
-    const [period, setPeriod] = useState<MarketPeriod>(() => readStored(PERIOD_STORAGE_KEY, PERIODS) ?? "1M");
+    const [period, setPeriod] = useState<MarketPeriod>(() => readStored(PERIOD_STORAGE_KEY, PERIODS) ?? "3M");
     const [currency, setCurrency] = useState<MarketCurrency>(initialCurrency);
     const aliveRef = useRef(true);
 
@@ -242,9 +239,9 @@ export function MarketsView() {
             </div>
 
             {loading ? (
-                <div className="space-y-3">
+                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
                     {[0, 1, 2].map((i) => (
-                        <div key={i} className="h-52 animate-pulse surface rounded-2xl" />
+                        <div key={i} className="h-72 animate-pulse surface rounded-2xl" />
                     ))}
                 </div>
             ) : loadFailed && !payload ? (
@@ -260,7 +257,7 @@ export function MarketsView() {
                     </div>
                 </div>
             ) : (
-                <div className="space-y-3">
+                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
                     {visibleAssets.map((asset) => (
                         <AssetCard
                             key={asset.id}
@@ -307,6 +304,23 @@ function formatMoney(value: number, currency: string, language: keyof typeof LAN
     }
 }
 
+function formatAxisValue(value: number, language: keyof typeof LANGUAGE_INTL): string {
+    const abs = Math.abs(value);
+    const digits = abs >= 100 ? 0 : abs >= 1 ? 2 : 4;
+    return new Intl.NumberFormat(LANGUAGE_INTL[language], {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: digits,
+    }).format(value);
+}
+
+function formatAxisDate(iso: string, period: MarketPeriod, language: keyof typeof LANGUAGE_INTL): string {
+    const d = new Date(`${iso}T00:00:00`);
+    if (Number.isNaN(d.getTime())) return iso;
+    const options: Intl.DateTimeFormatOptions =
+        period === "1Y" ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" };
+    return d.toLocaleDateString(LANGUAGE_INTL[language], options);
+}
+
 function AssetCard({
     asset,
     fx,
@@ -338,7 +352,6 @@ function AssetCard({
     // Funds publish one price per day, so say which day it is from.
     const showClose = (asset.type === "fund" || asset.type === "etf" || asset.type === "stock") && lastDate;
     const chartData = view?.series.map(([date, value]) => ({ date, value })) ?? [];
-    const pad = view && view.low !== null && view.high !== null ? (view.high - view.low || view.high * 0.01) * 0.12 : 0;
     const waiting = !converted || (asset.history.length === 0 && refreshing);
 
     return (
@@ -403,16 +416,36 @@ function AssetCard({
 
                     {chartData.length >= 2 ? (
                         <>
-                            <div className="mt-3 h-[110px]">
+                            <div className="mt-3 h-[190px]">
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={chartData} margin={{ top: 4, right: 2, left: 2, bottom: 0 }}>
+                                    <AreaChart data={chartData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
                                         <defs>
                                             <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="0%" stopColor={color} stopOpacity={0.28} />
                                                 <stop offset="100%" stopColor={color} stopOpacity={0} />
                                             </linearGradient>
                                         </defs>
-                                        <YAxis hide domain={[view!.low! - pad, view!.high! + pad]} />
+                                        <CartesianGrid vertical={false} stroke="var(--color-line)" strokeDasharray="3 3" />
+                                        <XAxis
+                                            dataKey="date"
+                                            tickFormatter={(v: string) => formatAxisDate(v, period, language)}
+                                            tick={{ fontSize: 10, fill: "var(--color-muted)" }}
+                                            tickLine={false}
+                                            axisLine={{ stroke: "var(--color-line)" }}
+                                            interval="preserveStartEnd"
+                                            minTickGap={36}
+                                            tickMargin={6}
+                                        />
+                                        <YAxis
+                                            orientation="right"
+                                            domain={["auto", "auto"]}
+                                            tickCount={5}
+                                            width={56}
+                                            tickFormatter={(v: number) => formatAxisValue(v, language)}
+                                            tick={{ fontSize: 10, fill: "var(--color-muted)" }}
+                                            tickLine={false}
+                                            axisLine={false}
+                                        />
                                         <Tooltip
                                             isAnimationActive={false}
                                             cursor={{ stroke: "var(--color-muted)", strokeDasharray: "3 3" }}

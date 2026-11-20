@@ -468,7 +468,7 @@ function AppShellView({
                 )}
 
                 <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain [scrollbar-gutter:stable]">
-                    <div className={`mx-auto pb-6 ${tab === "analytics" ? "max-w-md lg:max-w-6xl" : "max-w-md"}`}>
+                    <div className={`mx-auto pb-6 ${tab === "analytics" || tab === "markets" ? "max-w-md lg:max-w-6xl" : "max-w-md"}`}>
                         {tab === "home" && (
                             <HomeView
                                 dashboard={dashboard}
