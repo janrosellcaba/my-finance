@@ -49,8 +49,17 @@ echo "==> 🗄️ Applying database migrations..."
 # push diffs live schema at runtime and can decide a change is "unsafe" even when schema.ts
 # has a default, offering to truncate the table instead. migrate just runs the exact SQL.
 if ! npx drizzle-kit migrate; then
-    echo "⚠️ drizzle-kit migrate failed; will still try to add transaction.created_at if missing"
+    # drizzle-kit hides the real SQL error. A failed migrate used to be ignored here, which let
+    # new code ship against an old schema (e.g. the Markets tables never got created).
+    echo "❌ drizzle-kit migrate failed -- aborting before build/restart. The pre-deploy backup is in backups/."
+    exit 1
 fi
+for required_table in market_asset market_price market_sync market_seed; do
+    if [ "$(sqlite3 "$DATABASE_URL" "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND name='$required_table';")" = "0" ]; then
+        echo "❌ Table $required_table is missing after migrate -- aborting before build/restart."
+        exit 1
+    fi
+done
 
 # drizzle-kit can exit without applying migrations (that's what broke /api/dashboard
 # for created_at, and the homepage for appearance columns). Apply missing columns directly.
