@@ -160,6 +160,7 @@ export const ca: Messages = {
         typeStock: "Acció",
         typeIndex: "Índex",
         typeCrypto: "Cripto",
+        typeCurrency: "Divisa",
         disclaimer: "Preus de Yahoo Finance, només informatius. Els fons s'actualitzen un cop al dia.",
         styleAria: "Estil del gràfic",
         styleLine: "Línia",

@@ -26,6 +26,21 @@ const FORCE_MIN_INTERVAL_MS = 30 * 1000;
 const HISTORY_DAYS = 370;
 
 export const MAX_ASSETS_PER_USER = 20;
+
+/** The only currency pair offered in the search (an FX rate, not an investable asset). */
+export const FX_PAIR_RESULT: MarketSearchResult = {
+    symbol: "EURUSD=X",
+    name: "EUR/USD (Euro / US Dollar)",
+    type: "currency",
+    exchange: null,
+};
+
+function matchesFxPair(query: string): boolean {
+    const letters = query.toLowerCase().replace(/[^a-z]/g, "");
+    if (letters.includes("eurusd") || letters.includes("usdeur")) return true;
+    if (letters.includes("eur") && letters.includes("usd")) return true;
+    return ["forex", "fx", "divisa", "divisas", "currency", "cambio"].includes(letters);
+}
 export const SYMBOL_PATTERN = /^[A-Za-z0-9.^=\-]{1,24}$/;
 
 // What every new account starts with: two universally known assets, enough to explain the tab.
@@ -138,7 +153,7 @@ export async function searchAssets(query: string): Promise<MarketSearchResult[]>
             exchange: q.exchDisp ?? null,
         });
     }
-    return results;
+    return matchesFxPair(query) ? [FX_PAIR_RESULT, ...results.filter((r) => r.symbol !== FX_PAIR_RESULT.symbol)] : results;
 }
 
 // --- Cache / sync -------------------------------------------------------------------------

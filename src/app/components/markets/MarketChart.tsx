@@ -14,7 +14,7 @@ import {
 } from "recharts";
 import { formatDate } from "../../shared";
 import { useT } from "@/i18n/I18nProvider";
-import { DOWN_COLOR, UP_COLOR, formatAxisDate, formatAxisValue, formatMoney, type AppLanguage } from "./format";
+import { DOWN_COLOR, UP_COLOR, formatAxisDate, formatAxisValue, formatMoney, formatRate, type AppLanguage } from "./format";
 import type { MarketPeriod, PeriodView } from "./marketsMath";
 
 export type ChartMode = "line" | "candles";
@@ -59,6 +59,7 @@ export function MarketChart({
     mode,
     lastPrice,
     currency,
+    isRate,
     language,
     period,
 }: {
@@ -66,6 +67,7 @@ export function MarketChart({
     mode: ChartMode;
     lastPrice: number | null;
     currency: string;
+    isRate: boolean;
     language: AppLanguage;
     period: MarketPeriod;
 }) {
@@ -83,6 +85,7 @@ export function MarketChart({
         return view.series.map(([date, value]) => ({ date, value }));
     }, [effective, view]);
 
+    const fmt = (v: number) => (isRate ? formatRate(v, language) : formatMoney(v, currency, language));
     const axisTick = { fontSize: 10, fill: "var(--color-muted)" };
 
     return (
@@ -106,7 +109,7 @@ export function MarketChart({
                             domain={["auto", "auto"]}
                             tickCount={6}
                             width={58}
-                            tickFormatter={(v: number) => formatAxisValue(v, language)}
+                            tickFormatter={(v: number) => formatAxisValue(v, language, isRate)}
                             tick={axisTick}
                             tickLine={false}
                             axisLine={false}
@@ -127,17 +130,17 @@ export function MarketChart({
                                         {d.o !== undefined && d.h !== undefined && d.l !== undefined && d.c !== undefined ? (
                                             <dl className="mt-1 grid grid-cols-[auto_auto] gap-x-3 gap-y-0.5 tabular-nums">
                                                 <dt className="text-muted">{t("markets.open")}</dt>
-                                                <dd className="text-right font-semibold text-ink">{formatMoney(d.o, currency, language)}</dd>
+                                                <dd className="text-right font-semibold text-ink">{fmt(d.o)}</dd>
                                                 <dt className="text-muted">{t("markets.high")}</dt>
-                                                <dd className="text-right font-semibold text-ink">{formatMoney(d.h, currency, language)}</dd>
+                                                <dd className="text-right font-semibold text-ink">{fmt(d.h)}</dd>
                                                 <dt className="text-muted">{t("markets.low")}</dt>
-                                                <dd className="text-right font-semibold text-ink">{formatMoney(d.l, currency, language)}</dd>
+                                                <dd className="text-right font-semibold text-ink">{fmt(d.l)}</dd>
                                                 <dt className="text-muted">{t("markets.closeShort")}</dt>
-                                                <dd className="text-right font-semibold text-ink">{formatMoney(d.c, currency, language)}</dd>
+                                                <dd className="text-right font-semibold text-ink">{fmt(d.c)}</dd>
                                             </dl>
                                         ) : (
                                             <p className="mt-0.5 font-semibold tabular-nums text-ink">
-                                                {formatMoney(d.value, currency, language)}
+                                                {fmt(d.value)}
                                             </p>
                                         )}
                                     </div>
@@ -152,7 +155,7 @@ export function MarketChart({
                                 strokeOpacity={0.75}
                                 ifOverflow="extendDomain"
                                 label={{
-                                    value: formatAxisValue(lastPrice, language),
+                                    value: formatAxisValue(lastPrice, language, isRate),
                                     position: "insideTopRight",
                                     fill: color,
                                     fontSize: 10,

@@ -12,6 +12,8 @@ export function assetTypeLabel(t: TFunction, type: string): string {
             return t("markets.typeIndex");
         case "crypto":
             return t("markets.typeCrypto");
+        case "currency":
+            return t("markets.typeCurrency");
         default:
             return type;
     }

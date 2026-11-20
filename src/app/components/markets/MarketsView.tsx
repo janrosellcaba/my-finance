@@ -34,7 +34,7 @@ import { AddAssetModal } from "./AddAssetModal";
 import { assetTypeLabel } from "./labels";
 import { ChartStyleToggle } from "./ChartStyleToggle";
 import { MarketChart, type ChartMode } from "./MarketChart";
-import { UP_COLOR, DOWN_COLOR, formatMoney, type AppLanguage } from "./format";
+import { UP_COLOR, DOWN_COLOR, formatMoney, formatRate, type AppLanguage } from "./format";
 import { convertAsset, periodView, type MarketPeriod } from "./marketsMath";
 
 const PERIODS: MarketPeriod[] = ["1W", "1M", "3M", "1Y"];
@@ -441,6 +441,7 @@ function AssetCard({ asset, fx, period, currency, chartMode, language, refreshin
     // Funds publish one price per day, so say which day it is from.
     const showClose = (asset.type === "fund" || asset.type === "etf" || asset.type === "stock") && lastDate;
     const waiting = !converted || (asset.history.length === 0 && refreshing);
+    const money = (v: number) => (converted?.isRate ? formatRate(v, language) : formatMoney(v, converted!.currency, language));
     const lastPrice = converted?.price ?? (view && view.series.length > 0 ? view.series[view.series.length - 1][1] : null);
 
     return (
@@ -482,7 +483,7 @@ function AssetCard({ asset, fx, period, currency, chartMode, language, refreshin
                     <div className="mt-2 flex items-end justify-between gap-3">
                         <div>
                             <p className="text-2xl font-extrabold tabular-nums text-ink">
-                                {converted!.price !== null ? formatMoney(converted!.price, converted!.currency, language) : "—"}
+                                {converted!.price !== null ? money(converted!.price) : "—"}
                             </p>
                             {(showClose || !converted!.converted) && (
                                 <p className="mt-0.5 text-[11px] text-muted">
@@ -511,16 +512,17 @@ function AssetCard({ asset, fx, period, currency, chartMode, language, refreshin
                                     mode={chartMode}
                                     lastPrice={lastPrice}
                                     currency={converted!.currency}
+                                    isRate={converted!.isRate}
                                     language={language}
                                     period={period}
                                 />
                             </div>
                             <div className="mt-2 flex justify-between text-[11px] tabular-nums text-muted">
                                 <span>
-                                    {t("markets.low")} {formatMoney(view.low!, converted!.currency, language)}
+                                    {t("markets.low")} {money(view.low!)}
                                 </span>
                                 <span>
-                                    {t("markets.high")} {formatMoney(view.high!, converted!.currency, language)}
+                                    {t("markets.high")} {money(view.high!)}
                                 </span>
                             </div>
                         </>

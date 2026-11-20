@@ -160,6 +160,7 @@ export const es: Messages = {
         typeStock: "Acción",
         typeIndex: "Índice",
         typeCrypto: "Cripto",
+        typeCurrency: "Divisa",
         disclaimer: "Precios de Yahoo Finance, solo informativos. Los fondos se actualizan una vez al día.",
         styleAria: "Estilo del gráfico",
         styleLine: "Línea",

@@ -158,6 +158,7 @@ export const en = {
         typeStock: "Stock",
         typeIndex: "Index",
         typeCrypto: "Crypto",
+        typeCurrency: "Currency",
         disclaimer: "Prices from Yahoo Finance, for information only. Funds update once a day.",
         styleAria: "Chart style",
         styleLine: "Line",

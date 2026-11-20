@@ -1,6 +1,6 @@
 // Types shared between the Markets API routes and the Markets tab.
 
-export type MarketAssetType = "fund" | "etf" | "stock" | "index" | "crypto";
+export type MarketAssetType = "fund" | "etf" | "stock" | "index" | "crypto" | "currency";
 
 export type MarketPoint = [date: string, close: number];
 export type MarketCandle = [date: string, open: number, high: number, low: number, close: number];

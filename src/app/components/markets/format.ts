@@ -21,9 +21,14 @@ export function formatMoney(value: number, currency: string, language: AppLangua
     }
 }
 
-export function formatAxisValue(value: number, language: AppLanguage): string {
+/** An exchange rate (e.g. 1.0975): plain number, no currency symbol, 4 decimals. */
+export function formatRate(value: number, language: AppLanguage): string {
+    return new Intl.NumberFormat(LANGUAGE_INTL[language], { minimumFractionDigits: 4, maximumFractionDigits: 4 }).format(value);
+}
+
+export function formatAxisValue(value: number, language: AppLanguage, isRate = false): string {
     const abs = Math.abs(value);
-    const digits = abs >= 100 ? 0 : abs >= 1 ? 2 : 4;
+    const digits = isRate ? 4 : abs >= 100 ? 0 : abs >= 1 ? 2 : 4;
     return new Intl.NumberFormat(LANGUAGE_INTL[language], {
         minimumFractionDigits: 0,
         maximumFractionDigits: digits,

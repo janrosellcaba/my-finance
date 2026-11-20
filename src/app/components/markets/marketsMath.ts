@@ -24,6 +24,8 @@ export type ConvertedAsset = {
     currency: string;
     /** False when no FX rate was available, so the native currency is shown instead. */
     converted: boolean;
+    /** True for an FX pair such as EUR/USD: the numbers are a rate, not an amount of money. */
+    isRate: boolean;
     price: number | null;
     history: MarketPoint[];
     candles: MarketCandle[];
@@ -36,12 +38,16 @@ export function convertAsset(
 ): ConvertedAsset | null {
     const native = asset.currency;
     if (!native) return null;
+    // An exchange rate has no "currency" to convert: show it as is.
+    if (asset.type === "currency") {
+        return { currency: native, converted: true, isRate: true, price: asset.price, history: asset.history, candles: asset.candles };
+    }
     if (native === target) {
-        return { currency: native, converted: true, price: asset.price, history: asset.history, candles: asset.candles };
+        return { currency: native, converted: true, isRate: false, price: asset.price, history: asset.history, candles: asset.candles };
     }
     const rates = fx[`${native}${target}`];
     if (!rates || rates.length === 0) {
-        return { currency: native, converted: false, price: asset.price, history: asset.history, candles: asset.candles };
+        return { currency: native, converted: false, isRate: false, price: asset.price, history: asset.history, candles: asset.candles };
     }
     const cursor = { i: 0 };
     const history = asset.history.map(([date, close]) => [date, close * rateAt(rates, date, cursor)] as MarketPoint);
@@ -54,6 +60,7 @@ export function convertAsset(
     return {
         currency: target,
         converted: true,
+        isRate: false,
         price: asset.price === null ? null : asset.price * latestRate,
         history,
         candles,

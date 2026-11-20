@@ -3,6 +3,7 @@ import { and, eq } from "drizzle-orm";
 import { getDb } from "@/db";
 import { marketAsset } from "@/db/schema";
 import {
+    FX_PAIR_RESULT,
     MAX_ASSETS_PER_USER,
     SYMBOL_PATTERN,
     ensureSeeded,
@@ -13,7 +14,7 @@ import {
 } from "@/lib/markets";
 import { validateSession } from "@/lib/session";
 
-const TYPES = new Set(["fund", "etf", "stock", "index", "crypto"]);
+const TYPES = new Set(["fund", "etf", "stock", "index", "crypto", "currency"]);
 
 export async function POST(request: Request) {
     try {
@@ -24,7 +25,8 @@ export async function POST(request: Request) {
         const symbol = typeof body?.symbol === "string" ? body.symbol.trim() : "";
         const name = typeof body?.name === "string" ? body.name.trim().slice(0, 120) : "";
         const type = typeof body?.type === "string" ? body.type : "";
-        if (!SYMBOL_PATTERN.test(symbol) || !name || !TYPES.has(type)) {
+        // EUR/USD is the only FX pair on offer; "currency" can't be used for anything else.
+        if (!SYMBOL_PATTERN.test(symbol) || !name || !TYPES.has(type) || (type === "currency") !== (symbol === FX_PAIR_RESULT.symbol)) {
             return NextResponse.json({ error: "Invalid asset." }, { status: 400 });
         }
 
