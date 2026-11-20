@@ -1,4 +1,4 @@
-import type { MarketAssetDTO, MarketCurrency, MarketPoint } from "@/lib/marketsTypes";
+import type { MarketAssetDTO, MarketCandle, MarketCurrency, MarketPoint } from "@/lib/marketsTypes";
 
 export type MarketPeriod = "1W" | "1M" | "3M" | "1Y";
 
@@ -26,6 +26,7 @@ export type ConvertedAsset = {
     converted: boolean;
     price: number | null;
     history: MarketPoint[];
+    candles: MarketCandle[];
 };
 
 export function convertAsset(
@@ -36,46 +37,67 @@ export function convertAsset(
     const native = asset.currency;
     if (!native) return null;
     if (native === target) {
-        return { currency: native, converted: true, price: asset.price, history: asset.history };
+        return { currency: native, converted: true, price: asset.price, history: asset.history, candles: asset.candles };
     }
     const rates = fx[`${native}${target}`];
     if (!rates || rates.length === 0) {
-        return { currency: native, converted: false, price: asset.price, history: asset.history };
+        return { currency: native, converted: false, price: asset.price, history: asset.history, candles: asset.candles };
     }
     const cursor = { i: 0 };
     const history = asset.history.map(([date, close]) => [date, close * rateAt(rates, date, cursor)] as MarketPoint);
+    const candleCursor = { i: 0 };
+    const candles = asset.candles.map(([date, o, h, l, c]) => {
+        const r = rateAt(rates, date, candleCursor);
+        return [date, o * r, h * r, l * r, c * r] as MarketCandle;
+    });
     const latestRate = rates[rates.length - 1][1];
     return {
         currency: target,
         converted: true,
         price: asset.price === null ? null : asset.price * latestRate,
         history,
+        candles,
     };
 }
 
 export type PeriodView = {
     series: MarketPoint[];
+    /** Candles inside the window (no baseline point). Empty when the asset has none. */
+    candles: MarketCandle[];
+    /** True when candles carry real high/low ranges (false for funds, which publish one price a day). */
+    hasRange: boolean;
     changePct: number | null;
     low: number | null;
     high: number | null;
 };
 
-export function periodView(history: MarketPoint[], price: number | null, period: MarketPeriod): PeriodView {
+export function periodView(
+    history: MarketPoint[],
+    price: number | null,
+    period: MarketPeriod,
+    allCandles: MarketCandle[] = [],
+): PeriodView {
+    const empty: PeriodView = { series: [], candles: [], hasRange: false, changePct: null, low: null, high: null };
     const cutoff = isoDaysAgo(PERIOD_DAYS[period]);
     const firstInWindow = history.findIndex(([date]) => date >= cutoff);
-    if (firstInWindow === -1) return { series: [], changePct: null, low: null, high: null };
+    if (firstInWindow === -1) return empty;
 
     // Keep the last point before the window as the baseline so the change covers the whole period.
     const series = history.slice(Math.max(0, firstInWindow - 1));
-    if (series.length < 2) return { series: [], changePct: null, low: null, high: null };
+    if (series.length < 2) return empty;
+
+    const candles = allCandles.filter(([date]) => date >= cutoff);
+    const hasRange = candles.length >= 2 && candles.some(([, , h, l]) => h > l);
 
     const base = series[0][1];
     const current = price ?? series[series.length - 1][1];
     const closes = series.map(([, v]) => v);
     return {
         series,
+        candles,
+        hasRange,
         changePct: base > 0 ? ((current - base) / base) * 100 : null,
-        low: Math.min(...closes),
-        high: Math.max(...closes),
+        low: hasRange ? Math.min(...candles.map(([, , , l]) => l)) : Math.min(...closes),
+        high: hasRange ? Math.max(...candles.map(([, , h]) => h)) : Math.max(...closes),
     };
 }

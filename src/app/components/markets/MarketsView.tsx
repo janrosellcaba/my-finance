@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { INK_BTN, formatDate } from "../../shared";
-import { LANGUAGE_INTL, type TFunction } from "@/i18n";
+import { type TFunction } from "@/i18n";
 import { useLanguage, useT } from "@/i18n/I18nProvider";
 import {
     MARKET_TARGET_CURRENCIES,
@@ -16,11 +15,16 @@ import { useUndoToast } from "../UndoToastProvider";
 import { IconTrash, IconTrendingUp } from "../icons";
 import { AddAssetModal } from "./AddAssetModal";
 import { assetTypeLabel } from "./labels";
+import { ChartStyleToggle } from "./ChartStyleToggle";
+import { MarketChart, type ChartMode } from "./MarketChart";
+import { UP_COLOR, DOWN_COLOR, formatMoney, type AppLanguage } from "./format";
 import { convertAsset, periodView, type MarketPeriod } from "./marketsMath";
 
 const PERIODS: MarketPeriod[] = ["1W", "1M", "3M", "1Y"];
 const PERIOD_STORAGE_KEY = "markets-period";
 const CURRENCY_STORAGE_KEY = "markets-currency";
+const CHART_STORAGE_KEY = "markets-chart";
+const CHART_MODES: readonly ChartMode[] = ["line", "area", "candles"];
 
 function readStored<T extends string>(key: string, allowed: readonly T[]): T | null {
     try {
@@ -79,6 +83,7 @@ export function MarketsView() {
     const [pendingDeleteIds, setPendingDeleteIds] = useState<Set<string>>(new Set());
     const [period, setPeriod] = useState<MarketPeriod>(() => readStored(PERIOD_STORAGE_KEY, PERIODS) ?? "3M");
     const [currency, setCurrency] = useState<MarketCurrency>(initialCurrency);
+    const [chartMode, setChartMode] = useState<ChartMode>(() => readStored(CHART_STORAGE_KEY, CHART_MODES) ?? "line");
     const aliveRef = useRef(true);
 
     useEffect(() => {
@@ -133,6 +138,11 @@ export function MarketsView() {
         writeStored(PERIOD_STORAGE_KEY, next);
     }
 
+    function selectChartMode(next: ChartMode) {
+        setChartMode(next);
+        writeStored(CHART_STORAGE_KEY, next);
+    }
+
     function selectCurrency(next: MarketCurrency) {
         setCurrency(next);
         writeStored(CURRENCY_STORAGE_KEY, next);
@@ -179,9 +189,12 @@ export function MarketsView() {
         <div className="space-y-4 px-5 pt-6">
             <div className="flex items-center justify-between">
                 <h1 className="text-2xl font-semibold text-ink">{t("markets.title")}</h1>
-                <button type="button" onClick={() => setShowAdd(true)} className={`${INK_BTN} px-4 py-2 text-sm`}>
-                    {t("markets.add")}
-                </button>
+                <div className="flex items-center gap-2">
+                    <ChartStyleToggle mode={chartMode} onChange={selectChartMode} />
+                    <button type="button" onClick={() => setShowAdd(true)} className={`${INK_BTN} px-4 py-2 text-sm`}>
+                        {t("markets.add")}
+                    </button>
+                </div>
             </div>
 
             <div className="space-y-2">
@@ -239,9 +252,9 @@ export function MarketsView() {
             </div>
 
             {loading ? (
-                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 lg:grid-cols-2">
                     {[0, 1, 2].map((i) => (
-                        <div key={i} className="h-72 animate-pulse surface rounded-2xl" />
+                        <div key={i} className="h-96 animate-pulse surface rounded-2xl" />
                     ))}
                 </div>
             ) : loadFailed && !payload ? (
@@ -257,7 +270,7 @@ export function MarketsView() {
                     </div>
                 </div>
             ) : (
-                <div className="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 lg:grid-cols-2">
                     {visibleAssets.map((asset) => (
                         <AssetCard
                             key={asset.id}
@@ -265,6 +278,7 @@ export function MarketsView() {
                             fx={payload?.fx ?? {}}
                             period={period}
                             currency={currency}
+                            chartMode={chartMode}
                             language={language}
                             refreshing={refreshing}
                             onRemove={() => handleRemove(asset)}
@@ -289,43 +303,12 @@ export function MarketsView() {
     );
 }
 
-function formatMoney(value: number, currency: string, language: keyof typeof LANGUAGE_INTL): string {
-    const abs = Math.abs(value);
-    const digits = abs >= 1 ? 2 : 4;
-    try {
-        return new Intl.NumberFormat(LANGUAGE_INTL[language], {
-            style: "currency",
-            currency,
-            minimumFractionDigits: digits,
-            maximumFractionDigits: digits,
-        }).format(value);
-    } catch {
-        return `${value.toFixed(digits)} ${currency}`;
-    }
-}
-
-function formatAxisValue(value: number, language: keyof typeof LANGUAGE_INTL): string {
-    const abs = Math.abs(value);
-    const digits = abs >= 100 ? 0 : abs >= 1 ? 2 : 4;
-    return new Intl.NumberFormat(LANGUAGE_INTL[language], {
-        minimumFractionDigits: 0,
-        maximumFractionDigits: digits,
-    }).format(value);
-}
-
-function formatAxisDate(iso: string, period: MarketPeriod, language: keyof typeof LANGUAGE_INTL): string {
-    const d = new Date(`${iso}T00:00:00`);
-    if (Number.isNaN(d.getTime())) return iso;
-    const options: Intl.DateTimeFormatOptions =
-        period === "1Y" ? { month: "short", year: "2-digit" } : { day: "numeric", month: "short" };
-    return d.toLocaleDateString(LANGUAGE_INTL[language], options);
-}
-
 function AssetCard({
     asset,
     fx,
     period,
     currency,
+    chartMode,
     language,
     refreshing,
     onRemove,
@@ -334,25 +317,25 @@ function AssetCard({
     fx: MarketsPayload["fx"];
     period: MarketPeriod;
     currency: MarketCurrency;
-    language: keyof typeof LANGUAGE_INTL;
+    chartMode: ChartMode;
+    language: AppLanguage;
     refreshing: boolean;
     onRemove: () => void;
 }) {
     const t = useT();
     const converted = useMemo(() => convertAsset(asset, currency, fx), [asset, currency, fx]);
     const view = useMemo(
-        () => (converted ? periodView(converted.history, converted.price, period) : null),
+        () => (converted ? periodView(converted.history, converted.price, period, converted.candles) : null),
         [converted, period],
     );
 
     const up = (view?.changePct ?? 0) >= 0;
-    const color = up ? "var(--color-brand)" : "var(--color-danger)";
-    const gradientId = `mk-grad-${asset.id}`;
+    const color = up ? UP_COLOR : DOWN_COLOR;
     const lastDate = asset.history.length > 0 ? asset.history[asset.history.length - 1][0] : null;
     // Funds publish one price per day, so say which day it is from.
     const showClose = (asset.type === "fund" || asset.type === "etf" || asset.type === "stock") && lastDate;
-    const chartData = view?.series.map(([date, value]) => ({ date, value })) ?? [];
     const waiting = !converted || (asset.history.length === 0 && refreshing);
+    const lastPrice = converted?.price ?? (view && view.series.length > 0 ? view.series[view.series.length - 1][1] : null);
 
     return (
         <article className="surface rounded-2xl p-4">
@@ -383,7 +366,7 @@ function AssetCard({
             {waiting ? (
                 <div className="mt-3 space-y-3" aria-hidden>
                     <div className="h-8 w-40 animate-pulse rounded-lg bg-chip" />
-                    <div className="h-[110px] animate-pulse rounded-xl bg-chip" />
+                    <div className="h-[260px] animate-pulse rounded-xl bg-chip" />
                 </div>
             ) : (
                 <>
@@ -403,10 +386,7 @@ function AssetCard({
                         {view?.changePct != null && (
                             <span
                                 className="rounded-full px-2.5 py-1 text-xs font-bold tabular-nums"
-                                style={{
-                                    color,
-                                    backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)`,
-                                }}
+                                style={{ color, backgroundColor: `color-mix(in srgb, ${color} 12%, transparent)` }}
                             >
                                 {up ? "▲" : "▼"} {up ? "+" : ""}
                                 {view.changePct.toFixed(2)}%
@@ -414,73 +394,25 @@ function AssetCard({
                         )}
                     </div>
 
-                    {chartData.length >= 2 ? (
+                    {view && view.series.length >= 2 ? (
                         <>
-                            <div className="mt-3 h-[190px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <AreaChart data={chartData} margin={{ top: 6, right: 8, left: 0, bottom: 0 }}>
-                                        <defs>
-                                            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="0%" stopColor={color} stopOpacity={0.28} />
-                                                <stop offset="100%" stopColor={color} stopOpacity={0} />
-                                            </linearGradient>
-                                        </defs>
-                                        <CartesianGrid vertical={false} stroke="var(--color-line)" strokeDasharray="3 3" />
-                                        <XAxis
-                                            dataKey="date"
-                                            tickFormatter={(v: string) => formatAxisDate(v, period, language)}
-                                            tick={{ fontSize: 10, fill: "var(--color-muted)" }}
-                                            tickLine={false}
-                                            axisLine={{ stroke: "var(--color-line)" }}
-                                            interval="preserveStartEnd"
-                                            minTickGap={36}
-                                            tickMargin={6}
-                                        />
-                                        <YAxis
-                                            orientation="right"
-                                            domain={["auto", "auto"]}
-                                            tickCount={5}
-                                            width={56}
-                                            tickFormatter={(v: number) => formatAxisValue(v, language)}
-                                            tick={{ fontSize: 10, fill: "var(--color-muted)" }}
-                                            tickLine={false}
-                                            axisLine={false}
-                                        />
-                                        <Tooltip
-                                            isAnimationActive={false}
-                                            cursor={{ stroke: "var(--color-muted)", strokeDasharray: "3 3" }}
-                                            content={({ active, payload }) => {
-                                                if (!active || !payload?.length) return null;
-                                                const d = payload[0].payload as { date: string; value: number };
-                                                return (
-                                                    <div className="rounded-xl border border-line bg-paper px-3 py-2 text-xs shadow-sm">
-                                                        <p className="text-muted">{formatDate(d.date)}</p>
-                                                        <p className="mt-0.5 font-semibold tabular-nums text-ink">
-                                                            {formatMoney(d.value, converted!.currency, language)}
-                                                        </p>
-                                                    </div>
-                                                );
-                                            }}
-                                        />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="value"
-                                            stroke={color}
-                                            strokeWidth={2}
-                                            fill={`url(#${gradientId})`}
-                                            dot={false}
-                                            activeDot={{ r: 3.5, strokeWidth: 0, fill: color }}
-                                            isAnimationActive={false}
-                                        />
-                                    </AreaChart>
-                                </ResponsiveContainer>
+                            <div className="mt-3">
+                                <MarketChart
+                                    view={view}
+                                    mode={chartMode}
+                                    lastPrice={lastPrice}
+                                    currency={converted!.currency}
+                                    language={language}
+                                    period={period}
+                                    gradientId={`mk-grad-${asset.id}`}
+                                />
                             </div>
                             <div className="mt-2 flex justify-between text-[11px] tabular-nums text-muted">
                                 <span>
-                                    {t("markets.low")} {formatMoney(view!.low!, converted!.currency, language)}
+                                    {t("markets.low")} {formatMoney(view.low!, converted!.currency, language)}
                                 </span>
                                 <span>
-                                    {t("markets.high")} {formatMoney(view!.high!, converted!.currency, language)}
+                                    {t("markets.high")} {formatMoney(view.high!, converted!.currency, language)}
                                 </span>
                             </div>
                         </>

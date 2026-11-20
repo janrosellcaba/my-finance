@@ -3,6 +3,7 @@
 export type MarketAssetType = "fund" | "etf" | "stock" | "index" | "crypto";
 
 export type MarketPoint = [date: string, close: number];
+export type MarketCandle = [date: string, open: number, high: number, low: number, close: number];
 
 export type MarketAssetDTO = {
     id: string;
@@ -20,6 +21,8 @@ export type MarketAssetDTO = {
     ok: boolean;
     /** Daily closes in the asset's native currency, oldest first (about one year). */
     history: MarketPoint[];
+    /** Daily OHLC in the native currency, oldest first. Funds publish flat candles (no range). */
+    candles: MarketCandle[];
 };
 
 export type MarketsPayload = {

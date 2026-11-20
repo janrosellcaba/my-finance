@@ -7,6 +7,16 @@ import type { MarketSearchResult } from "@/lib/marketsTypes";
 import { IconClose, IconSearch } from "../icons";
 import { assetTypeLabel } from "./labels";
 
+// Verified against the provider (daily candles available, EUR-quoted unless stated).
+const SUGGESTIONS: MarketSearchResult[] = [
+    { symbol: "VWCE.DE", name: "Vanguard FTSE All-World UCITS ETF (Acc)", type: "etf", exchange: "XETRA" },
+    { symbol: "EUNL.DE", name: "iShares Core MSCI World UCITS ETF (Acc)", type: "etf", exchange: "XETRA" },
+    { symbol: "EUNM.DE", name: "iShares MSCI Emerging Markets UCITS ETF", type: "etf", exchange: "XETRA" },
+    { symbol: "^NDX", name: "Nasdaq-100", type: "index", exchange: null },
+    { symbol: "ETH-EUR", name: "Ethereum (ETH-EUR)", type: "crypto", exchange: null },
+    { symbol: "4GLD.DE", name: "Xetra-Gold (4GLD)", type: "etf", exchange: "XETRA" },
+];
+
 export function AddAssetModal({
     existingSymbols,
     onClose,
@@ -23,6 +33,9 @@ export function AddAssetModal({
     const [searchError, setSearchError] = useState(false);
     const [addingSymbol, setAddingSymbol] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const suggestions = SUGGESTIONS.filter((r) => !existingSymbols.has(r.symbol));
+    const showSuggestions = query.trim().length < 2;
+    const listed = showSuggestions ? suggestions : results;
 
     useEffect(() => {
         const q = query.trim();
@@ -126,9 +139,14 @@ export function AddAssetModal({
                     {!searching && !searchError && query.trim().length >= 2 && results.length === 0 && (
                         <p className="py-4 text-center text-sm text-muted">{t("markets.noResults")}</p>
                     )}
-                    {!searching && results.length > 0 && (
+                    {showSuggestions && suggestions.length > 0 && (
+                        <p className="pb-2 text-xs font-semibold uppercase tracking-wide text-muted">
+                            {t("markets.suggested")}
+                        </p>
+                    )}
+                    {(showSuggestions || !searching) && listed.length > 0 && (
                         <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line">
-                            {results.map((r) => {
+                            {listed.map((r) => {
                                 const already = existingSymbols.has(r.symbol);
                                 return (
                                     <li key={r.symbol}>

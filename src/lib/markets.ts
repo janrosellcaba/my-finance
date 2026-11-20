@@ -5,6 +5,7 @@ import {
     MARKET_TARGET_CURRENCIES,
     type MarketAssetDTO,
     type MarketAssetType,
+    type MarketCandle,
     type MarketPoint,
     type MarketSearchResult,
     type MarketsPayload,
@@ -41,6 +42,7 @@ type ChartResult = {
     price: number | null;
     priceTime: number | null;
     points: MarketPoint[];
+    candles: MarketCandle[];
 };
 
 type YahooChartResponse = {
@@ -48,7 +50,9 @@ type YahooChartResponse = {
         result?: {
             meta?: { currency?: string; regularMarketPrice?: number; regularMarketTime?: number; gmtoffset?: number };
             timestamp?: number[];
-            indicators?: { quote?: { close?: (number | null)[] }[] };
+            indicators?: {
+                quote?: { open?: (number | null)[]; high?: (number | null)[]; low?: (number | null)[]; close?: (number | null)[] }[];
+            };
         }[] | null;
     };
 };
@@ -65,7 +69,8 @@ async function fetchChart(symbol: string): Promise<ChartResult> {
     const json = (await res.json()) as YahooChartResponse;
     const result = json.chart?.result?.[0];
     const timestamps = result?.timestamp;
-    const closes = result?.indicators?.quote?.[0]?.close;
+    const quote = result?.indicators?.quote?.[0];
+    const closes = quote?.close;
     if (!result || !timestamps || !closes) throw new Error(`No data for ${symbol}`);
 
     let currency = result.meta?.currency ?? "";
@@ -76,20 +81,29 @@ async function fetchChart(symbol: string): Promise<ChartResult> {
     if (!/^[A-Z]{3}$/.test(currency)) throw new Error(`Unknown currency for ${symbol}`);
 
     const offsetSeconds = result.meta?.gmtoffset ?? 0;
-    const byDate = new Map<string, number>();
+    const isNum = (v: number | null | undefined): v is number => typeof v === "number" && Number.isFinite(v);
+    const byDate = new Map<string, MarketCandle>();
     for (let i = 0; i < timestamps.length; i++) {
         const close = closes[i];
-        if (typeof close !== "number" || !Number.isFinite(close)) continue;
+        if (!isNum(close)) continue;
         const date = new Date((timestamps[i] + offsetSeconds) * 1000).toISOString().slice(0, 10);
-        byDate.set(date, close * scale);
+        const open = quote?.open?.[i];
+        const high = quote?.high?.[i];
+        const low = quote?.low?.[i];
+        // Days without a full OHLC (providers sometimes omit it) degrade to a flat candle.
+        const o = isNum(open) ? open : close;
+        const h = isNum(high) ? high : Math.max(o, close);
+        const l = isNum(low) ? low : Math.min(o, close);
+        byDate.set(date, [date, o * scale, Math.max(h, o, close) * scale, Math.min(l, o, close) * scale, close * scale]);
     }
-    const points = [...byDate.entries()].sort(([a], [b]) => a.localeCompare(b)) as MarketPoint[];
-    if (points.length === 0) throw new Error(`Empty series for ${symbol}`);
+    const candles = [...byDate.values()].sort((a, b) => a[0].localeCompare(b[0]));
+    if (candles.length === 0) throw new Error(`Empty series for ${symbol}`);
+    const points = candles.map(([date, , , , close]) => [date, close] as MarketPoint);
 
     const rawPrice = result.meta?.regularMarketPrice;
     const price = typeof rawPrice === "number" && Number.isFinite(rawPrice) ? rawPrice * scale : points[points.length - 1][1];
     const rawTime = result.meta?.regularMarketTime;
-    return { currency, price, priceTime: typeof rawTime === "number" ? rawTime * 1000 : null, points };
+    return { currency, price, priceTime: typeof rawTime === "number" ? rawTime * 1000 : null, points, candles };
 }
 
 const SEARCH_TYPES: Record<string, MarketAssetType> = {
@@ -141,10 +155,15 @@ export function syncSymbol(db: Db, symbol: string): Promise<boolean> {
             const data = await fetchChart(symbol);
             db.transaction((tx) => {
                 tx.insert(marketPrice)
-                    .values(data.points.map(([date, close]) => ({ symbol, date, close })))
+                    .values(data.candles.map(([date, open, high, low, close]) => ({ symbol, date, open, high, low, close })))
                     .onConflictDoUpdate({
                         target: [marketPrice.symbol, marketPrice.date],
-                        set: { close: sql`excluded.close` },
+                        set: {
+                            close: sql`excluded.close`,
+                            open: sql`excluded.open`,
+                            high: sql`excluded.high`,
+                            low: sql`excluded.low`,
+                        },
                     })
                     .run();
                 tx.insert(marketSync)
@@ -301,10 +320,16 @@ export async function buildPayload(db: Db, userId: string): Promise<MarketsPaylo
                   .orderBy(asc(marketPrice.date))
                   .all();
     const bySymbol = new Map<string, MarketPoint[]>();
+    const candlesBySymbol = new Map<string, MarketCandle[]>();
     for (const row of priceRows) {
         const list = bySymbol.get(row.symbol) ?? [];
         list.push([row.date, row.close]);
         bySymbol.set(row.symbol, list);
+        if (row.open !== null && row.high !== null && row.low !== null) {
+            const candles = candlesBySymbol.get(row.symbol) ?? [];
+            candles.push([row.date, row.open, row.high, row.low, row.close]);
+            candlesBySymbol.set(row.symbol, candles);
+        }
     }
 
     const now = Date.now();
@@ -321,6 +346,7 @@ export async function buildPayload(db: Db, userId: string): Promise<MarketsPaylo
             fetchedAt: sync?.fetchedAt ?? null,
             ok: sync?.ok ?? false,
             history: bySymbol.get(a.symbol) ?? [],
+            candles: candlesBySymbol.get(a.symbol) ?? [],
         };
     });
 

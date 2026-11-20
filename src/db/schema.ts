@@ -89,6 +89,11 @@ export const marketPrice = sqliteTable("market_price", {
     symbol: text("symbol").notNull(),
     date: text("date").notNull(),
     close: real("close").notNull(),
+    // OHLC for candlesticks. Nullable: rows cached before candles existed have no values
+    // until their symbol is refreshed again.
+    open: real("open"),
+    high: real("high"),
+    low: real("low"),
 }, (table) => [
     primaryKey({ columns: [table.symbol, table.date] }),
 ]);
