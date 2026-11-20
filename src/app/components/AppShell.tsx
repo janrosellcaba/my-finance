@@ -35,7 +35,7 @@ import { I18nProvider, useT } from "@/i18n/I18nProvider";
 const TransactionsView = dynamic(() => import("./TransactionsView").then((m) => m.TransactionsView), {
     ssr: false,
 });
-const TodoView = dynamic(() => import("./TodoView").then((m) => m.TodoView), { ssr: false });
+const MarketsView = dynamic(() => import("./markets/MarketsView").then((m) => m.MarketsView), { ssr: false });
 const AnalyticsView = dynamic(() => import("./AnalyticsView").then((m) => m.AnalyticsView), { ssr: false });
 const ConfigView = dynamic(() => import("./ConfigView").then((m) => m.ConfigView), { ssr: false });
 
@@ -243,7 +243,7 @@ export function AppShell({
             } else if (e.key === "2") {
                 selectTab("transactions");
             } else if (e.key === "3") {
-                selectTab("todo");
+                selectTab("markets");
             } else if (e.key === "4") {
                 selectTab("analytics");
             } else if (e.key === "5") {
@@ -491,7 +491,7 @@ function AppShellView({
                                 onTransactionChanged={loadDashboard}
                             />
                         )}
-                        {tab === "todo" && <TodoView />}
+                        {tab === "markets" && <MarketsView />}
                         {tab === "analytics" && (
                             <AnalyticsView
                                 privacyMode={privacyMode}

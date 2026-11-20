@@ -7,7 +7,6 @@ import {
     IconArrowLeft,
     IconBank,
     IconChart,
-    IconCheckSquare,
     IconClose,
     IconEye,
     IconGrip,
@@ -16,6 +15,7 @@ import {
     IconPencil,
     IconRadioDot,
     IconSettings,
+    IconTrendingUp,
     IconUtensils,
     IconWallet,
 } from "./icons";
@@ -93,7 +93,7 @@ export type TourSlide = {
     title: string;
     body: string;
     visual: VisualKind;
-    nav?: "home" | "transactions" | "todo" | "analytics" | "config";
+    nav?: "home" | "transactions" | "markets" | "analytics" | "config";
 };
 
 export function getTourSlides(t: TFunction): TourSlide[] {
@@ -171,7 +171,7 @@ function MiniNav({ active }: { active: NonNullable<TourSlide["nav"]> }) {
     const items = [
         { key: "home" as const, label: t("nav.home"), Icon: IconHome },
         { key: "transactions" as const, label: t("nav.txns"), Icon: IconList },
-        { key: "todo" as const, label: t("nav.todo"), Icon: IconCheckSquare },
+        { key: "markets" as const, label: t("nav.markets"), Icon: IconTrendingUp },
         { key: "analytics" as const, label: t("nav.analytics"), Icon: IconChart },
         { key: "config" as const, label: t("nav.settings"), Icon: IconSettings },
     ];

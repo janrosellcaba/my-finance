@@ -169,23 +169,6 @@ export function IconPencil({ className }: { className?: string }) {
     );
 }
 
-export function IconCheckSquare({ className, checked }: { className?: string; checked?: boolean }) {
-    return (
-        <svg
-            viewBox="0 0 24 24"
-            className={className}
-            fill={checked ? "currentColor" : "none"}
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-        >
-            <rect x="4" y="4" width="16" height="16" rx="5" fill={checked ? "currentColor" : "none"} />
-            {checked && <path d="m8.5 12.5 2.5 2.5 5-5" stroke="white" />}
-        </svg>
-    );
-}
-
 export function IconTrash({ className }: { className?: string }) {
     return (
         <svg viewBox="0 0 24 24" fill="none" className={className} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

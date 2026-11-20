@@ -40,16 +40,7 @@ export type DashboardSummary = {
     accounts: { id: string; name: string; balance: number; icon: string | null; delta: Delta }[];
     recentTransactions: Transaction[];
 };
-export type Todo = {
-    id: string;
-    text: string;
-    dueDate: string | null;
-    completed: boolean;
-    parentId: string | null;
-    sortOrder: number;
-    createdAt: string;
-};
-export type Tab = "home" | "transactions" | "todo" | "analytics" | "config";
+export type Tab = "home" | "transactions" | "markets" | "analytics" | "config";
 export type Theme = "light" | "dark";
 export type AccentColor = "green" | "blue" | "terracotta" | "slate" | "rose";
 export type CurrencyCode = "EUR" | "USD" | "GBP";

@@ -8,7 +8,7 @@ const STORE_OUTBOX = "outbox";
 
 export type OutboxItem = {
     id: string;
-    type: "transaction" | "todo";
+    type: "transaction";
     payload: Record<string, unknown>;
     timestamp: number;
 };
@@ -111,8 +111,12 @@ export async function syncOutbox(): Promise<{ syncedCount: number; errors: numbe
 
     for (const item of items) {
         try {
-            const endpoint = item.type === "transaction" ? "/api/transactions" : "/api/todos";
-            const res = await fetch(endpoint, {
+            // Items queued by older versions (e.g. to-dos) have no endpoint any more: drop them.
+            if (item.type !== "transaction") {
+                await dequeueOutbox(item.id);
+                continue;
+            }
+            const res = await fetch("/api/transactions", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(item.payload),

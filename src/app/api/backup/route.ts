@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getDb } from "@/db";
-import { account, category, todo, transaction, users } from "@/db/schema";
+import { account, category, transaction, users } from "@/db/schema";
 import { validateSession } from "@/lib/session";
 import { eq } from "drizzle-orm";
 
@@ -12,7 +12,7 @@ export async function GET() {
 
     const db = await getDb();
 
-    const [userRecord, userAccounts, userCategories, userTransactions, userTodos] = await Promise.all([
+    const [userRecord, userAccounts, userCategories, userTransactions] = await Promise.all([
         db
             .select({
                 id: users.id,
@@ -31,7 +31,6 @@ export async function GET() {
         db.select().from(account).where(eq(account.userId, user.id)).all(),
         db.select().from(category).where(eq(category.userId, user.id)).all(),
         db.select().from(transaction).where(eq(transaction.userId, user.id)).all(),
-        db.select().from(todo).where(eq(todo.userId, user.id)).all(),
     ]);
 
     const backupPayload = {
@@ -41,7 +40,6 @@ export async function GET() {
         accounts: userAccounts,
         categories: userCategories,
         transactions: userTransactions,
-        todos: userTodos,
     };
 
     const json = JSON.stringify(backupPayload, null, 2);

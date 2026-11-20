@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { sqliteTable, text, real, index, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, real, index, integer, primaryKey, uniqueIndex } from "drizzle-orm/sqlite-core";
 
 export const users = sqliteTable("users", {
     id: text("id").primaryKey(),
@@ -60,20 +60,6 @@ export const transaction = sqliteTable("transaction", {
     index("idx_transaction_user_account").on(table.userId, table.accountId),
 ]);
 
-export const todo = sqliteTable("todo", {
-    id: text("id").primaryKey(),
-    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-    text: text("text").notNull(),
-    dueDate: text("due_date"),
-    completed: integer("completed", { mode: "boolean" }).notNull().default(false),
-    parentId: text("parent_id"),
-    sortOrder: integer("sort_order").notNull().default(0),
-    createdAt: text("created_at").notNull().default(sql`(datetime('now'))`),
-}, (table) => [
-    index("idx_todo_user").on(table.userId),
-    index("idx_todo_user_parent_sort").on(table.userId, table.parentId, table.sortOrder),
-]);
-
 export const session = sqliteTable("session", {
     id: text("id").primaryKey(),
     userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
@@ -83,9 +69,50 @@ export const session = sqliteTable("session", {
     index("idx_session_expires").on(table.expiresAt),
 ]);
 
+// --- Markets tab -----------------------------------------------------------------------
+// Per-user watchlist. Price data below is shared across users (it is public market data).
+export const marketAsset = sqliteTable("market_asset", {
+    id: text("id").primaryKey(),
+    userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    symbol: text("symbol").notNull(),
+    name: text("name").notNull(),
+    type: text("type").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: text("created_at").notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+}, (table) => [
+    uniqueIndex("uq_market_asset_user_symbol").on(table.userId, table.symbol),
+    index("idx_market_asset_user_sort").on(table.userId, table.sortOrder),
+]);
+
+// Daily closes, keyed by provider symbol (also holds FX pairs such as EURUSD=X).
+export const marketPrice = sqliteTable("market_price", {
+    symbol: text("symbol").notNull(),
+    date: text("date").notNull(),
+    close: real("close").notNull(),
+}, (table) => [
+    primaryKey({ columns: [table.symbol, table.date] }),
+]);
+
+// Latest quote + refresh bookkeeping per symbol (drives the "refresh on visit" cache).
+export const marketSync = sqliteTable("market_sync", {
+    symbol: text("symbol").primaryKey(),
+    currency: text("currency"),
+    price: real("price"),
+    priceTime: integer("price_time"),
+    fetchedAt: integer("fetched_at"),
+    attemptedAt: integer("attempted_at").notNull().default(0),
+    ok: integer("ok", { mode: "boolean" }).notNull().default(false),
+});
+
+// Marks users whose watchlist has already been seeded with the default assets, so that
+// removing every asset does not bring the defaults back.
+export const marketSeed = sqliteTable("market_seed", {
+    userId: text("user_id").primaryKey().references(() => users.id, { onDelete: "cascade" }),
+    seededAt: text("seeded_at").notNull().default(sql`(strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`),
+});
+
 export type User = typeof users.$inferSelect;
 export type Account = typeof account.$inferSelect;
 export type Category = typeof category.$inferSelect;
 export type Transaction = typeof transaction.$inferSelect;
 export type Session = typeof session.$inferSelect;
-export type Todo = typeof todo.$inferSelect;
